@@ -6,14 +6,17 @@ use tracing::{info, trace};
 pub struct TextureVault {
     pub display_view_dims: [u32; 2],
     pub display_view: Option<Arc<wgpu::TextureView>>,
+
     pub srcimg_dims: [u32; 2],
     pub srcimg_texture: Option<Arc<wgpu::Texture>>,
     pub srcimg_texture_view: Option<Arc<wgpu::TextureView>>,
-    pub effect_view: Option<Arc<wgpu::TextureView>>,
+
     pub effect_dims: [u32; 2],
+    pub effect_view: Option<Arc<wgpu::TextureView>>,
+
+    pub cropped_dims: [u32; 2],
     pub cropped_texture: Option<Arc<wgpu::Texture>>,
     pub cropped_texture_view: Option<Arc<wgpu::TextureView>>,
-    pub cropped_dims: [u32; 2],
 }
 
 impl TextureVault {
@@ -77,5 +80,10 @@ impl TextureVault {
         self.cropped_dims = [0, 0];
         self.cropped_texture = None;
         self.cropped_texture_view = None;
+    }
+    #[tracing::instrument(skip(self))]
+    pub fn clear_effects(&mut self) {
+        self.effect_dims = [0, 0];
+        self.effect_view = None;
     }
 }

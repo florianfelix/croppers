@@ -227,6 +227,7 @@ impl AppState {
         self.texture_vault
             .set_srcimg(Arc::new(texture), texture_view, dims);
         self.texture_vault.clear_cropped();
+        self.texture_vault.clear_effects();
         self.needs_compute = true;
     }
 }
