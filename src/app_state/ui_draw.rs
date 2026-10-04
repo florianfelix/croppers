@@ -27,7 +27,7 @@ impl AppState {
 
                 if self.ui_state.crop.enabled {
                     // if let Some(img_size) = self.texture_vault.image_size {
-                    let img_size = self.texture_vault.display_view_dims;
+                    let img_size = self.texture_vault.srcimg_dims;
                     let desired = [
                         self.ui_state.crop.crop_width,
                         self.ui_state.crop.crop_height,

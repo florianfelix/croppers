@@ -58,7 +58,7 @@ impl AppState {
             self.source_dirty = true;
         }
         self.set_srcimg_texture_from_source();
-        self.set_srcimg_to_display();
+        // self.set_srcimg_to_display();
     }
 
     pub fn open_previous(&mut self) {
@@ -66,7 +66,7 @@ impl AppState {
             self.source_dirty = true;
         }
         self.set_srcimg_texture_from_source();
-        self.set_srcimg_to_display();
+        // self.set_srcimg_to_display();
     }
 
     pub fn try_open_file(&mut self, path: &PathBuf) {

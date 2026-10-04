@@ -97,7 +97,7 @@ impl ApplicationHandler<Message> for Croppers {
         self.app_state.gpu = Some((device, queue));
 
         self.app_state.set_srcimg_texture_from_source();
-        self.app_state.set_srcimg_to_display();
+        // self.app_state.set_srcimg_to_display();
 
         self.renderer = Some(renderer);
     }

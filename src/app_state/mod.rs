@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
 use crossbeam_channel::{Receiver, Sender};
-use tracing::info;
+use tracing::{error, info};
 
 use crate::{
     app_state::{
@@ -62,6 +62,19 @@ impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn update_before_reddraw(&mut self) -> bool {
         let mut request_redraw = false;
+
+        if self.source_dirty {
+            if let Some(ref source) = self.source {
+                self.is_computing = false;
+                self.needs_compute = true;
+                self.effect_stack.needs_rebuild = true;
+            }
+            self.texture_vault.clear_cropped();
+            // self.texture_vault.clear_effects();
+            // self.texture_vault.effect_view = self.texture_vault.srcimg_texture_view.clone();
+            self.source_dirty = false;
+        }
+
         if self.is_computing {
             request_redraw = true
         }
@@ -75,7 +88,7 @@ impl AppState {
             };
 
             // if let Some((view, dims)) = self.get_srcimg_view() {
-            if let Some((view, dims)) = self.get_srcimg_view() {
+            if let Some((view, dims)) = res {
                 let compute_request = ComputeRequest::EffectsJob(EffectsJob {
                     effect_stack: self.effect_stack.clone(),
                     src_width: dims.width(),
@@ -108,6 +121,7 @@ impl AppState {
                 self.texture_vault.set_cropped(texture, view);
                 self.is_computing = false;
                 self.needs_compute = true;
+                self.effect_stack.needs_rebuild = true;
             }
             _ => {}
         }
@@ -160,18 +174,18 @@ impl AppState {
         }
     }
 
-    #[tracing::instrument(skip(self))]
-    pub fn set_srcimg_to_display(&mut self) {
-        let Some((ref device, ref queue)) = self.gpu else {
-            return;
-        };
-        self.texture_vault.display_view = self.texture_vault.srcimg_texture_view.clone();
-        self.texture_vault.display_view_dims = self.texture_vault.srcimg_dims;
-        info!(
-            "Set display view {:?}",
-            self.texture_vault.display_view_dims
-        );
-    }
+    // #[tracing::instrument(skip(self))]
+    // pub fn set_srcimg_to_display(&mut self) {
+    //     let Some((ref device, ref queue)) = self.gpu else {
+    //         return;
+    //     };
+    //     self.texture_vault.display_view = self.texture_vault.srcimg_texture_view.clone();
+    //     self.texture_vault.display_view_dims = self.texture_vault.srcimg_dims;
+    //     info!(
+    //         "Set display view {:?}",
+    //         self.texture_vault.display_view_dims
+    //     );
+    // }
 
     #[tracing::instrument(skip(self))]
     pub fn set_srcimg_texture_from_source(&mut self) {
@@ -226,8 +240,9 @@ impl AppState {
 
         self.texture_vault
             .set_srcimg(Arc::new(texture), texture_view, dims);
+        self.texture_vault.effect_view = self.texture_vault.srcimg_texture_view.clone();
         self.texture_vault.clear_cropped();
-        self.texture_vault.clear_effects();
+        // self.texture_vault.clear_effects();
         self.needs_compute = true;
     }
 }
