@@ -1,0 +1,233 @@
+#![allow(
+    clippy::new_without_default,
+    clippy::collapsible_match,
+    clippy::collapsible_if,
+    clippy::single_match
+)]
+#![allow(unused)]
+use std::{path::PathBuf, sync::Arc};
+
+use anyhow::Result;
+use clap::Parser;
+use tracing::info;
+use winit::{
+    application::ApplicationHandler,
+    event::{ElementState, KeyEvent, WindowEvent},
+    event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
+    keyboard::{Key, NamedKey},
+    platform::{
+        modifier_supplement::KeyEventExtModifierSupplement, wayland::WindowAttributesExtWayland,
+    },
+    window::{self, Window},
+};
+
+use crate::{
+    app_state::AppState,
+    compute::{ComputeRequest, ComputeResult, crop_renderer::CropJob},
+    render_state::RenderState,
+    utils::DimHelper,
+};
+
+pub mod app_state;
+pub mod compute;
+pub mod render_state;
+pub mod utils;
+
+#[derive(Debug, Clone)]
+pub enum Message {
+    Empty,
+    ComputeResult(ComputeResult),
+}
+
+pub struct Croppers {
+    renderer: Option<RenderState>,
+    app_state: AppState,
+    proxy: Option<EventLoopProxy<Message>>,
+}
+
+impl Croppers {
+    pub fn new() -> Self {
+        utils::init_logging();
+        let cli = utils::Cli::parse();
+        info!("{:#?}", cli);
+        Self {
+            renderer: None,
+            app_state: AppState::new(cli),
+            proxy: None,
+        }
+    }
+    pub fn run(&mut self) -> Result<()> {
+        let event_loop = EventLoop::<Message>::with_user_event().build()?;
+        self.proxy = Some(event_loop.create_proxy());
+        event_loop.run_app(self)?;
+        Ok(())
+    }
+}
+
+impl ApplicationHandler<Message> for Croppers {
+    #[tracing::instrument(skip(self, event_loop))]
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        if self.renderer.is_some() {
+            return;
+        }
+        let Some(proxy) = &self.proxy else {
+            return;
+        };
+
+        let window_attributes = Window::default_attributes()
+            .with_title("GPU Image Viewer")
+            .with_name("croppers", "");
+        let window = Arc::new(
+            event_loop
+                .create_window(window_attributes)
+                .expect("Failed to create winit window."),
+        );
+        let window_clone = window.clone();
+
+        let mut renderer = pollster::block_on(RenderState::new(window_clone));
+
+        let device = renderer.device.clone();
+        let queue = renderer.queue.clone();
+        let rx_job = self.app_state.rx_job.clone();
+
+        compute::spawn_worker(device, queue, proxy.clone(), rx_job);
+
+        let device = renderer.device.clone();
+        let queue = renderer.queue.clone();
+        self.app_state.gpu = Some((device, queue));
+
+        self.app_state.set_srcimg_texture_from_source();
+        self.app_state.set_srcimg_to_display();
+
+        self.renderer = Some(renderer);
+    }
+    fn exiting(&mut self, _event_loop: &ActiveEventLoop) {
+        self.renderer = None;
+    }
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: Message) {
+        match event {
+            Message::Empty => info!("Received empty proxy message."),
+            Message::ComputeResult(compute_result) => {
+                info!("Received Compute Result");
+                self.app_state.handle_compute_result(compute_result);
+            }
+        }
+    }
+
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _window_id: winit::window::WindowId,
+        window_event: winit::event::WindowEvent,
+    ) {
+        let Some(renderer) = self.renderer.as_mut() else {
+            return;
+        };
+        let response = renderer
+            .ui_renderer
+            .egui_winit
+            .on_window_event(&renderer.window, &window_event);
+        let is_input_event = matches!(
+            window_event,
+            WindowEvent::CursorMoved { .. }
+                | WindowEvent::MouseInput { .. }
+                | WindowEvent::MouseWheel { .. }
+                | WindowEvent::KeyboardInput { .. }
+                | WindowEvent::Touch { .. }
+        );
+        if response.repaint && is_input_event {
+            renderer.window.request_redraw();
+        }
+
+        match window_event {
+            WindowEvent::CloseRequested => {
+                self.renderer = None;
+                event_loop.exit();
+            }
+            WindowEvent::Resized(physical_size) => renderer.handle_resize(physical_size),
+            WindowEvent::RedrawRequested => {
+                if self.app_state.update_before_reddraw() {
+                    renderer.window.request_redraw();
+                };
+
+                renderer.update(&mut self.app_state);
+
+                match renderer.render(&mut self.app_state) {
+                    Ok(_) => {}
+                    Err(wgpu::hal::SurfaceError::Lost) => {
+                        let _ = renderer.device.poll(wgpu::PollType::Wait {
+                            submission_index: None,
+                            timeout: None, // Wait indefinitely until idle
+                        });
+                        renderer
+                            .surface
+                            .configure(&renderer.device, &renderer.config)
+                    }
+                    Err(wgpu::hal::SurfaceError::Device(wgpu::hal::DeviceError::OutOfMemory)) => {
+                        event_loop.exit()
+                    }
+                    Err(e) => eprintln!("Render error: {e:?}"),
+                }
+            }
+            WindowEvent::KeyboardInput { event, .. } => {
+                if !response.consumed {
+                    self.handle_keyboard_event(event, event_loop);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+impl Croppers {
+    pub fn handle_keyboard_event(&mut self, event: KeyEvent, event_loop: &ActiveEventLoop) {
+        if event.state == ElementState::Pressed && !event.repeat {
+            match event.key_without_modifiers().as_ref() {
+                Key::Character("w") => self.app_state.ui_state.toggle_panel(),
+                Key::Character("q") => {
+                    self.renderer = None; // Clean up before exit
+                    event_loop.exit();
+                }
+                Key::Character("n") | Key::Named(NamedKey::ArrowRight) => {
+                    self.app_state.open_next()
+                }
+                Key::Character("b") | Key::Named(NamedKey::ArrowLeft) => {
+                    self.app_state.open_previous()
+                }
+                Key::Character("c") => {
+                    self.app_state.ui_state.crop.enabled = !self.app_state.ui_state.crop.enabled
+                }
+                Key::Named(NamedKey::Enter) => {
+                    #[allow(clippy::collapsible_match)]
+                    if self.app_state.ui_state.crop.enabled {
+                        // if let Some(ref mut tx_job) = self.app_state.tx_job {
+                        info!("Sending Crop Job");
+                        if let Some(ref renderer) = self.renderer {
+                            let imgdim = self.app_state.texture_vault.srcimg_dims;
+                            let view = self
+                                .app_state
+                                .texture_vault
+                                .srcimg_texture_view
+                                .as_ref()
+                                .unwrap()
+                                .clone();
+                            let job = CropJob {
+                                src_view: view,
+                                src_dimensions: imgdim,
+                                target_dimensions: [
+                                    self.app_state.ui_state.crop.crop_width,
+                                    self.app_state.ui_state.crop.crop_height,
+                                ],
+                                uv_rect: self.app_state.ui_state.crop.uv_rect,
+                            };
+                            let _ = self.app_state.tx_job.send(ComputeRequest::CropJob(job));
+                            self.app_state.ui_state.crop.enabled = false;
+                        }
+                        // }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}

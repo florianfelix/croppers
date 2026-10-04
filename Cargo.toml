@@ -1,0 +1,33 @@
+[package]
+name = "croppers"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wgpu = { version = "30.0.1", features = ["webgl"] }
+winit = { version = "0.30", features = ["rwh_06", ] }
+bytemuck = { version = "1.25.2", features = ["derive"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+egui = "0.36.2"
+egui-wgpu = "0.36.2"
+log = "0.4"
+pollster = "1.0.1"
+egui-winit = { version = "0.36.2", features = [] }
+env_logger = "0.11.11"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+clap = { version = "4.6.7", features = ["derive"] }
+anyhow = "1.0.104"
+crossbeam-channel = "0.5.17"
+itertools = "0.15.0"
+# pod = "0.5.0"
+# zeroable = "0.2.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["Document", "Window", "Element", "HtmlCanvasElement"] }
+console_log = "1.1.0"
