@@ -13,7 +13,7 @@ use wgpu::Device;
 #[derive(Debug, Clone)]
 pub enum EffectsResult {
     Empty(String),
-    Finished(Arc<wgpu::TextureView>),
+    Finished((Arc<wgpu::TextureView>, [u32; 2])),
 }
 
 pub struct EffectProcessor {
@@ -51,6 +51,7 @@ impl EffectProcessor {
             .as_ref()
             .is_none_or(|p| p.dimensions != (job.src_width, job.src_height))
         {
+            info!("Dimensions Changed. New GpuEffectPipeline");
             self.compute_pipeline = Some(GpuEffectPipeline::new(
                 self.device.clone(),
                 job.src_width,
@@ -133,7 +134,7 @@ impl EffectProcessor {
             // Submit to GPU queue
             self.queue.submit(std::iter::once(encoder.finish()));
 
-            EffectsResult::Finished(Arc::new(output_view))
+            EffectsResult::Finished((Arc::new(output_view), [job.src_width, job.src_height]))
         } else {
             EffectsResult::Empty("No Compute Pipeline found".into())
         }

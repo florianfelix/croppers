@@ -66,6 +66,15 @@ impl AppState {
             request_redraw = true
         }
         if (self.needs_compute || self.effect_stack.needs_rebuild) && !self.is_computing {
+            let res = match self.texture_vault.cropped_texture_view.is_some() {
+                true => {
+                    info!("Sending cropped view to effects");
+                    self.get_cropped_view()
+                }
+                false => self.get_srcimg_view(),
+            };
+
+            // if let Some((view, dims)) = self.get_srcimg_view() {
             if let Some((view, dims)) = self.get_srcimg_view() {
                 let compute_request = ComputeRequest::EffectsJob(EffectsJob {
                     effect_stack: self.effect_stack.clone(),
@@ -86,9 +95,13 @@ impl AppState {
     #[tracing::instrument(skip(self, compute_result))]
     pub fn handle_compute_result(&mut self, compute_result: ComputeResult) {
         match compute_result {
-            ComputeResult::FinishedEffects(EffectsResult::Finished(view)) => {
+            ComputeResult::FinishedEffects(EffectsResult::Finished((view, dims))) => {
+                info!("Received Effects {:?}", dims);
+                // if self.texture_vault.cropped_texture_view.is_some() {}
                 self.texture_vault.effect_view = Some(view);
+                self.texture_vault.effect_dims = dims;
                 self.is_computing = false;
+                self.effect_stack.needs_rebuild = false;
             }
             ComputeResult::FinishedCrop(CropResult::Finished { texture, view }) => {
                 info!("Received Cropped {:?}", [texture.width(), texture.height()]);
@@ -104,7 +117,7 @@ impl AppState {
     pub fn get_view_auto(&self) -> Option<(Arc<wgpu::TextureView>, [u32; 2])> {
         if self.ui_state.crop.enabled {
             info!("GETTING SRC VIEW");
-            self.get_display_view()
+            self.get_srcimg_view()
         } else {
             info!("GETTING EFFECT VIEW");
             self.get_effect_view()
@@ -114,7 +127,7 @@ impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn get_cropped_view(&self) -> Option<(Arc<wgpu::TextureView>, [u32; 2])> {
         if let Some(ref cropped_view) = self.texture_vault.cropped_texture_view
-            && self.texture_vault.cropped_view_dims_non_zero()
+            && self.texture_vault.cropped_dims.is_non_zero()
         {
             Some((cropped_view.clone(), self.texture_vault.cropped_dims))
         } else {
@@ -124,22 +137,11 @@ impl AppState {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn get_display_view(&self) -> Option<(Arc<wgpu::TextureView>, [u32; 2])> {
-        if let Some(ref display_view) = self.texture_vault.display_view
-            && self.texture_vault.display_view_dims_non_zero()
-        {
-            Some((display_view.clone(), self.texture_vault.display_view_dims))
-        } else {
-            info!("no display view found");
-            None
-        }
-    }
-    #[tracing::instrument(skip(self))]
     pub fn get_effect_view(&self) -> Option<(Arc<wgpu::TextureView>, [u32; 2])> {
         if let Some(ref effect_view) = self.texture_vault.effect_view
-            && self.texture_vault.display_view_dims_non_zero()
+            && self.texture_vault.effect_dims.is_non_zero()
         {
-            Some((effect_view.clone(), self.texture_vault.display_view_dims))
+            Some((effect_view.clone(), self.texture_vault.effect_dims))
         } else {
             info!("no effect view found");
             None
@@ -149,9 +151,9 @@ impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn get_srcimg_view(&self) -> Option<(Arc<wgpu::TextureView>, [u32; 2])> {
         if let Some(ref srcimg_view) = self.texture_vault.srcimg_texture_view
-            && self.texture_vault.srcimg_view_dims_non_zero()
+            && self.texture_vault.srcimg_dims.is_non_zero()
         {
-            Some((srcimg_view.clone(), self.texture_vault.display_view_dims))
+            Some((srcimg_view.clone(), self.texture_vault.srcimg_dims))
         } else {
             info!("no display view found");
             None
@@ -224,5 +226,7 @@ impl AppState {
 
         self.texture_vault
             .set_srcimg(Arc::new(texture), texture_view, dims);
+        self.texture_vault.clear_cropped();
+        self.needs_compute = true;
     }
 }

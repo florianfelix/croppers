@@ -41,7 +41,7 @@ pub enum ComputeResult {
     FinishedCrop(CropResult),
 }
 
-#[tracing::instrument(skip(device, queue, rx_job,))]
+#[tracing::instrument(skip(device, queue, rx_job, proxy))]
 pub fn compute_worker(
     device: Arc<wgpu::Device>,
     queue: Arc<wgpu::Queue>,

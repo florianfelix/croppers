@@ -10,6 +10,7 @@ pub struct TextureVault {
     pub srcimg_texture: Option<Arc<wgpu::Texture>>,
     pub srcimg_texture_view: Option<Arc<wgpu::TextureView>>,
     pub effect_view: Option<Arc<wgpu::TextureView>>,
+    pub effect_dims: [u32; 2],
     pub cropped_texture: Option<Arc<wgpu::Texture>>,
     pub cropped_texture_view: Option<Arc<wgpu::TextureView>>,
     pub cropped_dims: [u32; 2],
@@ -72,11 +73,7 @@ impl TextureVault {
         self.cropped_texture_view = Some(texture_view);
     }
     #[tracing::instrument(skip(self))]
-    pub fn clear_cropped(
-        &mut self,
-        texture: Arc<wgpu::Texture>,
-        texture_view: Arc<wgpu::TextureView>,
-    ) {
+    pub fn clear_cropped(&mut self) {
         self.cropped_dims = [0, 0];
         self.cropped_texture = None;
         self.cropped_texture_view = None;

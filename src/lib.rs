@@ -112,6 +112,10 @@ impl ApplicationHandler<Message> for Croppers {
                 self.app_state.handle_compute_result(compute_result);
             }
         }
+        let Some(renderer) = self.renderer.as_mut() else {
+            return;
+        };
+        renderer.window.request_redraw();
     }
 
     fn window_event(
