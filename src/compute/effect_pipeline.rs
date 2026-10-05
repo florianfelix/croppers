@@ -17,7 +17,9 @@ use wgpu::util::DeviceExt;
 
 use crate::{
     app_state::effect_stack::{Effect, EffectStack},
-    compute::uniforms::{BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, VignetteUniforms},
+    compute::uniforms::{
+        BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, TiltShiftUniforms, VignetteUniforms,
+    },
 };
 
 #[allow(dead_code)]
@@ -211,6 +213,55 @@ impl GpuEffectPipeline {
                     };
                     let v_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                         label: Some("Blur Vertical Uniform Buffer"),
+                        contents: bytemuck::bytes_of(&uniforms),
+                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    });
+
+                    // Add Vertical Pass
+                    self.passes.push(GpuEffectPass {
+                        effect_id: container.id,
+                        pipeline: compute_pipeline,
+                        uniform_buffer: v_buf,
+                    });
+
+                    continue;
+                }
+
+                Effect::TiltShift(settings) => {
+                    let uniforms = TiltShiftUniforms::horizontal(settings);
+                    let h_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("TiltShift Horizontal Uniform Buffer"),
+                        contents: bytemuck::bytes_of(&uniforms),
+                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    });
+
+                    let pipeline_layout =
+                        device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                            label: Some("TiltShift Pipeline Layout"),
+                            bind_group_layouts: &[Some(&self.bind_group_layout)],
+                            immediate_size: 0,
+                        });
+
+                    let compute_pipeline =
+                        device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                            label: Some("Compute Pipeline TiltShift"),
+                            layout: Some(&pipeline_layout),
+                            module: &shader_modules["tiltshift"],
+                            entry_point: Some("main"),
+                            compilation_options: Default::default(),
+                            cache: None,
+                        });
+
+                    // Add Horizontal Pass
+                    self.passes.push(GpuEffectPass {
+                        effect_id: container.id,
+                        pipeline: compute_pipeline.clone(),
+                        uniform_buffer: h_buf,
+                    });
+
+                    let uniforms = TiltShiftUniforms::vertical(settings);
+                    let v_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("TiltShift Vertical Uniform Buffer"),
                         contents: bytemuck::bytes_of(&uniforms),
                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                     });

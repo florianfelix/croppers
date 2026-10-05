@@ -27,13 +27,13 @@ impl std::fmt::Debug for EffectStack {
 }
 impl Default for EffectStack {
     fn default() -> Self {
-        let effects = vec![
-            EffectSelector::Vignette.into(),
-            EffectSelector::Blur.into(),
-            EffectSelector::Bw.into(),
-        ];
+        // let effects = vec![
+        //     EffectSelector::Vignette.into(),
+        //     EffectSelector::Blur.into(),
+        //     EffectSelector::Bw.into(),
+        // ];
 
-        // let effects = vec![];
+        let effects = vec![EffectSelector::TiltShift.into()];
         let mut result = Self {
             effects,
             needs_rebuild: true,
@@ -57,6 +57,7 @@ pub enum EffectSelector {
     Bw,
     Hsv,
     Gamma,
+    TiltShift,
 }
 impl From<EffectSelector> for EffectContainer {
     fn from(value: EffectSelector) -> Self {
@@ -91,6 +92,12 @@ impl From<EffectSelector> for EffectContainer {
                 enabled: true,
                 effect: Effect::Gamma(GammaSettings::default()),
             },
+            EffectSelector::TiltShift => EffectContainer {
+                id: 0,
+                name: "Tilt Shift".into(),
+                enabled: true,
+                effect: Effect::TiltShift(TiltShiftSettings::default()),
+            },
         }
     }
 }
@@ -110,6 +117,25 @@ pub enum Effect {
     Bw(BwSettings),
     Hsv(HsvSettings),
     Gamma(GammaSettings),
+    TiltShift(TiltShiftSettings),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TiltShiftSettings {
+    pub max_radius: f32,
+    pub center: f32,
+    pub focus_size: f32,
+    pub feather: f32,
+}
+impl Default for TiltShiftSettings {
+    fn default() -> Self {
+        Self {
+            max_radius: 30.,
+            center: 0.5,
+            focus_size: 0.1,
+            feather: 0.4,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

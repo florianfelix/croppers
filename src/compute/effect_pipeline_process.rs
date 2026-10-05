@@ -3,7 +3,10 @@ use crate::{
     compute::{
         EffectsJob,
         effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
-        uniforms::{BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, VignetteUniforms},
+        uniforms::{
+            BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, TiltShiftUniforms,
+            VignetteUniforms,
+        },
     },
 };
 use std::{collections::HashMap, sync::Arc};
@@ -44,6 +47,10 @@ impl EffectProcessor {
         shader_modules.insert(
             "gamma".to_string(),
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/gamma_comp.wgsl")),
+        );
+        shader_modules.insert(
+            "tiltshift".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/tiltshift_comp.wgsl")),
         );
         Self {
             device,
@@ -159,6 +166,38 @@ impl EffectProcessor {
                                 dir_y: 1,
                                 _padding: 0.0,
                             };
+                            self.queue.write_buffer(
+                                &v_pass.uniform_buffer,
+                                0,
+                                bytemuck::bytes_of(&uniforms),
+                            );
+                        }
+                    }
+                    Effect::TiltShift(settings) => {
+                        // Pass 0: Horizontal Pass [radius (f32), 1 (i32), 0 (i32), 0.0 (f32)]
+                        if let Some(h_pass) = matching_passes.first() {
+                            // let uniforms = BlurUniforms {
+                            //     radius: settings.radius,
+                            //     dir_x: 1,
+                            //     dir_y: 0,
+                            //     _padding: 0.0,
+                            // };
+                            let uniforms = TiltShiftUniforms::horizontal(settings);
+                            self.queue.write_buffer(
+                                &h_pass.uniform_buffer,
+                                0,
+                                bytemuck::bytes_of(&uniforms),
+                            );
+                        }
+                        // Pass 1: Vertical Pass [radius (f32), 0 (i32), 1 (i32), 0.0 (f32)]
+                        if let Some(v_pass) = matching_passes.get(1) {
+                            // let uniforms = BlurUniforms {
+                            //     radius: settings.radius,
+                            //     dir_x: 0,
+                            //     dir_y: 1,
+                            //     _padding: 0.0,
+                            // };
+                            let uniforms = TiltShiftUniforms::vertical(settings);
                             self.queue.write_buffer(
                                 &v_pass.uniform_buffer,
                                 0,

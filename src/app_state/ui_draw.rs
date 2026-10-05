@@ -125,6 +125,13 @@ impl AppState {
                             self.effect_stack.effects.push(new_effect);
                             self.effect_stack.needs_rebuild = true;
                         }
+                        if ui.selectable_label(false, "TiltShift").clicked() {
+                            info!("TiltShift selected");
+                            let mut new_effect: EffectContainer = EffectSelector::TiltShift.into();
+                            new_effect.id = self.effect_stack.effects.len();
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                        }
                     });
 
                 let mut swap_index = None;
@@ -157,6 +164,49 @@ impl AppState {
 
                     if container.enabled {
                         match &mut container.effect {
+                            Effect::TiltShift(settings) => {
+                                ui.indent("tiltshift_settings", |ui| {
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(
+                                                &mut settings.max_radius,
+                                                0.0..=200.0,
+                                            )
+                                            .text("Radius"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    };
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.center, 0.0..=1.0)
+                                                .text("Center"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    };
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.focus_size, 0.0..=1.0)
+                                                .text("focus size"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    };
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.feather, 0.0..=1.0)
+                                                .text("feather"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    };
+                                });
+                            }
                             Effect::Gamma(settings) => {
                                 ui.indent("gamma_settings", |ui| {
                                     if ui
