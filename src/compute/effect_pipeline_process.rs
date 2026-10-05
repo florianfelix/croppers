@@ -3,7 +3,7 @@ use crate::{
     compute::{
         EffectsJob,
         effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
-        uniforms::{BlurUniforms, BwUniforms, HsvUniforms, VignetteUniforms},
+        uniforms::{BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, VignetteUniforms},
     },
 };
 use std::{collections::HashMap, sync::Arc};
@@ -40,6 +40,10 @@ impl EffectProcessor {
         shader_modules.insert(
             "hsv".to_string(),
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/hsv_comp.wgsl")),
+        );
+        shader_modules.insert(
+            "gamma".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/gamma_comp.wgsl")),
         );
         Self {
             device,
@@ -91,6 +95,16 @@ impl EffectProcessor {
                     .collect();
 
                 match &container.effect {
+                    Effect::Gamma(settings) => {
+                        if let Some(pass) = matching_passes.first() {
+                            let uniforms: GammaUniforms = (*settings).into();
+                            self.queue.write_buffer(
+                                &pass.uniform_buffer,
+                                0,
+                                bytemuck::bytes_of(&uniforms),
+                            );
+                        }
+                    }
                     Effect::Hsv(settings) => {
                         if let Some(pass) = matching_passes.first() {
                             let uniforms: HsvUniforms = (*settings).into();

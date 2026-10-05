@@ -17,7 +17,7 @@ use wgpu::util::DeviceExt;
 
 use crate::{
     app_state::effect_stack::{Effect, EffectStack},
-    compute::uniforms::{BlurUniforms, BwUniforms, HsvUniforms, VignetteUniforms},
+    compute::uniforms::{BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, VignetteUniforms},
 };
 
 #[allow(dead_code)]
@@ -126,6 +126,15 @@ impl GpuEffectPipeline {
 
             // Create uniform buffer based on effect type
             let (uniform_buffer, shader_key) = match &container.effect {
+                Effect::Gamma(settings) => {
+                    let uniforms: GammaUniforms = (*settings).into();
+                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("Gamma Uniform Buffer"),
+                        contents: bytemuck::bytes_of(&uniforms),
+                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    });
+                    (buf, "gamma")
+                }
                 Effect::Hsv(settings) => {
                     let uniforms: HsvUniforms = (*settings).into();
                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

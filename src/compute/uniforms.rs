@@ -1,4 +1,4 @@
-use crate::app_state::effect_stack::{BwSettings, HsvSettings, VignetteSettings};
+use crate::app_state::effect_stack::{BwSettings, GammaSettings, HsvSettings, VignetteSettings};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)] // or bytemuck::Pod, bytemuck::Zeroable
@@ -62,6 +62,25 @@ impl From<HsvSettings> for HsvUniforms {
             saturation: value.saturation,
             value: value.value,
             factor: value.factor,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)] // or bytemuck::Pod, bytemuck::Zeroable
+pub struct GammaUniforms {
+    pub gr: f32,
+    pub gg: f32,
+    pub gb: f32,
+    pub _padding1: i32,
+}
+impl From<GammaSettings> for GammaUniforms {
+    fn from(value: GammaSettings) -> Self {
+        Self {
+            gr: value.gr,
+            gg: value.gg,
+            gb: value.gb,
+            _padding1: 0,
         }
     }
 }

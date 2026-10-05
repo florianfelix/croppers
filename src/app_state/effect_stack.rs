@@ -56,6 +56,7 @@ pub enum EffectSelector {
     Blur,
     Bw,
     Hsv,
+    Gamma,
 }
 impl From<EffectSelector> for EffectContainer {
     fn from(value: EffectSelector) -> Self {
@@ -84,6 +85,12 @@ impl From<EffectSelector> for EffectContainer {
                 enabled: true,
                 effect: Effect::Hsv(HsvSettings::default()),
             },
+            EffectSelector::Gamma => EffectContainer {
+                id: 0,
+                name: "Gamma".into(),
+                enabled: true,
+                effect: Effect::Gamma(GammaSettings::default()),
+            },
         }
     }
 }
@@ -102,6 +109,23 @@ pub enum Effect {
     Vignette(VignetteSettings),
     Bw(BwSettings),
     Hsv(HsvSettings),
+    Gamma(GammaSettings),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct GammaSettings {
+    pub gr: f32,
+    pub gg: f32,
+    pub gb: f32,
+}
+impl Default for GammaSettings {
+    fn default() -> Self {
+        Self {
+            gr: 1.0,
+            gg: 1.0,
+            gb: 1.0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

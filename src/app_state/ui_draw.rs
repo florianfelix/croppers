@@ -118,6 +118,13 @@ impl AppState {
                             self.effect_stack.effects.push(new_effect);
                             self.effect_stack.needs_rebuild = true;
                         }
+                        if ui.selectable_label(false, "Gamma").clicked() {
+                            info!("Gamma selected");
+                            let mut new_effect: EffectContainer = EffectSelector::Gamma.into();
+                            new_effect.id = self.effect_stack.effects.len();
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                        }
                     });
 
                 let mut swap_index = None;
@@ -150,6 +157,37 @@ impl AppState {
 
                     if container.enabled {
                         match &mut container.effect {
+                            Effect::Gamma(settings) => {
+                                ui.indent("gamma_settings", |ui| {
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.gr, 0.0..=10.0)
+                                                .text("gamma red"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.gg, 0.0..=10.0)
+                                                .text("gamma green"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.gb, 0.0..=10.0)
+                                                .text("gamma blue"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                });
+                            }
                             Effect::Hsv(settings) => {
                                 ui.indent("hsv_settings", |ui| {
                                     if ui
