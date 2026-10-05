@@ -3,7 +3,7 @@ use crate::{
     compute::{
         EffectsJob,
         effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
-        uniforms::BlurUniforms,
+        uniforms::{BlurUniforms, VignetteUniforms},
     },
 };
 use std::{collections::HashMap, sync::Arc};
@@ -85,13 +85,24 @@ impl EffectProcessor {
                 match &container.effect {
                     Effect::Vignette(settings) => {
                         if let Some(pass) = matching_passes.first() {
-                            let pod_data = [
-                                settings.intensity,
-                                settings.radius,
-                                settings.smoothness,
-                                0.0f32,
-                            ];
-                            pass.update_uniforms(&self.queue, &pod_data);
+                            let uniforms = VignetteUniforms {
+                                intensity: settings.intensity,
+                                radius: settings.radius,
+                                smoothness: settings.smoothness,
+                                _padding: 0,
+                            };
+                            // let pod_data = [
+                            //     settings.intensity,
+                            //     settings.radius,
+                            //     settings.smoothness,
+                            //     0.0f32,
+                            // ];
+                            self.queue.write_buffer(
+                                &pass.uniform_buffer,
+                                0,
+                                bytemuck::bytes_of(&uniforms),
+                            );
+                            // pass.update_uniforms(&self.queue, &uniforms);
                         }
                     }
                     Effect::Blur(settings) => {

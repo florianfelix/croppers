@@ -6,3 +6,12 @@ pub struct BlurUniforms {
     pub dir_y: i32,
     pub _padding: f32,
 }
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)] // or bytemuck::Pod, bytemuck::Zeroable
+pub struct VignetteUniforms {
+    pub intensity: f32,
+    pub radius: f32,
+    pub smoothness: f32,
+    pub _padding: i32,
+}
