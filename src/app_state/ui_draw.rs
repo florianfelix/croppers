@@ -50,6 +50,7 @@ impl AppState {
     }
     #[tracing::instrument(skip(self, _raw_input, ctx))]
     fn draw_panel(&mut self, _raw_input: &egui::RawInput, ctx: &mut egui::Ui) {
+        let mut request_redraw = false;
         if !self.ui_state.show_panel {
             return;
         }
@@ -85,7 +86,8 @@ impl AppState {
                 });
 
                 ui.separator();
-                egui::ComboBox::from_label("Add Effect")
+
+                let res = egui::ComboBox::from_label("Add Effect")
                     .selected_text("Add Effect")
                     .show_ui(ui, |ui| {
                         if ui.selectable_label(false, "Vignette").clicked() {

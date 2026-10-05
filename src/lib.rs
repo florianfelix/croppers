@@ -66,7 +66,7 @@ impl Croppers {
 }
 
 impl ApplicationHandler<Message> for Croppers {
-    #[tracing::instrument(skip(self, event_loop))]
+    #[tracing::instrument(skip_all)]
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.renderer.is_some() {
             return;
@@ -105,6 +105,7 @@ impl ApplicationHandler<Message> for Croppers {
     fn exiting(&mut self, _event_loop: &ActiveEventLoop) {
         self.renderer = None;
     }
+    #[tracing::instrument(skip_all)]
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: Message) {
         match event {
             Message::Empty => info!("Received empty proxy message. Probably for redrawing"),
@@ -118,6 +119,7 @@ impl ApplicationHandler<Message> for Croppers {
         };
     }
 
+    #[tracing::instrument(skip_all)]
     fn window_event(
         &mut self,
         event_loop: &ActiveEventLoop,
@@ -127,10 +129,6 @@ impl ApplicationHandler<Message> for Croppers {
         let Some(renderer) = self.renderer.as_mut() else {
             return;
         };
-        let response = renderer
-            .ui_renderer
-            .egui_winit
-            .on_window_event(&renderer.window, &window_event);
         let is_input_event = matches!(
             window_event,
             WindowEvent::CursorMoved { .. }
@@ -139,6 +137,12 @@ impl ApplicationHandler<Message> for Croppers {
                 | WindowEvent::KeyboardInput { .. }
                 | WindowEvent::Touch { .. }
         );
+
+        let response = renderer
+            .ui_renderer
+            .egui_winit
+            .on_window_event(&renderer.window, &window_event);
+
         if response.repaint && is_input_event {
             renderer.window.request_redraw();
         }
@@ -146,7 +150,6 @@ impl ApplicationHandler<Message> for Croppers {
             || self.app_state.source_dirty
             || self.app_state.needs_compute
         {
-            info!("Is this triggered?");
             renderer.window.request_redraw();
         }
 

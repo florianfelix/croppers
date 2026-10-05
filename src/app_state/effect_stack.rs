@@ -12,13 +12,17 @@ impl std::fmt::Debug for EffectStack {
         let effects: String = self
             .effects
             .iter()
-            .map(|e| e.name.clone())
-            .intersperse(String::from("\n"))
+            .map(|e| {
+                if e.enabled {
+                    e.name.clone()
+                } else {
+                    e.name.chars().map(|c| format!("{}\u{0336}", c)).collect()
+                }
+            })
+            .intersperse(String::from("-->"))
             .collect();
 
-        // effects.extend(self.effects.iter().map(|e| e.name.push_str("\n")));
-
-        write!(f, "needs rebuild: {}\n{effects}", self.needs_rebuild)
+        write!(f, "needs rebuild: {} |{effects}", self.needs_rebuild)
     }
 }
 impl Default for EffectStack {
