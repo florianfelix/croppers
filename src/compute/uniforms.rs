@@ -1,6 +1,6 @@
 use crate::app_state::effect_stack::{
-    BwSettings, GammaSettings, HsvSettings, PixelateTiltSettings, TiltShiftSettings,
-    VignetteSettings,
+    BwSettings, GammaSettings, HsvSettings, PixelateLinearSettings, PixelateTiltSettings,
+    TiltShiftSettings, VignetteSettings,
 };
 
 #[repr(C)]
@@ -152,6 +152,37 @@ impl From<PixelateTiltSettings> for PixelateTiltUniforms {
             center_y: value.center_y,
             focus_size: value.focus_size,
             feather: value.feather,
+            _padding1: 0.0,
+            _padding2: 0.0,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct PixelateLinearUniforms {
+    // --- 1. Block (16 Bytes) ---
+    pub max_pixel_size: f32, // Maximale Kachelgröße am Startpunkt (z. B. 32.0)
+    pub angle: f32,          // Richtung des Verlaufs in Radians (0.0 bis 2*PI)
+    pub start_x: f32,        // Startpunkt des Verlaufs auf X (0.0 bis 1.0)
+    pub start_y: f32,        // Startpunkt des Verlaufs auf Y (0.0 bis 1.0)
+
+    // --- 2. Block (16 Bytes) ---
+    pub length: f32, // Distanz, über die der Verlauf scharf wird (0.0 bis 1.0)
+    pub invert: i32, // 0 = Start pixelig / Ende scharf, 1 = Start scharf / Ende pixelig
+    pub _padding1: f32,
+    pub _padding2: f32,
+}
+
+impl From<PixelateLinearSettings> for PixelateLinearUniforms {
+    fn from(value: PixelateLinearSettings) -> Self {
+        Self {
+            max_pixel_size: value.max_pixel_size,
+            angle: value.angle,
+            start_x: value.start_x,
+            start_y: value.start_y,
+            length: value.length,
+            invert: value.invert,
             _padding1: 0.0,
             _padding2: 0.0,
         }

@@ -132,10 +132,18 @@ impl AppState {
                             self.effect_stack.effects.push(new_effect);
                             self.effect_stack.needs_rebuild = true;
                         }
-                        if ui.selectable_label(false, "Pixelate").clicked() {
+                        if ui.selectable_label(false, "Pixelate Tilt Shift").clicked() {
                             info!("PixelateShift selected");
                             let mut new_effect: EffectContainer =
                                 EffectSelector::PixelateTilt.into();
+                            new_effect.id = self.effect_stack.effects.len();
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                        }
+                        if ui.selectable_label(false, "Pixelate Linear").clicked() {
+                            info!("PixelateShift selected");
+                            let mut new_effect: EffectContainer =
+                                EffectSelector::PixelateLinear.into();
                             new_effect.id = self.effect_stack.effects.len();
                             self.effect_stack.effects.push(new_effect);
                             self.effect_stack.needs_rebuild = true;
@@ -172,6 +180,67 @@ impl AppState {
 
                     if container.enabled {
                         match &mut container.effect {
+                            Effect::PixelateLinear(settings) => {
+                                ui.indent("pixelate_linear_settings", |ui| {
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(
+                                                &mut settings.max_pixel_size,
+                                                0.0..=128.0,
+                                            )
+                                            .text("pixel size"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.angle, 0.0..=10.0)
+                                                .text("angle"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.start_x, 0.0..=1.0)
+                                                .text("start x"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.start_y, 0.0..=1.0)
+                                                .text("start y"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.length, 0.0..=1.0)
+                                                .text("length"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.invert, 0..=1)
+                                                .text("invert"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                });
+                            }
                             Effect::PixelateTilt(settings) => {
                                 ui.indent("pixelate_settings", |ui| {
                                     if ui

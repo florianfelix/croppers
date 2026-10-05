@@ -33,7 +33,7 @@ impl Default for EffectStack {
         //     EffectSelector::Bw.into(),
         // ];
 
-        let effects = vec![EffectSelector::PixelateTilt.into()];
+        let effects = vec![EffectSelector::PixelateLinear.into()];
         let mut result = Self {
             effects,
             needs_rebuild: true,
@@ -59,6 +59,7 @@ pub enum EffectSelector {
     Gamma,
     TiltShift,
     PixelateTilt,
+    PixelateLinear,
 }
 impl From<EffectSelector> for EffectContainer {
     fn from(value: EffectSelector) -> Self {
@@ -105,6 +106,12 @@ impl From<EffectSelector> for EffectContainer {
                 enabled: true,
                 effect: Effect::PixelateTilt(PixelateTiltSettings::default()),
             },
+            EffectSelector::PixelateLinear => EffectContainer {
+                id: 0,
+                name: "Pixelate Linear".into(),
+                enabled: true,
+                effect: Effect::PixelateLinear(PixelateLinearSettings::default()),
+            },
         }
     }
 }
@@ -126,6 +133,29 @@ pub enum Effect {
     Gamma(GammaSettings),
     TiltShift(TiltShiftSettings),
     PixelateTilt(PixelateTiltSettings),
+    PixelateLinear(PixelateLinearSettings),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PixelateLinearSettings {
+    pub max_pixel_size: f32,
+    pub angle: f32,
+    pub start_x: f32,
+    pub start_y: f32,
+    pub length: f32,
+    pub invert: i32,
+}
+impl Default for PixelateLinearSettings {
+    fn default() -> Self {
+        Self {
+            max_pixel_size: 64.0,
+            angle: 0.0,
+            start_x: 0.0,
+            start_y: 0.5,
+            length: 0.8,
+            invert: 0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -141,11 +171,11 @@ impl Default for PixelateTiltSettings {
     fn default() -> Self {
         Self {
             max_pixel_size: 64.0,
-            angle: 0.0,
+            angle: 2.6,
             center_x: 0.5,
             center_y: 0.5,
-            focus_size: 0.4,
-            feather: 0.3,
+            focus_size: 0.0,
+            feather: 0.55,
         }
     }
 }

@@ -4,8 +4,8 @@ use crate::{
         EffectsJob,
         effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
         uniforms::{
-            BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, PixelateTiltUniforms,
-            TiltShiftUniforms, VignetteUniforms,
+            BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, PixelateLinearUniforms,
+            PixelateTiltUniforms, TiltShiftUniforms, VignetteUniforms,
         },
     },
 };
@@ -57,6 +57,12 @@ impl EffectProcessor {
             "pixelate".to_string(),
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/pixelate_comp.wgsl")),
         );
+        shader_modules.insert(
+            "pixelate_lineaer".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!(
+                "../../shaders/pixelate_linear_comp.wgsl"
+            )),
+        );
         Self {
             device,
             queue,
@@ -107,6 +113,16 @@ impl EffectProcessor {
                     .collect();
 
                 match &container.effect {
+                    Effect::PixelateLinear(settings) => {
+                        if let Some(pass) = matching_passes.first() {
+                            let uniforms: PixelateLinearUniforms = (*settings).into();
+                            self.queue.write_buffer(
+                                &pass.uniform_buffer,
+                                0,
+                                bytemuck::bytes_of(&uniforms),
+                            );
+                        }
+                    }
                     Effect::PixelateTilt(settings) => {
                         if let Some(pass) = matching_passes.first() {
                             let uniforms: PixelateTiltUniforms = (*settings).into();
