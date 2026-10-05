@@ -2,8 +2,10 @@ use std::{path::PathBuf, sync::Arc};
 
 use crossbeam_channel::{Receiver, Sender};
 use tracing::{error, info};
+use winit::event_loop::EventLoopProxy;
 
 use crate::{
+    Message,
     app_state::{
         effect_stack::EffectStack, files::ImageSource, texture_vault::TextureVault,
         ui_state::UiState,
@@ -29,6 +31,7 @@ pub struct AppState {
     pub is_computing: bool,
     pub tx_job: Sender<ComputeRequest>,
     pub rx_job: Receiver<ComputeRequest>,
+    pub proxy: Option<EventLoopProxy<Message>>,
 }
 
 pub mod effect_stack;
@@ -52,6 +55,7 @@ impl AppState {
             is_computing: false,
             tx_job,
             rx_job,
+            proxy: None,
         };
         if let Some(path) = cli.path {
             app_state.try_open_file(&path);
@@ -100,6 +104,9 @@ impl AppState {
                     self.needs_compute = false;
                     self.effect_stack.needs_rebuild = false;
                 }
+            }
+            if let Some(ref proxy) = self.proxy {
+                proxy.send_event(Message::Empty);
             }
         }
         request_redraw

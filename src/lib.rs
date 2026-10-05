@@ -59,6 +59,7 @@ impl Croppers {
     pub fn run(&mut self) -> Result<()> {
         let event_loop = EventLoop::<Message>::with_user_event().build()?;
         self.proxy = Some(event_loop.create_proxy());
+        self.app_state.proxy = Some(event_loop.create_proxy());
         event_loop.run_app(self)?;
         Ok(())
     }
@@ -106,16 +107,15 @@ impl ApplicationHandler<Message> for Croppers {
     }
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: Message) {
         match event {
-            Message::Empty => info!("Received empty proxy message."),
+            Message::Empty => info!("Received empty proxy message. Probably for redrawing"),
             Message::ComputeResult(compute_result) => {
                 info!("Received Compute Result");
                 self.app_state.handle_compute_result(compute_result);
             }
         }
-        let Some(renderer) = self.renderer.as_mut() else {
-            return;
+        if let Some(renderer) = self.renderer.as_mut() {
+            renderer.window.request_redraw();
         };
-        renderer.window.request_redraw();
     }
 
     fn window_event(
