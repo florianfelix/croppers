@@ -4,8 +4,8 @@ use crate::{
         EffectsJob,
         effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
         uniforms::{
-            BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, PixelateLinearUniforms,
-            PixelateTiltUniforms, TiltShiftUniforms, VignetteUniforms,
+            BlurUniforms, BwUniforms, DitherUniforms, GammaUniforms, HsvUniforms,
+            PixelateLinearUniforms, PixelateTiltUniforms, TiltShiftUniforms, VignetteUniforms,
         },
     },
 };
@@ -58,10 +58,14 @@ impl EffectProcessor {
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/pixelate_comp.wgsl")),
         );
         shader_modules.insert(
-            "pixelate_lineaer".to_string(),
+            "pixelate_linear".to_string(),
             device.create_shader_module(wgpu::include_wgsl!(
                 "../../shaders/pixelate_linear_comp.wgsl"
             )),
+        );
+        shader_modules.insert(
+            "dither".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/dither_comp.wgsl")),
         );
         Self {
             device,
@@ -113,6 +117,16 @@ impl EffectProcessor {
                     .collect();
 
                 match &container.effect {
+                    Effect::Dither(settings) => {
+                        if let Some(pass) = matching_passes.first() {
+                            let uniforms: DitherUniforms = (*settings).into();
+                            self.queue.write_buffer(
+                                &pass.uniform_buffer,
+                                0,
+                                bytemuck::bytes_of(&uniforms),
+                            );
+                        }
+                    }
                     Effect::PixelateLinear(settings) => {
                         if let Some(pass) = matching_passes.first() {
                             let uniforms: PixelateLinearUniforms = (*settings).into();

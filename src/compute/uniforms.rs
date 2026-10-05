@@ -1,6 +1,6 @@
 use crate::app_state::effect_stack::{
-    BwSettings, GammaSettings, HsvSettings, PixelateLinearSettings, PixelateTiltSettings,
-    TiltShiftSettings, VignetteSettings,
+    BwSettings, DitherSettings, GammaSettings, HsvSettings, PixelateLinearSettings,
+    PixelateTiltSettings, TiltShiftSettings, VignetteSettings,
 };
 
 #[repr(C)]
@@ -185,6 +185,34 @@ impl From<PixelateLinearSettings> for PixelateLinearUniforms {
             invert: value.invert,
             _padding1: 0.0,
             _padding2: 0.0,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct DitherUniforms {
+    pub color_steps: f32, // Anzahl der erlaubten Farbstufen pro Kanal (z. B. 4.0 oder 8.0)
+    pub spread: f32,      // Intensität des Dithering-Musters (Richtwert: 0.5 bis 1.0)
+    pub pattern_scale: f32,
+    pub palette_index: i32,
+    pub matrix_type: i32,
+    pub _padding4: f32,
+    pub _padding5: f32,
+    pub _padding6: f32,
+}
+
+impl From<DitherSettings> for DitherUniforms {
+    fn from(value: DitherSettings) -> Self {
+        Self {
+            color_steps: value.color_steps,
+            spread: value.spread,
+            pattern_scale: value.scale,
+            palette_index: value.palette_index,
+            matrix_type: value.matrix_type,
+            _padding4: 0.0,
+            _padding5: 0.0,
+            _padding6: 0.0,
         }
     }
 }

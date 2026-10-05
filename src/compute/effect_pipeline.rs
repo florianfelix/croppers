@@ -18,8 +18,8 @@ use wgpu::util::DeviceExt;
 use crate::{
     app_state::effect_stack::{Effect, EffectStack},
     compute::uniforms::{
-        BlurUniforms, BwUniforms, GammaUniforms, HsvUniforms, PixelateLinearUniforms,
-        PixelateTiltUniforms, TiltShiftUniforms, VignetteUniforms,
+        BlurUniforms, BwUniforms, DitherUniforms, GammaUniforms, HsvUniforms,
+        PixelateLinearUniforms, PixelateTiltUniforms, TiltShiftUniforms, VignetteUniforms,
     },
 };
 
@@ -129,6 +129,15 @@ impl GpuEffectPipeline {
 
             // Create uniform buffer based on effect type
             let (uniform_buffer, shader_key) = match &container.effect {
+                Effect::Dither(settings) => {
+                    let uniforms: DitherUniforms = (*settings).into();
+                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("Dither Uniform Buffer"),
+                        contents: bytemuck::bytes_of(&uniforms),
+                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    });
+                    (buf, "dither")
+                }
                 Effect::PixelateLinear(settings) => {
                     let uniforms: PixelateLinearUniforms = (*settings).into();
                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -136,7 +145,7 @@ impl GpuEffectPipeline {
                         contents: bytemuck::bytes_of(&uniforms),
                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                     });
-                    (buf, "pixelate_lineaer")
+                    (buf, "pixelate_linear")
                 }
                 Effect::PixelateTilt(settings) => {
                     let uniforms: PixelateTiltUniforms = (*settings).into();

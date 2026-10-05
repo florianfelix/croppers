@@ -148,6 +148,13 @@ impl AppState {
                             self.effect_stack.effects.push(new_effect);
                             self.effect_stack.needs_rebuild = true;
                         }
+                        if ui.selectable_label(false, "Dither").clicked() {
+                            info!("Dither selected");
+                            let mut new_effect: EffectContainer = EffectSelector::Dither.into();
+                            new_effect.id = self.effect_stack.effects.len();
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                        }
                     });
 
                 let mut swap_index = None;
@@ -180,6 +187,58 @@ impl AppState {
 
                     if container.enabled {
                         match &mut container.effect {
+                            Effect::Dither(settings) => {
+                                ui.indent("dither_settings", |ui| {
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(
+                                                &mut settings.color_steps,
+                                                0.0..=10.0,
+                                            )
+                                            .text("color steps"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.spread, 0.0..=10.0)
+                                                .text("spread"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.scale, 0.0..=10.0)
+                                                .text("scale"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.palette_index, 0..=8)
+                                                .text("palette"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.matrix_type, 0..=1)
+                                                .text("matrix_type"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                });
+                            }
                             Effect::PixelateLinear(settings) => {
                                 ui.indent("pixelate_linear_settings", |ui| {
                                     if ui

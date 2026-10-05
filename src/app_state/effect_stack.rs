@@ -33,7 +33,7 @@ impl Default for EffectStack {
         //     EffectSelector::Bw.into(),
         // ];
 
-        let effects = vec![EffectSelector::PixelateLinear.into()];
+        let effects = vec![EffectSelector::Dither.into()];
         let mut result = Self {
             effects,
             needs_rebuild: true,
@@ -60,6 +60,7 @@ pub enum EffectSelector {
     TiltShift,
     PixelateTilt,
     PixelateLinear,
+    Dither,
 }
 impl From<EffectSelector> for EffectContainer {
     fn from(value: EffectSelector) -> Self {
@@ -112,6 +113,12 @@ impl From<EffectSelector> for EffectContainer {
                 enabled: true,
                 effect: Effect::PixelateLinear(PixelateLinearSettings::default()),
             },
+            EffectSelector::Dither => EffectContainer {
+                id: 0,
+                name: "Dither".into(),
+                enabled: true,
+                effect: Effect::Dither(DitherSettings::default()),
+            },
         }
     }
 }
@@ -134,6 +141,27 @@ pub enum Effect {
     TiltShift(TiltShiftSettings),
     PixelateTilt(PixelateTiltSettings),
     PixelateLinear(PixelateLinearSettings),
+    Dither(DitherSettings),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DitherSettings {
+    pub color_steps: f32,
+    pub spread: f32,
+    pub scale: f32,
+    pub palette_index: i32,
+    pub matrix_type: i32,
+}
+impl Default for DitherSettings {
+    fn default() -> Self {
+        Self {
+            color_steps: 4.0,
+            spread: 0.5,
+            scale: 1.0,
+            palette_index: 0,
+            matrix_type: 0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
