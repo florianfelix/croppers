@@ -55,6 +55,7 @@ pub enum EffectSelector {
     Vignette,
     Blur,
     Bw,
+    Hsv,
 }
 impl From<EffectSelector> for EffectContainer {
     fn from(value: EffectSelector) -> Self {
@@ -77,6 +78,12 @@ impl From<EffectSelector> for EffectContainer {
                 enabled: true,
                 effect: Effect::Bw(BwSettings::default()),
             },
+            EffectSelector::Hsv => EffectContainer {
+                id: 0,
+                name: "HSV".into(),
+                enabled: true,
+                effect: Effect::Hsv(HsvSettings::default()),
+            },
         }
     }
 }
@@ -94,6 +101,25 @@ pub enum Effect {
     Blur(BlurSettings),
     Vignette(VignetteSettings),
     Bw(BwSettings),
+    Hsv(HsvSettings),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct HsvSettings {
+    pub hue: f32,
+    pub saturation: f32,
+    pub value: f32,
+    pub factor: f32,
+}
+impl Default for HsvSettings {
+    fn default() -> Self {
+        Self {
+            hue: 0.5,
+            saturation: 1.0,
+            value: 1.0,
+            factor: 1.0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

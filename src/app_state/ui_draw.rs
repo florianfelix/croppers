@@ -111,6 +111,13 @@ impl AppState {
                             self.effect_stack.effects.push(new_effect);
                             self.effect_stack.needs_rebuild = true;
                         }
+                        if ui.selectable_label(false, "HSV").clicked() {
+                            info!("HSV selected");
+                            let mut new_effect: EffectContainer = EffectSelector::Hsv.into();
+                            new_effect.id = self.effect_stack.effects.len();
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                        }
                     });
 
                 let mut swap_index = None;
@@ -143,6 +150,47 @@ impl AppState {
 
                     if container.enabled {
                         match &mut container.effect {
+                            Effect::Hsv(settings) => {
+                                ui.indent("hsv_settings", |ui| {
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.hue, 0.0..=1.0)
+                                                .text("hue"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.saturation, 0.0..=1.0)
+                                                .text("saturation"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.value, 0.0..=1.0)
+                                                .text("value"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.factor, 0.0..=1.0)
+                                                .text("factor"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                });
+                            }
                             Effect::Vignette(settings) => {
                                 ui.indent("vignette_settings", |ui| {
                                     if ui
