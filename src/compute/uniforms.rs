@@ -1,3 +1,5 @@
+use crate::app_state::effect_stack::{BwSettings, VignetteSettings};
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)] // or bytemuck::Pod, bytemuck::Zeroable
 pub struct BlurUniforms {
@@ -15,6 +17,16 @@ pub struct VignetteUniforms {
     pub smoothness: f32,
     pub _padding: i32,
 }
+impl From<VignetteSettings> for VignetteUniforms {
+    fn from(value: VignetteSettings) -> Self {
+        Self {
+            intensity: value.intensity,
+            radius: value.radius,
+            smoothness: value.smoothness,
+            _padding: 0,
+        }
+    }
+}
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)] // or bytemuck::Pod, bytemuck::Zeroable
@@ -23,4 +35,14 @@ pub struct BwUniforms {
     pub _padding1: i32,
     pub _padding2: i32,
     pub _padding3: i32,
+}
+impl From<BwSettings> for BwUniforms {
+    fn from(value: BwSettings) -> Self {
+        Self {
+            select: value.select,
+            _padding1: 0,
+            _padding2: 0,
+            _padding3: 0,
+        }
+    }
 }

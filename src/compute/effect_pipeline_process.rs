@@ -89,12 +89,7 @@ impl EffectProcessor {
                 match &container.effect {
                     Effect::Bw(settings) => {
                         if let Some(pass) = matching_passes.first() {
-                            let uniforms = BwUniforms {
-                                select: settings.select,
-                                _padding1: 0,
-                                _padding2: 0,
-                                _padding3: 0,
-                            };
+                            let uniforms: BwUniforms = (*settings).into();
                             self.queue.write_buffer(
                                 &pass.uniform_buffer,
                                 0,
@@ -104,18 +99,7 @@ impl EffectProcessor {
                     }
                     Effect::Vignette(settings) => {
                         if let Some(pass) = matching_passes.first() {
-                            let uniforms = VignetteUniforms {
-                                intensity: settings.intensity,
-                                radius: settings.radius,
-                                smoothness: settings.smoothness,
-                                _padding: 0,
-                            };
-                            // let pod_data = [
-                            //     settings.intensity,
-                            //     settings.radius,
-                            //     settings.smoothness,
-                            //     0.0f32,
-                            // ];
+                            let uniforms: VignetteUniforms = (*settings).into();
                             self.queue.write_buffer(
                                 &pass.uniform_buffer,
                                 0,

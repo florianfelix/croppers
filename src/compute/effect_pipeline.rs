@@ -17,7 +17,7 @@ use wgpu::util::DeviceExt;
 
 use crate::{
     app_state::effect_stack::{Effect, EffectStack},
-    compute::uniforms::{BlurUniforms, BwUniforms},
+    compute::uniforms::{BlurUniforms, BwUniforms, VignetteUniforms},
 };
 
 #[allow(dead_code)]
@@ -127,12 +127,7 @@ impl GpuEffectPipeline {
             // Create uniform buffer based on effect type
             let (uniform_buffer, shader_key) = match &container.effect {
                 Effect::Bw(settings) => {
-                    let uniforms = BwUniforms {
-                        select: settings.select,
-                        _padding1: 0,
-                        _padding2: 0,
-                        _padding3: 0,
-                    };
+                    let uniforms: BwUniforms = (*settings).into();
                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                         label: Some("Vignette Uniform Buffer"),
                         contents: bytemuck::bytes_of(&uniforms),
@@ -141,15 +136,10 @@ impl GpuEffectPipeline {
                     (buf, "bw")
                 }
                 Effect::Vignette(settings) => {
-                    let pod_data = [
-                        settings.intensity,
-                        settings.radius,
-                        settings.smoothness,
-                        0.0, // padding
-                    ];
+                    let uniforms: VignetteUniforms = (*settings).into();
                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                         label: Some("Vignette Uniform Buffer"),
-                        contents: bytemuck::cast_slice(&pod_data),
+                        contents: bytemuck::bytes_of(&uniforms),
                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                     });
                     (buf, "vignette")
