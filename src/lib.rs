@@ -212,33 +212,7 @@ impl Croppers {
                     self.app_state.ui_state.crop.enabled = !self.app_state.ui_state.crop.enabled
                 }
                 Key::Named(NamedKey::Enter) => {
-                    #[allow(clippy::collapsible_match)]
-                    if self.app_state.ui_state.crop.enabled {
-                        // if let Some(ref mut tx_job) = self.app_state.tx_job {
-                        info!("Sending Crop Job");
-                        if let Some(ref renderer) = self.renderer {
-                            let imgdim = self.app_state.texture_vault.srcimg_dims;
-                            let view = self
-                                .app_state
-                                .texture_vault
-                                .srcimg_texture_view
-                                .as_ref()
-                                .unwrap()
-                                .clone();
-                            let job = CropJob {
-                                src_view: view,
-                                src_dimensions: imgdim,
-                                target_dimensions: [
-                                    self.app_state.ui_state.crop.crop_width,
-                                    self.app_state.ui_state.crop.crop_height,
-                                ],
-                                uv_rect: self.app_state.ui_state.crop.uv_rect,
-                            };
-                            let _ = self.app_state.tx_job.send(ComputeRequest::CropJob(job));
-                            self.app_state.ui_state.crop.enabled = false;
-                        }
-                        // }
-                    }
+                    self.app_state.send_crop_job();
                 }
                 _ => {}
             }

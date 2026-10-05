@@ -11,7 +11,8 @@ use crate::{
         ui_state::UiState,
     },
     compute::{
-        ComputeRequest, ComputeResult, EffectsJob, crop_renderer::CropResult,
+        ComputeRequest, ComputeResult, EffectsJob,
+        crop_renderer::{CropJob, CropResult},
         effect_pipeline_process::EffectsResult,
     },
     utils::DimHelper,
@@ -181,19 +182,6 @@ impl AppState {
         }
     }
 
-    // #[tracing::instrument(skip(self))]
-    // pub fn set_srcimg_to_display(&mut self) {
-    //     let Some((ref device, ref queue)) = self.gpu else {
-    //         return;
-    //     };
-    //     self.texture_vault.display_view = self.texture_vault.srcimg_texture_view.clone();
-    //     self.texture_vault.display_view_dims = self.texture_vault.srcimg_dims;
-    //     info!(
-    //         "Set display view {:?}",
-    //         self.texture_vault.display_view_dims
-    //     );
-    // }
-
     #[tracing::instrument(skip(self))]
     pub fn set_srcimg_texture_from_source(&mut self) {
         let Some(ref img) = self.source else { return };
@@ -256,5 +244,30 @@ impl AppState {
         if let Some(ref proxy) = self.proxy {
             let _ = proxy.send_event(Message::Empty);
         }
+    }
+
+    pub fn send_crop_job(&mut self) {
+        if !self.ui_state.crop.enabled {
+            return;
+        }
+        info!("Sending Crop Job");
+        let imgdim = self.texture_vault.srcimg_dims;
+        let view = self
+            .texture_vault
+            .srcimg_texture_view
+            .as_ref()
+            .unwrap()
+            .clone();
+        let job = CropJob {
+            src_view: view,
+            src_dimensions: imgdim,
+            target_dimensions: [
+                self.ui_state.crop.crop_width,
+                self.ui_state.crop.crop_height,
+            ],
+            uv_rect: self.ui_state.crop.uv_rect,
+        };
+        let _ = self.tx_job.send(ComputeRequest::CropJob(job));
+        self.ui_state.crop.enabled = false;
     }
 }
