@@ -104,6 +104,13 @@ impl AppState {
                             self.effect_stack.effects.push(new_effect);
                             self.effect_stack.needs_rebuild = true;
                         }
+                        if ui.selectable_label(false, "Black and White").clicked() {
+                            info!("Black and White selected");
+                            let mut new_effect: EffectContainer = EffectSelector::Bw.into();
+                            new_effect.id = self.effect_stack.effects.len();
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                        }
                     });
 
                 let mut swap_index = None;
