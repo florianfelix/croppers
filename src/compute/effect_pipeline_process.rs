@@ -124,7 +124,6 @@ impl EffectProcessor {
                             );
                         }
                     }
-                    Effect::Crop(_) => {}
                 }
             }
 

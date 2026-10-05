@@ -80,7 +80,6 @@ pub struct EffectContainer {
 
 #[derive(Clone)]
 pub enum Effect {
-    Crop(CropSettings),
     Blur(BlurSettings),
     Vignette(VignetteSettings),
 }

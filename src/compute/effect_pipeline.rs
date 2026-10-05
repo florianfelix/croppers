@@ -200,7 +200,6 @@ impl GpuEffectPipeline {
 
                     continue;
                 }
-                Effect::Crop(_) => continue, // Add other shader passes here
             };
 
             let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

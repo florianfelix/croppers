@@ -167,11 +167,6 @@ impl AppState {
                                     }
                                 });
                             }
-                            Effect::Crop(_settings) => {
-                                ui.indent("crop_settings", |_ui| {
-                                    // ui.checkbox(&mut settings.show_handles, "Show Handles");
-                                });
-                            }
                             Effect::Blur(settings) => {
                                 ui.indent("blur_settings", |ui| {
                                     if ui
