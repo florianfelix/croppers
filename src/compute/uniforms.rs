@@ -1,5 +1,6 @@
 use crate::app_state::effect_stack::{
-    BwSettings, GammaSettings, HsvSettings, TiltShiftSettings, VignetteSettings,
+    BwSettings, GammaSettings, HsvSettings, PixelateTiltSettings, TiltShiftSettings,
+    VignetteSettings,
 };
 
 #[repr(C)]
@@ -120,6 +121,37 @@ impl TiltShiftUniforms {
             center: settings.center,
             focus_size: settings.focus_size,
             feather: settings.feather,
+            _padding1: 0.0,
+            _padding2: 0.0,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct PixelateTiltUniforms {
+    // --- 1. Block (16 Bytes) ---
+    pub max_pixel_size: f32, // Maximale Kachelgröße am Rand (z. B. 16.0 oder 32.0)
+    pub angle: f32,          // Rotation des Fokusstreifens in Radians (0.0 bis 2*PI)
+    pub center_x: f32,       // Zentrum des Streifens auf X (0.0 bis 1.0)
+    pub center_y: f32,       // Zentrum des Streifens auf Y (0.0 bis 1.0)
+
+    // --- 2. Block (16 Bytes) ---
+    pub focus_size: f32, // Breite der perfekt scharfen Zone (0.0 bis 1.0)
+    pub feather: f32,    // Übergangsbreite bis zur maximalen Verpixelung (0.0 bis 1.0)
+    pub _padding1: f32,
+    pub _padding2: f32,
+}
+
+impl From<PixelateTiltSettings> for PixelateTiltUniforms {
+    fn from(value: PixelateTiltSettings) -> Self {
+        Self {
+            max_pixel_size: value.max_pixel_size,
+            angle: value.angle,
+            center_x: value.center_x,
+            center_y: value.center_y,
+            focus_size: value.focus_size,
+            feather: value.feather,
             _padding1: 0.0,
             _padding2: 0.0,
         }

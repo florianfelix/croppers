@@ -33,7 +33,7 @@ impl Default for EffectStack {
         //     EffectSelector::Bw.into(),
         // ];
 
-        let effects = vec![EffectSelector::TiltShift.into()];
+        let effects = vec![EffectSelector::PixelateTilt.into()];
         let mut result = Self {
             effects,
             needs_rebuild: true,
@@ -58,6 +58,7 @@ pub enum EffectSelector {
     Hsv,
     Gamma,
     TiltShift,
+    PixelateTilt,
 }
 impl From<EffectSelector> for EffectContainer {
     fn from(value: EffectSelector) -> Self {
@@ -98,6 +99,12 @@ impl From<EffectSelector> for EffectContainer {
                 enabled: true,
                 effect: Effect::TiltShift(TiltShiftSettings::default()),
             },
+            EffectSelector::PixelateTilt => EffectContainer {
+                id: 0,
+                name: "Pixelate Tilt".into(),
+                enabled: true,
+                effect: Effect::PixelateTilt(PixelateTiltSettings::default()),
+            },
         }
     }
 }
@@ -118,6 +125,29 @@ pub enum Effect {
     Hsv(HsvSettings),
     Gamma(GammaSettings),
     TiltShift(TiltShiftSettings),
+    PixelateTilt(PixelateTiltSettings),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PixelateTiltSettings {
+    pub max_pixel_size: f32,
+    pub angle: f32,
+    pub center_x: f32,
+    pub center_y: f32,
+    pub focus_size: f32,
+    pub feather: f32,
+}
+impl Default for PixelateTiltSettings {
+    fn default() -> Self {
+        Self {
+            max_pixel_size: 64.0,
+            angle: 0.0,
+            center_x: 0.5,
+            center_y: 0.5,
+            focus_size: 0.4,
+            feather: 0.3,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
