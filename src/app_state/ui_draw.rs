@@ -163,7 +163,7 @@ impl AppState {
                                     }
                                     if ui
                                         .add(
-                                            egui::Slider::new(&mut settings.saturation, 0.0..=1.0)
+                                            egui::Slider::new(&mut settings.saturation, 0.0..=2.0)
                                                 .text("saturation"),
                                         )
                                         .changed()
@@ -172,7 +172,7 @@ impl AppState {
                                     }
                                     if ui
                                         .add(
-                                            egui::Slider::new(&mut settings.value, 0.0..=1.0)
+                                            egui::Slider::new(&mut settings.value, 0.0..=2.0)
                                                 .text("value"),
                                         )
                                         .changed()
