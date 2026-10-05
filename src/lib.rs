@@ -142,6 +142,13 @@ impl ApplicationHandler<Message> for Croppers {
         if response.repaint && is_input_event {
             renderer.window.request_redraw();
         }
+        if self.app_state.effect_stack.needs_rebuild
+            || self.app_state.source_dirty
+            || self.app_state.needs_compute
+        {
+            info!("Is this triggered?");
+            renderer.window.request_redraw();
+        }
 
         match window_event {
             WindowEvent::CloseRequested => {

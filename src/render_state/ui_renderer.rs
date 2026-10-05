@@ -22,6 +22,33 @@ impl UiRenderer {
             None,
             None,
         );
+
+        // --- CENTRAL STYLING AND THEMING ---
+        let mut visuals = egui::Visuals::dark(); // Or egui::Visuals::light()
+
+        // Customize global colors
+        visuals.window_fill = egui::Color32::from_rgb(30, 30, 30);
+        visuals.panel_fill = egui::Color32::from_rgb(24, 24, 28);
+        visuals.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(40, 40, 45);
+        visuals.selection.bg_fill = egui::Color32::from_rgb(40, 40, 40); // Accent color
+        visuals.slider_trailing_fill = true;
+        egui_ctx.set_visuals(visuals);
+
+        // Customize widget geometry, spacing, and rounding centrally
+        egui_ctx.global_style_mut(|style| {
+            style.spacing.item_spacing = egui::vec2(4.0, 2.0);
+            style.spacing.button_padding = egui::vec2(4.0, 2.0);
+
+            // Modify rounding for a modern look
+            // style.visuals.slider_trailing_fill = true;
+            style.visuals.widgets.active.corner_radius = egui::CornerRadius::same(1);
+            style.visuals.widgets.hovered.corner_radius = egui::CornerRadius::same(1);
+            style.visuals.widgets.inactive.corner_radius = egui::CornerRadius::same(1);
+        });
+
+        // egui_ctx.set_style(style);
+        // -----------------------------------
+
         let egui_render_options = egui_wgpu::RendererOptions {
             msaa_samples: 1,
             depth_stencil_format: None,

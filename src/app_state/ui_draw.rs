@@ -54,7 +54,7 @@ impl AppState {
             return;
         }
         egui::Panel::left("settings_panel")
-            .resizable(true)
+            .resizable(false)
             .default_size(280.0)
             .show(ctx, |ui| {
                 ui.heading("Image Controls");
@@ -88,14 +88,14 @@ impl AppState {
                 egui::ComboBox::from_label("Add Effect")
                     .selected_text("Add Effect")
                     .show_ui(ui, |ui| {
-                        if ui.label("Vignette").clicked() {
+                        if ui.selectable_label(false, "Vignette").clicked() {
                             info!("Vignette selected");
                             let mut new_effect: EffectContainer = EffectSelector::Vignette.into();
                             new_effect.id = self.effect_stack.effects.len();
                             self.effect_stack.effects.push(new_effect);
                             self.effect_stack.needs_rebuild = true;
                         }
-                        if ui.label("Blur").clicked() {
+                        if ui.selectable_label(false, "Blur").clicked() {
                             info!("Blur selected");
                             let mut new_effect: EffectContainer = EffectSelector::Blur.into();
                             new_effect.id = self.effect_stack.effects.len();
@@ -187,11 +187,15 @@ impl AppState {
                     }
                     ui.separator();
                 }
+                if self.effect_stack.needs_rebuild {
+                    self.request_redraw_wake();
+                }
                 if let Some(idx) = remove_idx {
                     self.effect_stack.effects.remove(idx);
                     self.effect_stack.needs_rebuild = true;
                     self.needs_compute = true;
                     self.effect_stack.validate_ids();
+                    self.request_redraw_wake();
                 }
                 // Perform stack swap and flag dirty state
                 if let Some((i, j)) = swap_index {
@@ -199,6 +203,7 @@ impl AppState {
                     self.effect_stack.needs_rebuild = true;
                     self.needs_compute = true;
                     self.effect_stack.validate_ids();
+                    self.request_redraw_wake();
                 }
             });
     }

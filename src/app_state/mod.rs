@@ -252,4 +252,9 @@ impl AppState {
         // self.texture_vault.clear_effects();
         self.needs_compute = true;
     }
+    pub fn request_redraw_wake(&mut self) {
+        if let Some(ref proxy) = self.proxy {
+            let _ = proxy.send_event(Message::Empty);
+        }
+    }
 }
