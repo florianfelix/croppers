@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
 use crossbeam_channel::{Receiver, Sender};
-use tracing::{error, info};
+use tracing::{error, info, trace};
 use winit::event_loop::EventLoopProxy;
 
 use crate::{
@@ -138,10 +138,10 @@ impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn get_view_auto(&self) -> Option<(Arc<wgpu::TextureView>, [u32; 2])> {
         if self.ui_state.crop.enabled {
-            info!("GETTING SRC VIEW");
+            trace!("GETTING SRC VIEW");
             self.get_srcimg_view()
         } else {
-            info!("GETTING EFFECT VIEW");
+            trace!("GETTING EFFECT VIEW");
             self.get_effect_view()
         }
     }
