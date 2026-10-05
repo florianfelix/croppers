@@ -41,10 +41,7 @@ impl Default for EffectStack {
             id: 1,
             name: String::from("Blur"),
             enabled: true,
-            effect: Effect::Blur(BlurSettings {
-                radius: 10.0,
-                sigma: 1.0,
-            }),
+            effect: Effect::Blur(BlurSettings { radius: 10.0 }),
         };
         let _vignette2 = EffectContainer {
             id: 3,
@@ -102,10 +99,7 @@ impl From<EffectSelector> for EffectContainer {
                 id: 0,
                 name: "The Blur".into(),
                 enabled: true,
-                effect: Effect::Blur(BlurSettings {
-                    radius: 10.0,
-                    sigma: 1.0,
-                }),
+                effect: Effect::Blur(BlurSettings::default()),
             },
         }
     }
@@ -135,7 +129,11 @@ impl Default for CropSettings {
 #[derive(Debug, Clone, Copy)]
 pub struct BlurSettings {
     pub radius: f32,
-    pub sigma: f32,
+}
+impl Default for BlurSettings {
+    fn default() -> Self {
+        Self { radius: 10.0 }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
