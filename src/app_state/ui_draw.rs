@@ -180,6 +180,19 @@ impl AppState {
                                     };
                                 });
                             }
+                            Effect::Bw(settings) => {
+                                ui.indent("bw_settings", |ui| {
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.select, 0..=3)
+                                                .text("mode"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    };
+                                });
+                            }
                         }
                     }
                     ui.separator();

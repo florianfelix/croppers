@@ -3,7 +3,7 @@ use crate::{
     compute::{
         EffectsJob,
         effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
-        uniforms::{BlurUniforms, VignetteUniforms},
+        uniforms::{BlurUniforms, BwUniforms, VignetteUniforms},
     },
 };
 use std::{collections::HashMap, sync::Arc};
@@ -32,6 +32,10 @@ impl EffectProcessor {
         shader_modules.insert(
             "blur".to_string(),
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/blur_comp.wgsl")),
+        );
+        shader_modules.insert(
+            "bw".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/bw_comp.wgsl")),
         );
         Self {
             device,
@@ -83,6 +87,21 @@ impl EffectProcessor {
                     .collect();
 
                 match &container.effect {
+                    Effect::Bw(settings) => {
+                        if let Some(pass) = matching_passes.first() {
+                            let uniforms = BwUniforms {
+                                select: settings.select,
+                                _padding1: 0,
+                                _padding2: 0,
+                                _padding3: 0,
+                            };
+                            self.queue.write_buffer(
+                                &pass.uniform_buffer,
+                                0,
+                                bytemuck::bytes_of(&uniforms),
+                            );
+                        }
+                    }
                     Effect::Vignette(settings) => {
                         if let Some(pass) = matching_passes.first() {
                             let uniforms = VignetteUniforms {

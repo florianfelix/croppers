@@ -15,3 +15,12 @@ pub struct VignetteUniforms {
     pub smoothness: f32,
     pub _padding: i32,
 }
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)] // or bytemuck::Pod, bytemuck::Zeroable
+pub struct BwUniforms {
+    pub select: i32,
+    pub _padding1: i32,
+    pub _padding2: i32,
+    pub _padding3: i32,
+}

@@ -27,36 +27,19 @@ impl std::fmt::Debug for EffectStack {
 }
 impl Default for EffectStack {
     fn default() -> Self {
-        let vignette = EffectContainer {
-            id: 0,
-            name: String::from("The Vignette"),
-            enabled: true,
-            effect: Effect::Vignette(VignetteSettings {
-                intensity: 1.0,
-                radius: 0.75,
-                smoothness: 0.65,
-            }),
-        };
-        let blur = EffectContainer {
-            id: 1,
-            name: String::from("Blur"),
-            enabled: true,
-            effect: Effect::Blur(BlurSettings { radius: 10.0 }),
-        };
-        let _vignette2 = EffectContainer {
-            id: 3,
-            name: String::from("The Vignette"),
-            enabled: true,
-            effect: Effect::Vignette(VignetteSettings {
-                intensity: 1.0,
-                radius: 0.75,
-                smoothness: 0.65,
-            }),
-        };
-        Self {
-            effects: vec![vignette, blur],
+        let effects = vec![
+            EffectSelector::Vignette.into(),
+            EffectSelector::Blur.into(),
+            EffectSelector::Bw.into(),
+        ];
+
+        // let effects = vec![];
+        let mut result = Self {
+            effects,
             needs_rebuild: true,
-        }
+        };
+        result.validate_ids();
+        result
     }
 }
 impl EffectStack {
@@ -67,24 +50,11 @@ impl EffectStack {
     }
 }
 
-#[derive(Clone)]
-pub struct EffectContainer {
-    pub id: usize,
-    pub name: String,
-    pub enabled: bool,
-    pub effect: Effect,
-}
-
-#[derive(Clone)]
-pub enum Effect {
-    Blur(BlurSettings),
-    Vignette(VignetteSettings),
-}
-
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum EffectSelector {
     Vignette,
     Blur,
+    Bw,
 }
 impl From<EffectSelector> for EffectContainer {
     fn from(value: EffectSelector) -> Self {
@@ -101,7 +71,38 @@ impl From<EffectSelector> for EffectContainer {
                 enabled: true,
                 effect: Effect::Blur(BlurSettings::default()),
             },
+            EffectSelector::Bw => EffectContainer {
+                id: 0,
+                name: "Grey".into(),
+                enabled: true,
+                effect: Effect::Bw(BwSettings::default()),
+            },
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct EffectContainer {
+    pub id: usize,
+    pub name: String,
+    pub enabled: bool,
+    pub effect: Effect,
+}
+
+#[derive(Clone)]
+pub enum Effect {
+    Blur(BlurSettings),
+    Vignette(VignetteSettings),
+    Bw(BwSettings),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct BwSettings {
+    pub select: i32,
+}
+impl Default for BwSettings {
+    fn default() -> Self {
+        Self { select: 3 }
     }
 }
 
