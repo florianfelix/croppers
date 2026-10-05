@@ -15,8 +15,10 @@ use std::sync::Arc;
 use wgpu::Extent3d;
 use wgpu::util::DeviceExt;
 
-use crate::app_state::effect_stack::{Effect, EffectStack};
-use crate::utils::BlurUniforms;
+use crate::{
+    app_state::effect_stack::{Effect, EffectStack},
+    compute::uniforms::BlurUniforms,
+};
 
 #[allow(dead_code)]
 pub struct GpuEffectPipeline {

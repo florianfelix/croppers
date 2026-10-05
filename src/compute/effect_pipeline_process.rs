@@ -3,8 +3,8 @@ use crate::{
     compute::{
         EffectsJob,
         effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
+        uniforms::BlurUniforms,
     },
-    utils::BlurUniforms,
 };
 use std::{collections::HashMap, sync::Arc};
 use tracing::info;
