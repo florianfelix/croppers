@@ -1,7 +1,9 @@
 use tracing::info;
 
 use crate::app_state::{
-    AppState, effect_stack::EffectSelector, widgets::crop_widget::WidgetCroppers,
+    AppState,
+    effect_stack::{EffectContainerObject, EffectSelector, vignette::VignetteContainer},
+    widgets::crop_widget::WidgetCroppers,
 };
 
 impl AppState {
@@ -85,85 +87,104 @@ impl AppState {
 
                 ui.separator();
 
-                // let res = egui::ComboBox::from_label("Add Effect")
-                //     .selected_text("Add Effect")
-                //     .show_ui(ui, |ui| {
-                //         if ui.selectable_label(false, "Vignette").clicked() {
-                //             info!("Vignette selected");
-                //             let mut new_effect: EffectContainer = EffectSelector::Vignette.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //         if ui.selectable_label(false, "Blur").clicked() {
-                //             info!("Blur selected");
-                //             let mut new_effect: EffectContainer = EffectSelector::Blur.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //         if ui.selectable_label(false, "Black and White").clicked() {
-                //             info!("Black and White selected");
-                //             let mut new_effect: EffectContainer = EffectSelector::Bw.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //         if ui.selectable_label(false, "HSV").clicked() {
-                //             info!("HSV selected");
-                //             let mut new_effect: EffectContainer = EffectSelector::Hsv.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //         if ui.selectable_label(false, "Gamma").clicked() {
-                //             info!("Gamma selected");
-                //             let mut new_effect: EffectContainer = EffectSelector::Gamma.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //         if ui.selectable_label(false, "TiltShift").clicked() {
-                //             info!("TiltShift selected");
-                //             let mut new_effect: EffectContainer = EffectSelector::TiltShift.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //         if ui.selectable_label(false, "Pixelate Tilt Shift").clicked() {
-                //             info!("PixelateShift selected");
-                //             let mut new_effect: EffectContainer =
-                //                 EffectSelector::PixelateTilt.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //         if ui.selectable_label(false, "Pixelate Linear").clicked() {
-                //             info!("PixelateShift selected");
-                //             let mut new_effect: EffectContainer =
-                //                 EffectSelector::PixelateLinear.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //         if ui.selectable_label(false, "Dither").clicked() {
-                //             info!("Dither selected");
-                //             let mut new_effect: EffectContainer = EffectSelector::Dither.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //         if ui.selectable_label(false, "Crt").clicked() {
-                //             info!("Crt selected");
-                //             let mut new_effect: EffectContainer = EffectSelector::Crt.into();
-                //             new_effect.id = self.effect_stack.effects.len();
-                //             self.effect_stack.effects.push(new_effect);
-                //             self.effect_stack.needs_rebuild = true;
-                //         }
-                //     });
+                let mut request_redraw = false;
+                let res = egui::ComboBox::from_label("Add Effect")
+                    .selected_text("Add Effect")
+                    .show_ui(ui, |ui| {
+                        if ui.selectable_label(false, "Vignette").clicked() {
+                            info!("Vignette selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Vignette.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                        }
+                        if ui.selectable_label(false, "Blur").clicked() {
+                            info!("Blur selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Blur.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "Black and White").clicked() {
+                            info!("Black and White selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Bw.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "HSV").clicked() {
+                            info!("HSV selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Hsv.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "Gamma").clicked() {
+                            info!("Gamma selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Gamma.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "TiltShift").clicked() {
+                            info!("TiltShift selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::TiltShift.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "Pixelate Tilt Shift").clicked() {
+                            info!("PixelateShift selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::PixelateTilt.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "Pixelate Linear").clicked() {
+                            info!("PixelateShift selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::PixelateLinear.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "Dither").clicked() {
+                            info!("Dither selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Dither.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "Crt").clicked() {
+                            info!("Crt selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Crt.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                    });
 
                 let mut swap_index = None;
                 let mut remove_idx = None;
+
                 let len = self.effect_stack.effects.len();
 
                 for (idx, container) in &mut self.effect_stack.effects.iter_mut().enumerate() {
@@ -173,11 +194,13 @@ impl AppState {
                             container.set_enabled(is_enabled);
                             self.effect_stack.needs_rebuild = true;
                             self.needs_compute = true;
+                            request_redraw = true;
                         }
                         if ui.button("X").clicked() {
                             remove_idx = Some(idx);
                             self.effect_stack.needs_rebuild = true;
                             self.needs_compute = true;
+                            request_redraw = true;
                         }
                     });
 
@@ -189,441 +212,16 @@ impl AppState {
                     }
 
                     if container.enabled() {
-                        // Jedes Trait-Objekt zeichnet sich vollkommen autonom selbst!
                         if container.draw_ui(ui) {
                             self.needs_compute = true;
                         }
                     }
                     ui.separator();
                 }
-                //                 for (idx, container) in &mut self.effect_stack.effects.iter_mut().enumerate() {
-                //                     ui.horizontal(|ui| {
-                //                         if ui
-                //                             .checkbox(&mut container.enabled, &container.name)
-                //                             .changed()
-                //                         {
-                //                             self.effect_stack.needs_rebuild = true;
-                //                             self.needs_compute = true;
-                //                         }
-                //                         if ui.button("X").clicked() {
-                //                             remove_idx = Some(idx);
-                //                             self.effect_stack.needs_rebuild = true;
-                //                             self.needs_compute = true;
-                //                         }
-                //                     });
-                //
-                //                     // --- REORDERING BUTTONS ---
-                //                     if idx > 0 && ui.small_button("▲").clicked() {
-                //                         swap_index = Some((idx, idx - 1));
-                //                     }
-                //                     if idx + 1 < len && ui.small_button("▼").clicked() {
-                //                         swap_index = Some((idx, idx + 1));
-                //                     }
-                //
-                //                     if container.enabled {
-                //                         match &mut container.effect {
-                //                             Effect::Crt(settings) => {
-                //                                 ui.indent("dither_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.curvature, 0.0..=1.0)
-                //                                                 .text("curvature"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(
-                //                                                 &mut settings.scanline_count,
-                //                                                 0.0..=1000.0,
-                //                                             )
-                //                                             .text("scanlines"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(
-                //                                                 &mut settings.scanline_strength,
-                //                                                 0.0..=1.0,
-                //                                             )
-                //                                             .text("scanline strength"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(
-                //                                                 &mut settings.rgb_mask_strength,
-                //                                                 0.0..=1.0,
-                //                                             )
-                //                                             .text("mask strength"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                 });
-                //                             }
-                //                             Effect::Dither(settings) => {
-                //                                 ui.indent("dither_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(
-                //                                                 &mut settings.color_steps,
-                //                                                 0.0..=10.0,
-                //                                             )
-                //                                             .text("color steps"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.spread, 0.0..=10.0)
-                //                                                 .text("spread"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.scale, 0.0..=10.0)
-                //                                                 .text("scale"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.palette_index, 0..=8)
-                //                                                 .text("palette"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.matrix_type, 0..=1)
-                //                                                 .text("matrix_type"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                 });
-                //                             }
-                //                             Effect::PixelateLinear(settings) => {
-                //                                 ui.indent("pixelate_linear_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(
-                //                                                 &mut settings.max_pixel_size,
-                //                                                 0.0..=128.0,
-                //                                             )
-                //                                             .text("pixel size"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.angle, 0.0..=10.0)
-                //                                                 .text("angle"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.start_x, 0.0..=1.0)
-                //                                                 .text("start x"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.start_y, 0.0..=1.0)
-                //                                                 .text("start y"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.length, 0.0..=1.0)
-                //                                                 .text("length"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.invert, 0..=1)
-                //                                                 .text("invert"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                 });
-                //                             }
-                //                             Effect::PixelateTilt(settings) => {
-                //                                 ui.indent("pixelate_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(
-                //                                                 &mut settings.max_pixel_size,
-                //                                                 0.0..=128.0,
-                //                                             )
-                //                                             .text("pixel size"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.angle, 0.0..=10.0)
-                //                                                 .text("angle"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.center_x, 0.0..=1.0)
-                //                                                 .text("center x"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.center_y, 0.0..=1.0)
-                //                                                 .text("center y"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.focus_size, 0.0..=1.0)
-                //                                                 .text("focus size"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.feather, 0.0..=1.0)
-                //                                                 .text("feather"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                 });
-                //                             }
-                //                             Effect::TiltShift(settings) => {
-                //                                 ui.indent("tiltshift_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(
-                //                                                 &mut settings.max_radius,
-                //                                                 0.0..=200.0,
-                //                                             )
-                //                                             .text("Radius"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     };
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.center, 0.0..=1.0)
-                //                                                 .text("Center"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     };
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.focus_size, 0.0..=1.0)
-                //                                                 .text("focus size"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     };
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.feather, 0.0..=1.0)
-                //                                                 .text("feather"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     };
-                //                                 });
-                //                             }
-                //                             Effect::Gamma(settings) => {
-                //                                 ui.indent("gamma_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.gr, 0.0..=10.0)
-                //                                                 .text("gamma red"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.gg, 0.0..=10.0)
-                //                                                 .text("gamma green"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.gb, 0.0..=10.0)
-                //                                                 .text("gamma blue"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                 });
-                //                             }
-                //                             Effect::Hsv(settings) => {
-                //                                 ui.indent("hsv_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.hue, 0.0..=1.0)
-                //                                                 .text("hue"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.saturation, 0.0..=2.0)
-                //                                                 .text("saturation"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.value, 0.0..=2.0)
-                //                                                 .text("value"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.factor, 0.0..=1.0)
-                //                                                 .text("factor"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                 });
-                //                             }
-                //                             Effect::Vignette(settings) => {
-                //                                 ui.indent("vignette_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.intensity, 0.0..=1.0)
-                //                                                 .text("Intensity"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.radius, 0.0..=2.0)
-                //                                                 .text("Radius"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.smoothness, 0.0..=1.0)
-                //                                                 .text("Smoothness"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     }
-                //                                 });
-                //                             }
-                //                             Effect::Blur(settings) => {
-                //                                 ui.indent("blur_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.radius, 0.0..=200.0)
-                //                                                 .text("Radius"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     };
-                //                                 });
-                //                             }
-                //                             Effect::Bw(settings) => {
-                //                                 ui.indent("bw_settings", |ui| {
-                //                                     if ui
-                //                                         .add(
-                //                                             egui::Slider::new(&mut settings.select, 0..=3)
-                //                                                 .text("mode"),
-                //                                         )
-                //                                         .changed()
-                //                                     {
-                //                                         self.needs_compute = true;
-                //                                     };
-                //                                 });
-                //                             }
-                //                         }
-                //                     }
-                //                     ui.separator();
-                //                 }
-                //                 if self.effect_stack.needs_rebuild {
-                //                     self.request_redraw_wake();
-                //                 }
+
+                if request_redraw {
+                    self.request_redraw_wake();
+                }
                 if let Some(idx) = remove_idx {
                     self.effect_stack.effects.remove(idx);
                     self.effect_stack.needs_rebuild = true;

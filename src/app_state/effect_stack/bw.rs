@@ -59,10 +59,7 @@ impl EffectContainerObject for BwContainer {
         let mut changed = false;
         ui.indent("bw_settings", |ui| {
             changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.select, 0..=3)
-                        .text("mode (0:R, 1:G, 2:B, 3:Luminance)"),
-                )
+                .add(egui::Slider::new(&mut self.uniforms.select, 0..=3).text("mode (rgbl)"))
                 .changed();
         });
         changed

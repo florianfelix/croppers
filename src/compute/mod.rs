@@ -12,7 +12,6 @@ use winit::{event_loop::EventLoopProxy, window::Window};
 pub mod crop_renderer;
 pub mod effect_pipeline;
 pub mod effect_pipeline_process;
-pub mod uniforms;
 
 pub fn spawn_worker(
     device: Arc<wgpu::Device>,
