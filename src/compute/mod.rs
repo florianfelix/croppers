@@ -23,12 +23,12 @@ pub fn spawn_worker(
     let _ = std::thread::spawn(|| compute_worker(device, queue, rx_job, proxy));
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum ComputeRequest {
     EffectsJob(EffectsJob),
     CropJob(CropJob),
 }
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct EffectsJob {
     pub effect_stack: EffectStack,
     pub src_width: u32,

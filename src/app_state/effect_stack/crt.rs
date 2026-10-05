@@ -1,11 +1,51 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::DerefMut, sync::Arc};
 
 use crate::app_state::effect_stack::EffectContainerObject;
 
+#[derive(Clone)]
 pub struct CrtContainer {
     pub id: usize,
     pub enabled: bool,
-    pub settings: crate::app_state::effect_stack::CrtSettings, // Ihre bestehende Struct
+    pub uniforms: CrtUniforms, // Ihre bestehende Struct
+}
+impl CrtContainer {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
+            id: 0,
+            enabled: true,
+            uniforms: CrtUniforms::default(),
+        })
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct CrtUniforms {
+    // --- 1. Block (16 Bytes) ---
+    pub curvature: f32,         // Stärke der Röhrenwölbung (0.0 = flach)
+    pub scanline_count: f32,    // Anzahl der horizontalen Zeilen (z. B. 240.0)
+    pub scanline_strength: f32, // Dunkelheit der Zeilen (0.0 bis 1.0)
+    pub rgb_mask_strength: f32, // Intensität des vertikalen RGB-Pixelgitters (0.0 bis 1.0)
+
+    // --- 2. Block (16 Bytes) ---
+    pub _padding1: f32,
+    pub _padding2: f32,
+    pub _padding3: f32,
+    pub _padding4: f32,
+}
+impl Default for CrtUniforms {
+    fn default() -> Self {
+        Self {
+            curvature: 0.1,
+            scanline_count: 120.0,
+            scanline_strength: 0.5,
+            rgb_mask_strength: 0.5,
+            _padding1: 0.0,
+            _padding2: 0.0,
+            _padding3: 0.0,
+            _padding4: 0.0,
+        }
+    }
 }
 
 impl EffectContainerObject for CrtContainer {
@@ -29,23 +69,23 @@ impl EffectContainerObject for CrtContainer {
         let mut changed = false;
         ui.indent("crt_settings", |ui| {
             changed |= ui
-                .add(egui::Slider::new(&mut self.settings.curvature, 0.0..=1.0).text("curvature"))
+                .add(egui::Slider::new(&mut self.uniforms.curvature, 0.0..=1.0).text("curvature"))
                 .changed();
             changed |= ui
                 .add(
-                    egui::Slider::new(&mut self.settings.scanline_count, 0.0..=1000.0)
+                    egui::Slider::new(&mut self.uniforms.scanline_count, 0.0..=1000.0)
                         .text("scanlines"),
                 )
                 .changed();
             changed |= ui
                 .add(
-                    egui::Slider::new(&mut self.settings.scanline_strength, 0.0..=1.0)
+                    egui::Slider::new(&mut self.uniforms.scanline_strength, 0.0..=1.0)
                         .text("scanline strength"),
                 )
                 .changed();
             changed |= ui
                 .add(
-                    egui::Slider::new(&mut self.settings.rgb_mask_strength, 0.0..=1.0)
+                    egui::Slider::new(&mut self.uniforms.rgb_mask_strength, 0.0..=1.0)
                         .text("mask strength"),
                 )
                 .changed();
@@ -65,11 +105,10 @@ impl EffectContainerObject for CrtContainer {
         passes: &mut Vec<crate::compute::effect_pipeline::GpuEffectPass>,
     ) {
         use wgpu::util::DeviceExt;
-        let uniforms: crate::compute::uniforms::CrtUniforms = self.settings.into();
 
         let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Crt Uniform Buffer"),
-            contents: bytemuck::bytes_of(&uniforms),
+            contents: bytemuck::bytes_of(&self.uniforms),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
@@ -101,8 +140,7 @@ impl EffectContainerObject for CrtContainer {
         matching_passes: &[&crate::compute::effect_pipeline::GpuEffectPass],
     ) {
         if let Some(pass) = matching_passes.first() {
-            let uniforms: crate::compute::uniforms::CrtUniforms = self.settings.into();
-            queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&uniforms));
+            queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
         }
     }
 }

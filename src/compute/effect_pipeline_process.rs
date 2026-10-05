@@ -1,13 +1,6 @@
-use crate::{
-    app_state::effect_stack::Effect,
-    compute::{
-        EffectsJob,
-        effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
-        uniforms::{
-            BlurUniforms, BwUniforms, CrtUniforms, DitherUniforms, GammaUniforms, HsvUniforms,
-            PixelateLinearUniforms, PixelateTiltUniforms, TiltShiftUniforms, VignetteUniforms,
-        },
-    },
+use crate::compute::{
+    EffectsJob,
+    effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
 };
 use std::{collections::HashMap, sync::Arc};
 use tracing::info;
@@ -79,7 +72,7 @@ impl EffectProcessor {
         }
     }
     pub fn process_effects(&mut self, job: EffectsJob) -> EffectsResult {
-        info!("{:?}", job.effect_stack);
+        // info!("{:?}", job.effect_stack);
         if job.src_width == 0 || job.src_height == 0 {
             return EffectsResult::Empty("src_image width or height is zero".into());
         }
@@ -109,164 +102,180 @@ impl EffectProcessor {
         if let Some(ref mut pipe) = self.compute_pipeline {
             let mut encoder = self.device.create_command_encoder(&Default::default());
 
+            // 2. Das Frame-Update (in `process_effects`) schrumpft auf:
             for container in &job.effect_stack.effects {
-                if !container.enabled {
+                if !container.enabled() {
                     continue;
                 }
-                // Find ALL passes matching this effect ID (Blur will match 2 passes)
+
                 let matching_passes: Vec<&GpuEffectPass> = pipe
                     .passes
                     .iter()
-                    .filter(|p| p.effect_id == container.id)
+                    .filter(|p| p.effect_id == container.id())
                     .collect();
 
-                match &container.effect {
-                    Effect::Crt(settings) => {
-                        if let Some(pass) = matching_passes.first() {
-                            let uniforms: CrtUniforms = (*settings).into();
-                            self.queue.write_buffer(
-                                &pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                    }
-                    Effect::Dither(settings) => {
-                        if let Some(pass) = matching_passes.first() {
-                            let uniforms: DitherUniforms = (*settings).into();
-                            self.queue.write_buffer(
-                                &pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                    }
-                    Effect::PixelateLinear(settings) => {
-                        if let Some(pass) = matching_passes.first() {
-                            let uniforms: PixelateLinearUniforms = (*settings).into();
-                            self.queue.write_buffer(
-                                &pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                    }
-                    Effect::PixelateTilt(settings) => {
-                        if let Some(pass) = matching_passes.first() {
-                            let uniforms: PixelateTiltUniforms = (*settings).into();
-                            self.queue.write_buffer(
-                                &pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                    }
-                    Effect::Gamma(settings) => {
-                        if let Some(pass) = matching_passes.first() {
-                            let uniforms: GammaUniforms = (*settings).into();
-                            self.queue.write_buffer(
-                                &pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                    }
-                    Effect::Hsv(settings) => {
-                        if let Some(pass) = matching_passes.first() {
-                            let uniforms: HsvUniforms = (*settings).into();
-                            self.queue.write_buffer(
-                                &pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                    }
-                    Effect::Bw(settings) => {
-                        if let Some(pass) = matching_passes.first() {
-                            let uniforms: BwUniforms = (*settings).into();
-                            self.queue.write_buffer(
-                                &pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                    }
-                    Effect::Vignette(settings) => {
-                        if let Some(pass) = matching_passes.first() {
-                            let uniforms: VignetteUniforms = (*settings).into();
-                            self.queue.write_buffer(
-                                &pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                            // pass.update_uniforms(&self.queue, &uniforms);
-                        }
-                    }
-                    Effect::Blur(settings) => {
-                        // Pass 0: Horizontal Pass [radius (f32), 1 (i32), 0 (i32), 0.0 (f32)]
-                        if let Some(h_pass) = matching_passes.first() {
-                            let uniforms = BlurUniforms {
-                                radius: settings.radius,
-                                dir_x: 1,
-                                dir_y: 0,
-                                _padding: 0.0,
-                            };
-                            self.queue.write_buffer(
-                                &h_pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                        // Pass 1: Vertical Pass [radius (f32), 0 (i32), 1 (i32), 0.0 (f32)]
-                        if let Some(v_pass) = matching_passes.get(1) {
-                            let uniforms = BlurUniforms {
-                                radius: settings.radius,
-                                dir_x: 0,
-                                dir_y: 1,
-                                _padding: 0.0,
-                            };
-                            self.queue.write_buffer(
-                                &v_pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                    }
-                    Effect::TiltShift(settings) => {
-                        // Pass 0: Horizontal Pass [radius (f32), 1 (i32), 0 (i32), 0.0 (f32)]
-                        if let Some(h_pass) = matching_passes.first() {
-                            // let uniforms = BlurUniforms {
-                            //     radius: settings.radius,
-                            //     dir_x: 1,
-                            //     dir_y: 0,
-                            //     _padding: 0.0,
-                            // };
-                            let uniforms = TiltShiftUniforms::horizontal(settings);
-                            self.queue.write_buffer(
-                                &h_pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                        // Pass 1: Vertical Pass [radius (f32), 0 (i32), 1 (i32), 0.0 (f32)]
-                        if let Some(v_pass) = matching_passes.get(1) {
-                            // let uniforms = BlurUniforms {
-                            //     radius: settings.radius,
-                            //     dir_x: 0,
-                            //     dir_y: 1,
-                            //     _padding: 0.0,
-                            // };
-                            let uniforms = TiltShiftUniforms::vertical(settings);
-                            self.queue.write_buffer(
-                                &v_pass.uniform_buffer,
-                                0,
-                                bytemuck::bytes_of(&uniforms),
-                            );
-                        }
-                    }
-                }
+                // Delegiert das Schreiben des Buffers direkt an das Trait-Objekt!
+                container.update_uniforms(&self.queue, &matching_passes);
             }
 
+            //             for container in &job.effect_stack.effects {
+            //                 if !container.enabled {
+            //                     continue;
+            //                 }
+            //                 // Find ALL passes matching this effect ID (Blur will match 2 passes)
+            //                 let matching_passes: Vec<&GpuEffectPass> = pipe
+            //                     .passes
+            //                     .iter()
+            //                     .filter(|p| p.effect_id == container.id)
+            //                     .collect();
+            //
+            //                 match &container.effect {
+            //                     Effect::Crt(settings) => {
+            //                         if let Some(pass) = matching_passes.first() {
+            //                             let uniforms: CrtUniforms = (*settings).into();
+            //                             self.queue.write_buffer(
+            //                                 &pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                     }
+            //                     Effect::Dither(settings) => {
+            //                         if let Some(pass) = matching_passes.first() {
+            //                             let uniforms: DitherUniforms = (*settings).into();
+            //                             self.queue.write_buffer(
+            //                                 &pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                     }
+            //                     Effect::PixelateLinear(settings) => {
+            //                         if let Some(pass) = matching_passes.first() {
+            //                             let uniforms: PixelateLinearUniforms = (*settings).into();
+            //                             self.queue.write_buffer(
+            //                                 &pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                     }
+            //                     Effect::PixelateTilt(settings) => {
+            //                         if let Some(pass) = matching_passes.first() {
+            //                             let uniforms: PixelateTiltUniforms = (*settings).into();
+            //                             self.queue.write_buffer(
+            //                                 &pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                     }
+            //                     Effect::Gamma(settings) => {
+            //                         if let Some(pass) = matching_passes.first() {
+            //                             let uniforms: GammaUniforms = (*settings).into();
+            //                             self.queue.write_buffer(
+            //                                 &pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                     }
+            //                     Effect::Hsv(settings) => {
+            //                         if let Some(pass) = matching_passes.first() {
+            //                             let uniforms: HsvUniforms = (*settings).into();
+            //                             self.queue.write_buffer(
+            //                                 &pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                     }
+            //                     Effect::Bw(settings) => {
+            //                         if let Some(pass) = matching_passes.first() {
+            //                             let uniforms: BwUniforms = (*settings).into();
+            //                             self.queue.write_buffer(
+            //                                 &pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                     }
+            //                     Effect::Vignette(settings) => {
+            //                         if let Some(pass) = matching_passes.first() {
+            //                             let uniforms: VignetteUniforms = (*settings).into();
+            //                             self.queue.write_buffer(
+            //                                 &pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                             // pass.update_uniforms(&self.queue, &uniforms);
+            //                         }
+            //                     }
+            //                     Effect::Blur(settings) => {
+            //                         // Pass 0: Horizontal Pass [radius (f32), 1 (i32), 0 (i32), 0.0 (f32)]
+            //                         if let Some(h_pass) = matching_passes.first() {
+            //                             let uniforms = BlurUniforms {
+            //                                 radius: settings.radius,
+            //                                 dir_x: 1,
+            //                                 dir_y: 0,
+            //                                 _padding: 0.0,
+            //                             };
+            //                             self.queue.write_buffer(
+            //                                 &h_pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                         // Pass 1: Vertical Pass [radius (f32), 0 (i32), 1 (i32), 0.0 (f32)]
+            //                         if let Some(v_pass) = matching_passes.get(1) {
+            //                             let uniforms = BlurUniforms {
+            //                                 radius: settings.radius,
+            //                                 dir_x: 0,
+            //                                 dir_y: 1,
+            //                                 _padding: 0.0,
+            //                             };
+            //                             self.queue.write_buffer(
+            //                                 &v_pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                     }
+            //                     Effect::TiltShift(settings) => {
+            //                         // Pass 0: Horizontal Pass [radius (f32), 1 (i32), 0 (i32), 0.0 (f32)]
+            //                         if let Some(h_pass) = matching_passes.first() {
+            //                             // let uniforms = BlurUniforms {
+            //                             //     radius: settings.radius,
+            //                             //     dir_x: 1,
+            //                             //     dir_y: 0,
+            //                             //     _padding: 0.0,
+            //                             // };
+            //                             let uniforms = TiltShiftUniforms::horizontal(settings);
+            //                             self.queue.write_buffer(
+            //                                 &h_pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                         // Pass 1: Vertical Pass [radius (f32), 0 (i32), 1 (i32), 0.0 (f32)]
+            //                         if let Some(v_pass) = matching_passes.get(1) {
+            //                             // let uniforms = BlurUniforms {
+            //                             //     radius: settings.radius,
+            //                             //     dir_x: 0,
+            //                             //     dir_y: 1,
+            //                             //     _padding: 0.0,
+            //                             // };
+            //                             let uniforms = TiltShiftUniforms::vertical(settings);
+            //                             self.queue.write_buffer(
+            //                                 &v_pass.uniform_buffer,
+            //                                 0,
+            //                                 bytemuck::bytes_of(&uniforms),
+            //                             );
+            //                         }
+            //                     }
+            //                 }
+            //             }
+            //
             // Execute compute dispatches on worker thread
             let output_view = pipe.execute(&self.device, &mut encoder, &job.input_view);
 

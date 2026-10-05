@@ -15,13 +15,7 @@ use std::sync::Arc;
 use wgpu::Extent3d;
 use wgpu::util::DeviceExt;
 
-use crate::{
-    app_state::effect_stack::{Effect, EffectStack},
-    compute::uniforms::{
-        BlurUniforms, BwUniforms, CrtUniforms, DitherUniforms, GammaUniforms, HsvUniforms,
-        PixelateLinearUniforms, PixelateTiltUniforms, TiltShiftUniforms, VignetteUniforms,
-    },
-};
+use crate::app_state::effect_stack::EffectStack;
 
 #[allow(dead_code)]
 pub struct GpuEffectPipeline {
@@ -121,222 +115,235 @@ impl GpuEffectPipeline {
         self.passes.clear();
 
         for container in &stack.effects {
-            if !container.enabled {
-                // info!("{:} Disabled", container.name);
+            if !container.enabled() {
                 continue;
             }
-            // info!("{:} Enabled", container.name);
-
-            // Create uniform buffer based on effect type
-            let (uniform_buffer, shader_key) = match &container.effect {
-                Effect::Crt(settings) => {
-                    let uniforms: CrtUniforms = (*settings).into();
-                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Crt Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-                    (buf, "crt")
-                }
-                Effect::Dither(settings) => {
-                    let uniforms: DitherUniforms = (*settings).into();
-                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Dither Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-                    (buf, "dither")
-                }
-                Effect::PixelateLinear(settings) => {
-                    let uniforms: PixelateLinearUniforms = (*settings).into();
-                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("PixelateLinear Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-                    (buf, "pixelate_linear")
-                }
-                Effect::PixelateTilt(settings) => {
-                    let uniforms: PixelateTiltUniforms = (*settings).into();
-                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("PixelateTilt Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-                    (buf, "pixelate")
-                }
-                Effect::Gamma(settings) => {
-                    let uniforms: GammaUniforms = (*settings).into();
-                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Gamma Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-                    (buf, "gamma")
-                }
-                Effect::Hsv(settings) => {
-                    let uniforms: HsvUniforms = (*settings).into();
-                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Hsv Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-                    (buf, "hsv")
-                }
-                Effect::Bw(settings) => {
-                    let uniforms: BwUniforms = (*settings).into();
-                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Bw Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-                    (buf, "bw")
-                }
-                Effect::Vignette(settings) => {
-                    let uniforms: VignetteUniforms = (*settings).into();
-                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Vignette Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-                    (buf, "vignette")
-                }
-                Effect::Blur(settings) => {
-                    // 1. Horizontal Pass Uniforms
-                    // Cast integers directly via bytemuck or transmute bits:
-                    let uniforms = BlurUniforms {
-                        radius: settings.radius,
-                        dir_x: 1,
-                        dir_y: 0,
-                        _padding: 0.0,
-                    };
-
-                    let h_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Blur Horizontal Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-
-                    let pipeline_layout =
-                        device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                            label: Some("Blur Pipeline Layout"),
-                            bind_group_layouts: &[Some(&self.bind_group_layout)],
-                            immediate_size: 0,
-                        });
-
-                    let compute_pipeline =
-                        device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                            label: Some("Compute Pipeline Blur"),
-                            layout: Some(&pipeline_layout),
-                            module: &shader_modules["blur"],
-                            entry_point: Some("main"),
-                            compilation_options: Default::default(),
-                            cache: None,
-                        });
-
-                    // Add Horizontal Pass
-                    self.passes.push(GpuEffectPass {
-                        effect_id: container.id,
-                        pipeline: compute_pipeline.clone(),
-                        uniform_buffer: h_buf,
-                    });
-
-                    // 2. Vertical Pass Uniforms
-                    let uniforms = BlurUniforms {
-                        radius: settings.radius,
-                        dir_x: 0,
-                        dir_y: 1,
-                        _padding: 0.0,
-                    };
-                    let v_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Blur Vertical Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-
-                    // Add Vertical Pass
-                    self.passes.push(GpuEffectPass {
-                        effect_id: container.id,
-                        pipeline: compute_pipeline,
-                        uniform_buffer: v_buf,
-                    });
-
-                    continue;
-                }
-
-                Effect::TiltShift(settings) => {
-                    let uniforms = TiltShiftUniforms::horizontal(settings);
-                    let h_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("TiltShift Horizontal Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-
-                    let pipeline_layout =
-                        device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                            label: Some("TiltShift Pipeline Layout"),
-                            bind_group_layouts: &[Some(&self.bind_group_layout)],
-                            immediate_size: 0,
-                        });
-
-                    let compute_pipeline =
-                        device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                            label: Some("Compute Pipeline TiltShift"),
-                            layout: Some(&pipeline_layout),
-                            module: &shader_modules["tiltshift"],
-                            entry_point: Some("main"),
-                            compilation_options: Default::default(),
-                            cache: None,
-                        });
-
-                    // Add Horizontal Pass
-                    self.passes.push(GpuEffectPass {
-                        effect_id: container.id,
-                        pipeline: compute_pipeline.clone(),
-                        uniform_buffer: h_buf,
-                    });
-
-                    let uniforms = TiltShiftUniforms::vertical(settings);
-                    let v_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("TiltShift Vertical Uniform Buffer"),
-                        contents: bytemuck::bytes_of(&uniforms),
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    });
-
-                    // Add Vertical Pass
-                    self.passes.push(GpuEffectPass {
-                        effect_id: container.id,
-                        pipeline: compute_pipeline,
-                        uniform_buffer: v_buf,
-                    });
-
-                    continue;
-                }
-            };
-
-            let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Compute Pass Layout"),
-                bind_group_layouts: &[Some(&self.bind_group_layout)],
-                immediate_size: 0, // ..Default::default()
-            });
-
-            let compute_pipeline =
-                device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                    label: Some(&format!("Compute Pipeline {}", container.name)),
-                    layout: Some(&pipeline_layout),
-                    module: &shader_modules[shader_key],
-                    entry_point: Some("main"),
-                    compilation_options: Default::default(),
-                    cache: None,
-                });
-
-            // Note: Bind groups are created/updated per ping-pong swap during execution
-            self.passes.push(GpuEffectPass {
-                effect_id: container.id,
-                pipeline: compute_pipeline,
-                uniform_buffer,
-            });
+            // Delegiert die Pass-Generierung direkt an das Trait-Objekt!
+            container.build_passes(
+                device,
+                &self.bind_group_layout,
+                shader_modules,
+                &mut self.passes,
+            );
         }
+
+        //         for container in &stack.effects {
+        //             if !container.enabled {
+        //                 // info!("{:} Disabled", container.name);
+        //                 continue;
+        //             }
+        //             // info!("{:} Enabled", container.name);
+        //
+        //             // Create uniform buffer based on effect type
+        //             let (uniform_buffer, shader_key) = match &container.effect {
+        //                 Effect::Crt(settings) => {
+        //                     let uniforms: CrtUniforms = (*settings).into();
+        //                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("Crt Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //                     (buf, "crt")
+        //                 }
+        //                 Effect::Dither(settings) => {
+        //                     let uniforms: DitherUniforms = (*settings).into();
+        //                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("Dither Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //                     (buf, "dither")
+        //                 }
+        //                 Effect::PixelateLinear(settings) => {
+        //                     let uniforms: PixelateLinearUniforms = (*settings).into();
+        //                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("PixelateLinear Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //                     (buf, "pixelate_linear")
+        //                 }
+        //                 Effect::PixelateTilt(settings) => {
+        //                     let uniforms: PixelateTiltUniforms = (*settings).into();
+        //                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("PixelateTilt Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //                     (buf, "pixelate")
+        //                 }
+        //                 Effect::Gamma(settings) => {
+        //                     let uniforms: GammaUniforms = (*settings).into();
+        //                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("Gamma Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //                     (buf, "gamma")
+        //                 }
+        //                 Effect::Hsv(settings) => {
+        //                     let uniforms: HsvUniforms = (*settings).into();
+        //                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("Hsv Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //                     (buf, "hsv")
+        //                 }
+        //                 Effect::Bw(settings) => {
+        //                     let uniforms: BwUniforms = (*settings).into();
+        //                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("Bw Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //                     (buf, "bw")
+        //                 }
+        //                 Effect::Vignette(settings) => {
+        //                     let uniforms: VignetteUniforms = (*settings).into();
+        //                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("Vignette Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //                     (buf, "vignette")
+        //                 }
+        //                 Effect::Blur(settings) => {
+        //                     // 1. Horizontal Pass Uniforms
+        //                     // Cast integers directly via bytemuck or transmute bits:
+        //                     let uniforms = BlurUniforms {
+        //                         radius: settings.radius,
+        //                         dir_x: 1,
+        //                         dir_y: 0,
+        //                         _padding: 0.0,
+        //                     };
+        //
+        //                     let h_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("Blur Horizontal Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //
+        //                     let pipeline_layout =
+        //                         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        //                             label: Some("Blur Pipeline Layout"),
+        //                             bind_group_layouts: &[Some(&self.bind_group_layout)],
+        //                             immediate_size: 0,
+        //                         });
+        //
+        //                     let compute_pipeline =
+        //                         device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        //                             label: Some("Compute Pipeline Blur"),
+        //                             layout: Some(&pipeline_layout),
+        //                             module: &shader_modules["blur"],
+        //                             entry_point: Some("main"),
+        //                             compilation_options: Default::default(),
+        //                             cache: None,
+        //                         });
+        //
+        //                     // Add Horizontal Pass
+        //                     self.passes.push(GpuEffectPass {
+        //                         effect_id: container.id,
+        //                         pipeline: compute_pipeline.clone(),
+        //                         uniform_buffer: h_buf,
+        //                     });
+        //
+        //                     // 2. Vertical Pass Uniforms
+        //                     let uniforms = BlurUniforms {
+        //                         radius: settings.radius,
+        //                         dir_x: 0,
+        //                         dir_y: 1,
+        //                         _padding: 0.0,
+        //                     };
+        //                     let v_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("Blur Vertical Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //
+        //                     // Add Vertical Pass
+        //                     self.passes.push(GpuEffectPass {
+        //                         effect_id: container.id,
+        //                         pipeline: compute_pipeline,
+        //                         uniform_buffer: v_buf,
+        //                     });
+        //
+        //                     continue;
+        //                 }
+        //
+        //                 Effect::TiltShift(settings) => {
+        //                     let uniforms = TiltShiftUniforms::horizontal(settings);
+        //                     let h_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("TiltShift Horizontal Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //
+        //                     let pipeline_layout =
+        //                         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        //                             label: Some("TiltShift Pipeline Layout"),
+        //                             bind_group_layouts: &[Some(&self.bind_group_layout)],
+        //                             immediate_size: 0,
+        //                         });
+        //
+        //                     let compute_pipeline =
+        //                         device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        //                             label: Some("Compute Pipeline TiltShift"),
+        //                             layout: Some(&pipeline_layout),
+        //                             module: &shader_modules["tiltshift"],
+        //                             entry_point: Some("main"),
+        //                             compilation_options: Default::default(),
+        //                             cache: None,
+        //                         });
+        //
+        //                     // Add Horizontal Pass
+        //                     self.passes.push(GpuEffectPass {
+        //                         effect_id: container.id,
+        //                         pipeline: compute_pipeline.clone(),
+        //                         uniform_buffer: h_buf,
+        //                     });
+        //
+        //                     let uniforms = TiltShiftUniforms::vertical(settings);
+        //                     let v_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //                         label: Some("TiltShift Vertical Uniform Buffer"),
+        //                         contents: bytemuck::bytes_of(&uniforms),
+        //                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        //                     });
+        //
+        //                     // Add Vertical Pass
+        //                     self.passes.push(GpuEffectPass {
+        //                         effect_id: container.id,
+        //                         pipeline: compute_pipeline,
+        //                         uniform_buffer: v_buf,
+        //                     });
+        //
+        //                     continue;
+        //                 }
+        //             };
+        //
+        //             let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        //                 label: Some("Compute Pass Layout"),
+        //                 bind_group_layouts: &[Some(&self.bind_group_layout)],
+        //                 immediate_size: 0, // ..Default::default()
+        //             });
+        //
+        //             let compute_pipeline =
+        //                 device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        //                     label: Some(&format!("Compute Pipeline {}", container.name)),
+        //                     layout: Some(&pipeline_layout),
+        //                     module: &shader_modules[shader_key],
+        //                     entry_point: Some("main"),
+        //                     compilation_options: Default::default(),
+        //                     cache: None,
+        //                 });
+        //
+        //             // Note: Bind groups are created/updated per ping-pong swap during execution
+        //             self.passes.push(GpuEffectPass {
+        //                 effect_id: container.id,
+        //                 pipeline: compute_pipeline,
+        //                 uniform_buffer,
+        //             });
+        //         }
     }
 
     /// Dispatches all compute passes in order using ping-pong textures
