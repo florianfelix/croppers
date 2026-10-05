@@ -209,7 +209,7 @@ impl Croppers {
                     self.app_state.open_previous()
                 }
                 Key::Character("c") => {
-                    self.app_state.ui_state.crop.enabled = !self.app_state.ui_state.crop.enabled
+                    self.app_state.crop_toggle();
                 }
                 Key::Named(NamedKey::Enter) => {
                     self.app_state.send_crop_job();
