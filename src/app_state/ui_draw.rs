@@ -155,6 +155,13 @@ impl AppState {
                             self.effect_stack.effects.push(new_effect);
                             self.effect_stack.needs_rebuild = true;
                         }
+                        if ui.selectable_label(false, "Crt").clicked() {
+                            info!("Crt selected");
+                            let mut new_effect: EffectContainer = EffectSelector::Crt.into();
+                            new_effect.id = self.effect_stack.effects.len();
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                        }
                     });
 
                 let mut swap_index = None;
@@ -187,6 +194,55 @@ impl AppState {
 
                     if container.enabled {
                         match &mut container.effect {
+                            Effect::Crt(settings) => {
+                                ui.indent("dither_settings", |ui| {
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(&mut settings.curvature, 0.0..=1.0)
+                                                .text("curvature"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(
+                                                &mut settings.scanline_count,
+                                                0.0..=1000.0,
+                                            )
+                                            .text("scanlines"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(
+                                                &mut settings.scanline_strength,
+                                                0.0..=1.0,
+                                            )
+                                            .text("scanline strength"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Slider::new(
+                                                &mut settings.rgb_mask_strength,
+                                                0.0..=1.0,
+                                            )
+                                            .text("mask strength"),
+                                        )
+                                        .changed()
+                                    {
+                                        self.needs_compute = true;
+                                    }
+                                });
+                            }
                             Effect::Dither(settings) => {
                                 ui.indent("dither_settings", |ui| {
                                     if ui

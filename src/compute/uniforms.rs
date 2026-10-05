@@ -1,5 +1,5 @@
 use crate::app_state::effect_stack::{
-    BwSettings, DitherSettings, GammaSettings, HsvSettings, PixelateLinearSettings,
+    BwSettings, CrtSettings, DitherSettings, GammaSettings, HsvSettings, PixelateLinearSettings,
     PixelateTiltSettings, TiltShiftSettings, VignetteSettings,
 };
 
@@ -213,6 +213,37 @@ impl From<DitherSettings> for DitherUniforms {
             _padding4: 0.0,
             _padding5: 0.0,
             _padding6: 0.0,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct CrtUniforms {
+    // --- 1. Block (16 Bytes) ---
+    pub curvature: f32,         // Stärke der Röhrenwölbung (0.0 = flach)
+    pub scanline_count: f32,    // Anzahl der horizontalen Zeilen (z. B. 240.0)
+    pub scanline_strength: f32, // Dunkelheit der Zeilen (0.0 bis 1.0)
+    pub rgb_mask_strength: f32, // Intensität des vertikalen RGB-Pixelgitters (0.0 bis 1.0)
+
+    // --- 2. Block (16 Bytes) ---
+    pub _padding1: f32,
+    pub _padding2: f32,
+    pub _padding3: f32,
+    pub _padding4: f32,
+}
+
+impl From<CrtSettings> for CrtUniforms {
+    fn from(value: CrtSettings) -> Self {
+        Self {
+            curvature: value.curvature,
+            scanline_count: value.scanline_count,
+            scanline_strength: value.scanline_strength,
+            rgb_mask_strength: value.rgb_mask_strength,
+            _padding1: 0.0,
+            _padding2: 0.0,
+            _padding3: 0.0,
+            _padding4: 0.0,
         }
     }
 }

@@ -4,7 +4,7 @@ use crate::{
         EffectsJob,
         effect_pipeline::{GpuEffectPass, GpuEffectPipeline},
         uniforms::{
-            BlurUniforms, BwUniforms, DitherUniforms, GammaUniforms, HsvUniforms,
+            BlurUniforms, BwUniforms, CrtUniforms, DitherUniforms, GammaUniforms, HsvUniforms,
             PixelateLinearUniforms, PixelateTiltUniforms, TiltShiftUniforms, VignetteUniforms,
         },
     },
@@ -67,6 +67,10 @@ impl EffectProcessor {
             "dither".to_string(),
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/dither_comp.wgsl")),
         );
+        shader_modules.insert(
+            "crt".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/crt_comp.wgsl")),
+        );
         Self {
             device,
             queue,
@@ -117,6 +121,16 @@ impl EffectProcessor {
                     .collect();
 
                 match &container.effect {
+                    Effect::Crt(settings) => {
+                        if let Some(pass) = matching_passes.first() {
+                            let uniforms: CrtUniforms = (*settings).into();
+                            self.queue.write_buffer(
+                                &pass.uniform_buffer,
+                                0,
+                                bytemuck::bytes_of(&uniforms),
+                            );
+                        }
+                    }
                     Effect::Dither(settings) => {
                         if let Some(pass) = matching_passes.first() {
                             let uniforms: DitherUniforms = (*settings).into();

@@ -33,7 +33,7 @@ impl Default for EffectStack {
         //     EffectSelector::Bw.into(),
         // ];
 
-        let effects = vec![EffectSelector::Dither.into()];
+        let effects = vec![EffectSelector::Crt.into()];
         let mut result = Self {
             effects,
             needs_rebuild: true,
@@ -61,6 +61,7 @@ pub enum EffectSelector {
     PixelateTilt,
     PixelateLinear,
     Dither,
+    Crt,
 }
 impl From<EffectSelector> for EffectContainer {
     fn from(value: EffectSelector) -> Self {
@@ -119,6 +120,12 @@ impl From<EffectSelector> for EffectContainer {
                 enabled: true,
                 effect: Effect::Dither(DitherSettings::default()),
             },
+            EffectSelector::Crt => EffectContainer {
+                id: 0,
+                name: "Crt".into(),
+                enabled: true,
+                effect: Effect::Crt(CrtSettings::default()),
+            },
         }
     }
 }
@@ -142,6 +149,25 @@ pub enum Effect {
     PixelateTilt(PixelateTiltSettings),
     PixelateLinear(PixelateLinearSettings),
     Dither(DitherSettings),
+    Crt(CrtSettings),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CrtSettings {
+    pub curvature: f32,
+    pub scanline_count: f32,
+    pub scanline_strength: f32,
+    pub rgb_mask_strength: f32,
+}
+impl Default for CrtSettings {
+    fn default() -> Self {
+        Self {
+            curvature: 0.1,
+            scanline_count: 240.0,
+            scanline_strength: 0.5,
+            rgb_mask_strength: 0.2,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

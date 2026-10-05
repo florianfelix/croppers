@@ -18,7 +18,7 @@ use wgpu::util::DeviceExt;
 use crate::{
     app_state::effect_stack::{Effect, EffectStack},
     compute::uniforms::{
-        BlurUniforms, BwUniforms, DitherUniforms, GammaUniforms, HsvUniforms,
+        BlurUniforms, BwUniforms, CrtUniforms, DitherUniforms, GammaUniforms, HsvUniforms,
         PixelateLinearUniforms, PixelateTiltUniforms, TiltShiftUniforms, VignetteUniforms,
     },
 };
@@ -129,6 +129,15 @@ impl GpuEffectPipeline {
 
             // Create uniform buffer based on effect type
             let (uniform_buffer, shader_key) = match &container.effect {
+                Effect::Crt(settings) => {
+                    let uniforms: CrtUniforms = (*settings).into();
+                    let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("Crt Uniform Buffer"),
+                        contents: bytemuck::bytes_of(&uniforms),
+                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    });
+                    (buf, "crt")
+                }
                 Effect::Dither(settings) => {
                     let uniforms: DitherUniforms = (*settings).into();
                     let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
