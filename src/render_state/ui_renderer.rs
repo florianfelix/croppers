@@ -36,6 +36,7 @@ impl UiRenderer {
 
         // Customize widget geometry, spacing, and rounding centrally
         egui_ctx.global_style_mut(|style| {
+            style.animation_time = 0.0;
             style.spacing.item_spacing = egui::vec2(4.0, 2.0);
             style.spacing.button_padding = egui::vec2(4.0, 2.0);
 
@@ -72,7 +73,11 @@ impl UiRenderer {
         queue: &Queue,
         config: &SurfaceConfiguration,
         app_state: &mut AppState,
-    ) -> (Vec<egui::ClippedPrimitive>, egui_wgpu::ScreenDescriptor) {
+    ) -> (
+        Vec<egui::ClippedPrimitive>,
+        egui_wgpu::ScreenDescriptor,
+        bool,
+    ) {
         let raw_input = self.egui_winit.take_egui_input(window);
         let full_output = self.egui_ctx.run_ui(raw_input.clone(), |ctx| {
             app_state.draw(&raw_input, ctx);
@@ -80,6 +85,12 @@ impl UiRenderer {
 
         self.egui_winit
             .handle_platform_output(window, full_output.platform_output);
+
+        let needs_immediate_repaint = full_output
+            .viewport_output
+            .get(&egui::ViewportId::ROOT)
+            .map(|v| v.repaint_delay.is_zero())
+            .unwrap_or(false);
 
         let tris = self
             .egui_ctx
@@ -101,7 +112,7 @@ impl UiRenderer {
         }
         textures_delta.clear();
 
-        (tris, screen_descriptor)
+        (tris, screen_descriptor, needs_immediate_repaint)
     }
     pub fn render(
         &mut self,

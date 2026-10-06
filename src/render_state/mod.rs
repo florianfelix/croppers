@@ -81,6 +81,7 @@ impl RenderState {
             config.format,
             &dummy_texture_view,
         );
+
         Self {
             surface,
             device,
@@ -115,13 +116,16 @@ impl RenderState {
                 label: Some("Render Encoder"),
             });
 
-        let (tris, screen_descriptor) = self.ui_renderer.prepare_frame(
+        let (tris, screen_descriptor, needs_repaint) = self.ui_renderer.prepare_frame(
             &self.window,
             &self.device,
             &self.queue,
             &self.config,
             app_state,
         );
+        if needs_repaint {
+            app_state.request_redraw_wake();
+        }
 
         self.ui_renderer.egui_renderer.update_buffers(
             &self.device,

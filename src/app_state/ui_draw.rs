@@ -54,6 +54,10 @@ impl AppState {
         if !self.ui_state.show_panel {
             return;
         }
+        if ctx.is_pointer_over_egui() {
+            request_redraw = true;
+        }
+
         egui::Panel::left("settings_panel")
             .resizable(false)
             .default_size(280.0)

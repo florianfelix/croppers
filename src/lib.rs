@@ -9,7 +9,7 @@ use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Result;
 use clap::Parser;
-use tracing::info;
+use tracing::{info, trace};
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, KeyEvent, WindowEvent},
@@ -111,7 +111,7 @@ impl ApplicationHandler<Message> for Croppers {
     #[tracing::instrument(skip_all)]
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: Message) {
         match event {
-            Message::Empty => info!("Received empty proxy message. Probably for redrawing"),
+            Message::Empty => trace!("Received empty proxy message. Probably for redrawing"),
             Message::ComputeResult(compute_result) => {
                 info!("Received Compute Result");
                 self.app_state.handle_compute_result(compute_result);
