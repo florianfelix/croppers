@@ -70,6 +70,10 @@ impl EffectProcessor {
             "crt".to_string(),
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/crt_comp.wgsl")),
         );
+        shader_modules.insert(
+            "ascii".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/ascii_comp.wgsl")),
+        );
         Self {
             device,
             queue,

@@ -3,12 +3,13 @@ use std::collections::HashMap;
 use dyn_clone::DynClone;
 
 use crate::app_state::effect_stack::{
-    blur::BlurContainer, bw::BwContainer, crt::CrtContainer, dither::DitherContainer,
-    gamma::GammaContainer, hsv::HsvContainer, pixelate_linear::PixelateLinearContainer,
-    pixelate_tilt::PixelateTiltContainer, tiltshift::TiltShiftContainer,
-    vignette::VignetteContainer,
+    ascii::AsciiContainer, blur::BlurContainer, bw::BwContainer, crt::CrtContainer,
+    dither::DitherContainer, gamma::GammaContainer, hsv::HsvContainer,
+    pixelate_linear::PixelateLinearContainer, pixelate_tilt::PixelateTiltContainer,
+    tiltshift::TiltShiftContainer, vignette::VignetteContainer,
 };
 
+mod ascii;
 mod blur;
 mod bw;
 mod crt;
@@ -59,7 +60,7 @@ pub struct EffectStack {
 
 impl Default for EffectStack {
     fn default() -> Self {
-        let effects = vec![EffectSelector::Vignette.into()];
+        let effects = vec![EffectSelector::Ascii.into()];
         let mut result = Self {
             effects,
             needs_rebuild: true,
@@ -89,6 +90,7 @@ pub enum EffectSelector {
     PixelateLinear,
     Dither,
     Crt,
+    Ascii,
 }
 impl From<EffectSelector> for Box<dyn EffectContainerObject> {
     fn from(value: EffectSelector) -> Self {
@@ -103,6 +105,7 @@ impl From<EffectSelector> for Box<dyn EffectContainerObject> {
             EffectSelector::Hsv => HsvContainer::new(),
             EffectSelector::Gamma => GammaContainer::new(),
             EffectSelector::TiltShift => TiltShiftContainer::new(),
+            EffectSelector::Ascii => AsciiContainer::new(),
         }
     }
 }
