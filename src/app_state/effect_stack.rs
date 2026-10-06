@@ -64,6 +64,7 @@ dyn_clone::clone_trait_object!(EffectContainerObject);
 pub struct EffectStack {
     pub effects: Vec<Box<dyn EffectContainerObject>>,
     pub needs_rebuild: bool,
+    pub enabled: bool,
 }
 
 impl Default for EffectStack {
@@ -78,6 +79,7 @@ impl Default for EffectStack {
         let mut result = Self {
             effects,
             needs_rebuild: true,
+            enabled: true,
         };
         result.validate_ids();
         result

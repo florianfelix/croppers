@@ -78,7 +78,12 @@ impl EffectProcessor {
             last_processed: None,
         }
     }
-    pub fn process_effects(&mut self, job: EffectsJob) -> EffectsResult {
+    pub fn process_effects(&mut self, mut job: EffectsJob) -> EffectsResult {
+        if !job.effect_stack.enabled {
+            for mut c in job.effect_stack.effects.iter_mut() {
+                c.set_enabled(false);
+            }
+        }
         // info!("{:?}", job.effect_stack);
         if job.src_width == 0 || job.src_height == 0 {
             return EffectsResult::Empty("src_image width or height is zero".into());

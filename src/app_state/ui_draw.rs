@@ -86,8 +86,17 @@ impl AppState {
                 });
 
                 ui.separator();
-
                 let mut request_redraw = false;
+                if ui
+                    .checkbox(&mut self.effect_stack.enabled, "Enabled")
+                    .changed()
+                {
+                    // container.set_enabled(is_enabled);
+                    self.effect_stack.needs_rebuild = true;
+                    self.needs_compute = true;
+                    request_redraw = true;
+                }
+
                 let res = egui::ComboBox::from_label("Add Effect")
                     .selected_text("Add Effect")
                     .show_ui(ui, |ui| {
