@@ -156,10 +156,8 @@ impl AppState {
                 let next = get_next_image(&source.path.canonicalize().unwrap(), &images);
 
                 if fs::remove_file(&source.path).is_ok() {
-                    // let _ = self.try_open_next();
                     info!("Deleted file");
                     if let Some(next) = next {
-                        // info!("NEXT {:?}", next);
                         self.try_open_file(&next);
                         self.set_src_dirty();
                     }
@@ -177,11 +175,9 @@ fn get_images_in_folder<P: AsRef<Path>>(folder_path: P) -> Vec<PathBuf> {
         for entry in entries.flatten() {
             let path = entry.path();
 
-            // Prüfen, ob es eine Datei ist und die passende Endung hat
             #[allow(clippy::collapsible_if)]
             if path.is_file() {
                 if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                    // Kleingeschrieben vergleichen, falls Endungen wie .JPG existieren
                     if valid_extensions.contains(&ext.to_lowercase().as_str()) {
                         images.push(path);
                     }
@@ -190,19 +186,15 @@ fn get_images_in_folder<P: AsRef<Path>>(folder_path: P) -> Vec<PathBuf> {
         }
     }
 
-    // Sortieren, damit die Reihenfolge stabil ist (z.B. alphabetisch)
     images.sort();
     images
 }
 
 fn get_next_image(current_image: &Path, image_list: &[PathBuf]) -> Option<PathBuf> {
-    // Finde die Position des aktuellen Bildes in der Liste
     let current_index = image_list.iter().position(|p| p == current_image)?;
 
-    // Berechne den nächsten Index (mit % für einen unendlichen Loop zurück zum ersten Bild)
     let next_index = (current_index + 1) % image_list.len();
 
-    // Gib eine Kopie des Pfades zurück
     Some(image_list[next_index].clone())
 }
 
@@ -225,18 +217,14 @@ fn increment_filename(path: &Path) -> PathBuf {
     let mut counter = 1;
 
     loop {
-        // Construct the new filename format, e.g., "filename (1)"
         let new_filename = format!("{}_{:03}", file_stem, counter);
 
-        // Create the new path structure
         let mut new_path = parent.join(new_filename);
 
-        // Push the original extension back if it had one
         if let Some(ext) = extension {
             new_path.set_extension(ext);
         }
 
-        // If this incremented path doesn't exist, it's safe to use
         if !new_path.exists() {
             return new_path;
         }

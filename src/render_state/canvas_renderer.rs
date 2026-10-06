@@ -204,19 +204,10 @@ impl CanvasRenderer {
             .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
     }
 
-    // pub fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-    //     render_pass.set_pipeline(&self.render_pipeline);
-    //     render_pass.set_bind_group(0, &self.bind_group, &[]);
-    //     render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-    //     render_pass.draw(0..4, 0..1);
-    // }
-
     #[allow(clippy::too_many_arguments)]
     pub fn render<'a>(
         &mut self,
         render_pass: &mut RenderPass<'a>,
-        // window: Arc<Window>,
-        // queue: Arc<Queue>,
         target_rect: &Option<Rect>,
         image_size: Option<(f32, f32)>,
     ) {

@@ -38,7 +38,7 @@ impl Default for TiltShiftUniforms {
     fn default() -> Self {
         Self {
             max_radius: 30.0,
-            dir_x: 1, // Standardmäßig auf Horizontal-Werte initialisiert
+            dir_x: 1,
             dir_y: 0,
             center: 0.5,
             focus_size: 0.1,
@@ -69,8 +69,6 @@ impl EffectContainerObject for TiltShiftContainer {
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
         ui.indent("tiltshift_settings", |ui| {
-            // Die UI manipuliert nur max_radius, center, focus_size und feather.
-            // dir_x und dir_y werden im UI ignoriert, da sie reine Steuerflags für die Pipeline sind.
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.max_radius, 0.0..=200.0).text("Radius"))
                 .changed();
@@ -116,7 +114,6 @@ impl EffectContainerObject for TiltShiftContainer {
         });
 
         // --- PASS 1: Horizontaler Pass ---
-        // Wir nehmen die aktuellen Slider-Werte und zwingen dir_x=1, dir_y=0
         let mut h_uniforms = self.uniforms;
         h_uniforms.dir_x = 1;
         h_uniforms.dir_y = 0;
@@ -134,7 +131,6 @@ impl EffectContainerObject for TiltShiftContainer {
         });
 
         // --- PASS 2: Vertikaler Pass ---
-        // Wir nehmen dieselben Slider-Werte und zwingen dir_x=0, dir_y=1
         let mut v_uniforms = self.uniforms;
         v_uniforms.dir_x = 0;
         v_uniforms.dir_y = 1;
@@ -157,9 +153,6 @@ impl EffectContainerObject for TiltShiftContainer {
         queue: &wgpu::Queue,
         matching_passes: &[&crate::compute::effect_pipeline::GpuEffectPass],
     ) {
-        // ESSENZIELL: Beim Slider-Update müssen wir die Richtungs-Flags zwingend wieder mitsenden,
-        // da die GPU sonst nicht mehr weiß, in welche Achse sie weichzeichnen soll!
-
         // Pass 0 (Horizontal) updaten
         if let Some(h_pass) = matching_passes.first() {
             let mut h_uniforms = self.uniforms;

@@ -2,12 +2,11 @@ use tracing::info;
 
 use crate::app_state::{
     AppState,
-    effect_stack::{EffectContainerObject, EffectSelector, vignette::VignetteContainer},
+    effect_stack::{EffectContainerObject, EffectSelector},
     widgets::crop_widget::WidgetCroppers,
 };
 
 impl AppState {
-    // #[tracing::instrument(skip(self, raw_input, ctx))]
     pub fn draw(&mut self, raw_input: &egui::RawInput, ctx: &mut egui::Ui) {
         self.draw_panel(raw_input, ctx);
         self.draw_canvas(raw_input, ctx);
@@ -50,12 +49,9 @@ impl AppState {
     }
     #[tracing::instrument(skip(self, _raw_input, ctx))]
     fn draw_panel(&mut self, _raw_input: &egui::RawInput, ctx: &mut egui::Ui) {
-        let mut request_redraw = false;
+        // let mut request_redraw = false;
         if !self.ui_state.show_panel {
             return;
-        }
-        if ctx.is_pointer_over_egui() {
-            request_redraw = true;
         }
 
         egui::Panel::left("settings_panel")
@@ -101,7 +97,7 @@ impl AppState {
                     request_redraw = true;
                 }
 
-                let res = egui::ComboBox::from_label("Add Effect")
+                let _ = egui::ComboBox::from_label("Add Effect")
                     .selected_text("Add Effect")
                     .show_ui(ui, |ui| {
                         if ui.selectable_label(false, "Vignette").clicked() {

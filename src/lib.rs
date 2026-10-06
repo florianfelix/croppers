@@ -4,7 +4,7 @@
     clippy::collapsible_if,
     clippy::single_match
 )]
-#![allow(unused)]
+// #![allow(unused)]
 use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Result;
@@ -13,20 +13,15 @@ use tracing::{info, trace};
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, KeyEvent, WindowEvent},
-    event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
+    event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy},
     keyboard::{Key, ModifiersState, NamedKey},
     platform::{
         modifier_supplement::KeyEventExtModifierSupplement, wayland::WindowAttributesExtWayland,
     },
-    window::{self, Window},
+    window::Window,
 };
 
-use crate::{
-    app_state::AppState,
-    compute::{ComputeRequest, ComputeResult, crop_renderer::CropJob},
-    render_state::RenderState,
-    utils::DimHelper,
-};
+use crate::{app_state::AppState, compute::ComputeResult, render_state::RenderState};
 
 pub mod app_state;
 pub mod compute;
@@ -88,7 +83,7 @@ impl ApplicationHandler<Message> for Croppers {
         );
         let window_clone = window.clone();
 
-        let mut renderer = pollster::block_on(RenderState::new(window_clone));
+        let renderer = pollster::block_on(RenderState::new(window_clone));
 
         let device = renderer.device.clone();
         let queue = renderer.queue.clone();
@@ -101,7 +96,6 @@ impl ApplicationHandler<Message> for Croppers {
         self.app_state.gpu = Some((device, queue));
 
         self.app_state.set_srcimg_texture_from_source();
-        // self.app_state.set_srcimg_to_display();
 
         self.renderer = Some(renderer);
     }

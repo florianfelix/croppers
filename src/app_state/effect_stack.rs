@@ -1,8 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use dyn_clone::DynClone;
-use egui::Pos2;
-use itertools::Itertools;
 
 use crate::app_state::effect_stack::{
     blur::BlurContainer, bw::BwContainer, crt::CrtContainer, dither::DitherContainer,
@@ -32,16 +30,10 @@ pub trait EffectContainerObject: DynClone + Send + Sync {
     fn enabled(&self) -> bool;
     fn set_enabled(&mut self, enabled: bool);
 
-    // --- UI Rendering ---
-    // Zeichnet die Slider und gibt true zurück, wenn .changed() getriggert wurde.
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool;
 
-    // --- GPU Pipeline & Pass Konstruktion ---
-    // Bestimmt, welchen Shader dieser Effekt nutzen will (z.B. "crt" oder "blur")
     fn shader_key(&self) -> &str;
 
-    // Erlaubt es Effekten, sich in die GpuEffectPass-Vektoren einzuschreiben.
-    // Mehrpass-Effekte (wie Blur/TiltShift) pushen hier einfach 2 Pässe hinein!
     fn build_passes(
         &self,
         device: &wgpu::Device,
@@ -50,8 +42,6 @@ pub trait EffectContainerObject: DynClone + Send + Sync {
         passes: &mut Vec<crate::compute::effect_pipeline::GpuEffectPass>,
     );
 
-    // --- GPU Frame Updates ---
-    // Schreibt die aktuellen CPU-Werte in die Uniform-Buffer der zugehörigen Pässe.
     fn update_uniforms(
         &self,
         queue: &wgpu::Queue,
@@ -69,12 +59,6 @@ pub struct EffectStack {
 
 impl Default for EffectStack {
     fn default() -> Self {
-        // let effects = vec![
-        //     EffectSelector::Vignette.into(),
-        //     EffectSelector::Blur.into(),
-        //     EffectSelector::Bw.into(),
-        // ];
-
         let effects = vec![EffectSelector::Vignette.into()];
         let mut result = Self {
             effects,
@@ -87,7 +71,7 @@ impl Default for EffectStack {
 }
 impl EffectStack {
     pub fn validate_ids(&mut self) {
-        for (idx, mut e) in self.effects.iter_mut().enumerate() {
+        for (idx, e) in self.effects.iter_mut().enumerate() {
             e.set_id(idx);
         }
     }

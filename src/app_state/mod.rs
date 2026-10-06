@@ -1,6 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
 use crossbeam_channel::{Receiver, Sender};
+#[allow(unused)]
 use tracing::{error, info, trace};
 use winit::event_loop::EventLoopProxy;
 
@@ -69,14 +70,12 @@ impl AppState {
         let mut request_redraw = false;
 
         if self.source_dirty {
-            if let Some(ref source) = self.source {
+            if let Some(ref _source) = self.source {
                 self.is_computing = false;
                 self.needs_compute = true;
                 self.effect_stack.needs_rebuild = true;
             }
             self.texture_vault.clear_cropped();
-            // self.texture_vault.clear_effects();
-            // self.texture_vault.effect_view = self.texture_vault.srcimg_texture_view.clone();
             self.source_dirty = false;
         }
 
@@ -92,7 +91,6 @@ impl AppState {
                 false => self.get_srcimg_view(),
             };
 
-            // if let Some((view, dims)) = self.get_srcimg_view() {
             if let Some((view, dims)) = res {
                 let compute_request = ComputeRequest::EffectsJob(EffectsJob {
                     effect_stack: self.effect_stack.clone(),
@@ -107,7 +105,7 @@ impl AppState {
                 }
             }
             if let Some(ref proxy) = self.proxy {
-                proxy.send_event(Message::Empty);
+                let _ = proxy.send_event(Message::Empty);
             }
         }
         request_redraw
@@ -118,7 +116,6 @@ impl AppState {
         match compute_result {
             ComputeResult::FinishedEffects(EffectsResult::Finished((view, dims))) => {
                 info!("Received Effects {:?}", dims);
-                // if self.texture_vault.cropped_texture_view.is_some() {}
                 self.texture_vault.effect_view = Some(view);
                 self.texture_vault.effect_dims = dims;
                 self.is_computing = false;

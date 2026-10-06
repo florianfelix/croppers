@@ -26,7 +26,6 @@ pub struct CropRender {
     pub device: Arc<wgpu::Device>,
     pub queue: Arc<wgpu::Queue>,
     pub render_pipeline: wgpu::RenderPipeline,
-    // pub window: Arc<Window>,
     pub shader: wgpu::ShaderModule,
     target_texture: Option<Arc<wgpu::Texture>>,
     target_texture_view: Option<Arc<wgpu::TextureView>>,
@@ -110,13 +109,7 @@ impl CropRender {
         self.target_texture_view = Some(Arc::new(texture_view));
     }
 
-    pub fn process(
-        &mut self,
-        job: CropJob, // src_view: Arc<wgpu::TextureView>,
-                      // src_dimensions: [u32; 2],
-                      // target_dimensions: [u32; 2],
-                      // uv_rect: egui::Rect,
-    ) -> CropResult {
+    pub fn process(&mut self, job: CropJob) -> CropResult {
         info!("CropJob {:#?}", job);
 
         self.create_target_texture(job.target_dimensions);

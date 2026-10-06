@@ -80,7 +80,7 @@ impl EffectProcessor {
     }
     pub fn process_effects(&mut self, mut job: EffectsJob) -> EffectsResult {
         if !job.effect_stack.enabled {
-            for mut c in job.effect_stack.effects.iter_mut() {
+            for c in job.effect_stack.effects.iter_mut() {
                 c.set_enabled(false);
             }
         }
@@ -114,7 +114,6 @@ impl EffectProcessor {
         if let Some(ref mut pipe) = self.compute_pipeline {
             let mut encoder = self.device.create_command_encoder(&Default::default());
 
-            // 2. Das Frame-Update (in `process_effects`) schrumpft auf:
             for container in &job.effect_stack.effects {
                 if !container.enabled() {
                     continue;
@@ -126,7 +125,6 @@ impl EffectProcessor {
                     .filter(|p| p.effect_id == container.id())
                     .collect();
 
-                // Delegiert das Schreiben des Buffers direkt an das Trait-Objekt!
                 container.update_uniforms(&self.queue, &matching_passes);
             }
 
@@ -136,7 +134,7 @@ impl EffectProcessor {
             if let Some(idx) = maybe_idx {
                 self.last_processed = Some((idx, [job.src_width, job.src_height]));
             }
-            // Submit to GPU queue
+
             self.queue.submit(std::iter::once(encoder.finish()));
 
             EffectsResult::Finished((Arc::new(output_view), [job.src_width, job.src_height]))
@@ -145,8 +143,6 @@ impl EffectProcessor {
         }
     }
 }
-
-use std::path::Path;
 
 impl EffectProcessor {
     pub fn try_save(&self, path: &PathBuf) -> Result<()> {
@@ -163,7 +159,6 @@ impl EffectProcessor {
         self.save_texture_to_file(texture, dims.width(), dims.height(), path)
     }
 
-    /// Reads a texture back to the CPU and writes it to disk at `path`.
     #[tracing::instrument(skip(self, texture, width, height))]
     pub fn save_texture_to_file(
         &self,
@@ -225,7 +220,7 @@ impl EffectProcessor {
         });
 
         // Block worker thread until GPU copy finishes
-        self.device.poll(wgpu::PollType::wait_indefinitely());
+        self.device.poll(wgpu::PollType::wait_indefinitely())?;
 
         if rx.recv()?.is_ok() {
             let data = slice.get_mapped_range()?;

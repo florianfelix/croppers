@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
+#[allow(unused)]
 use tracing::{info, trace};
 
 #[derive(Default)]
 pub struct TextureVault {
-    // pub display_view_dims: [u32; 2],
-    // pub display_view: Option<Arc<wgpu::TextureView>>,
     pub srcimg_dims: [u32; 2],
     pub srcimg_texture: Option<Arc<wgpu::Texture>>,
     pub srcimg_texture_view: Option<Arc<wgpu::TextureView>>,

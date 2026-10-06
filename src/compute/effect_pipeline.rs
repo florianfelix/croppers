@@ -13,7 +13,6 @@ impl GpuEffectPass {
 use std::sync::Arc;
 
 use wgpu::Extent3d;
-use wgpu::util::DeviceExt;
 
 use crate::app_state::effect_stack::EffectStack;
 
@@ -118,7 +117,7 @@ impl GpuEffectPipeline {
             if !container.enabled() {
                 continue;
             }
-            // Delegiert die Pass-Generierung direkt an das Trait-Objekt!
+
             container.build_passes(
                 device,
                 &self.bind_group_layout,

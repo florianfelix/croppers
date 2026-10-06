@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::DerefMut, sync::Arc};
+use std::collections::HashMap;
 
 use crate::app_state::effect_stack::EffectContainerObject;
 
@@ -21,13 +21,13 @@ impl CrtContainer {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CrtUniforms {
-    // --- 1. Block (16 Bytes) ---
-    pub curvature: f32,         // Stärke der Röhrenwölbung (0.0 = flach)
-    pub scanline_count: f32,    // Anzahl der horizontalen Zeilen (z. B. 240.0)
-    pub scanline_strength: f32, // Dunkelheit der Zeilen (0.0 bis 1.0)
-    pub rgb_mask_strength: f32, // Intensität des vertikalen RGB-Pixelgitters (0.0 bis 1.0)
+    // --- (16 Bytes) ---
+    pub curvature: f32,
+    pub scanline_count: f32,
+    pub scanline_strength: f32,
+    pub rgb_mask_strength: f32,
 
-    // --- 2. Block (16 Bytes) ---
+    // --- (16 Bytes) ---
     pub overscan: f32,
     pub _padding2: f32,
     pub _padding3: f32,

@@ -2,7 +2,7 @@ use crate::app_state::widgets::CropSettings;
 
 pub enum GizmoSelection {
     Empty,
-    CropHandle(usize), // Top-Left, Top-Right, etc.
+    CropHandle(usize),
     VignetteCenter,
 }
 

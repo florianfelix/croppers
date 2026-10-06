@@ -5,11 +5,10 @@ use crate::{
         crop_renderer::{CropJob, CropRender, CropResult},
         effect_pipeline_process::{EffectProcessor, EffectsResult},
     },
-    utils::DimHelper,
 };
 use std::{path::PathBuf, sync::Arc};
 use tracing::error;
-use winit::{event_loop::EventLoopProxy, window::Window};
+use winit::event_loop::EventLoopProxy;
 
 pub mod crop_renderer;
 pub mod effect_pipeline;
@@ -48,7 +47,6 @@ pub enum ComputeResult {
 pub fn compute_worker(
     device: Arc<wgpu::Device>,
     queue: Arc<wgpu::Queue>,
-    // window: Arc<Window>,
     rx_job: crossbeam_channel::Receiver<ComputeRequest>,
     proxy: EventLoopProxy<Message>,
 ) {
@@ -74,7 +72,7 @@ pub fn compute_worker(
             }
             ComputeRequest::SaveLastEffect(path) => match effect_processor.try_save(&path) {
                 Ok(()) => {
-                    proxy.send_event(Message::FileSaved(path));
+                    let _ = proxy.send_event(Message::FileSaved(path));
                 }
                 Err(e) => {
                     error!("Failed to Save file {e}");
@@ -82,5 +80,4 @@ pub fn compute_worker(
             },
         }
     }
-    // window.request_redraw();
 }

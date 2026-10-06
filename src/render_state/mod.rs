@@ -1,4 +1,5 @@
 use std::sync::Arc;
+#[allow(unused)]
 use tracing::{info, trace, warn};
 use winit::window::Window;
 
@@ -95,8 +96,8 @@ impl RenderState {
             dummy: (dummy_texture, dummy_texture_view),
         }
     }
-    #[tracing::instrument(skip(self, app_state))]
-    pub fn update(&mut self, app_state: &mut AppState) {}
+    #[tracing::instrument(skip(self, _app_state))]
+    pub fn update(&mut self, _app_state: &mut AppState) {}
 
     #[tracing::instrument(skip(self, app_state))]
     pub fn render(&mut self, app_state: &mut AppState) -> Result<(), wgpu::hal::SurfaceError> {
