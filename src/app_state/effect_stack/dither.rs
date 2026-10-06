@@ -80,7 +80,7 @@ impl EffectContainerObject for DitherContainer {
                 .add(egui::Slider::new(&mut self.uniforms.pattern_scale, 1.0..=16.0).text("scale"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=8).text("palette"))
+                .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=13).text("palette"))
                 .changed();
             changed |= ui
                 .add(

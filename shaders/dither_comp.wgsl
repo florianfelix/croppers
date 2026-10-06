@@ -63,6 +63,55 @@ const PAL_GRUVBOX = array<vec3<f32>, 16>(
     vec3<f32>(0.651f, 0.600f, 0.518f), vec3<f32>(0.557f, 0.494f, 0.443f), vec3<f32>(0.984f, 0.286f, 0.204f), vec3<f32>(0.722f, 0.722f, 0.149f),
     vec3<f32>(0.980f, 0.741f, 0.184f), vec3<f32>(0.522f, 0.718f, 0.718f), vec3<f32>(0.827f, 0.533f, 0.706f), vec3<f32>(0.667f, 0.812f, 0.557f)
 );
+// Scheme 1: Warm Muted / Rosé Pine Dawn style (16 colors)
+const PAL_WARM_MUTED = array<vec3<f32>, 16>(
+    // Normal: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.173f, 0.173f, 0.188f), vec3<f32>(0.663f, 0.439f, 0.439f), vec3<f32>(0.467f, 0.549f, 0.451f), vec3<f32>(0.800f, 0.569f, 0.400f),
+    vec3<f32>(0.424f, 0.498f, 0.576f), vec3<f32>(0.722f, 0.580f, 0.686f), vec3<f32>(0.557f, 0.643f, 0.635f), vec3<f32>(0.686f, 0.655f, 0.616f),
+    // Bright: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.647f, 0.647f, 0.612f), vec3<f32>(0.737f, 0.561f, 0.561f), vec3<f32>(0.573f, 0.639f, 0.561f), vec3<f32>(0.851f, 0.675f, 0.549f),
+    vec3<f32>(0.541f, 0.600f, 0.659f), vec3<f32>(0.800f, 0.702f, 0.776f), vec3<f32>(0.667f, 0.733f, 0.729f), vec3<f32>(0.776f, 0.753f, 0.725f)
+);
+
+// Scheme 2: Earth / Forest Vintage (16 colors)
+const PAL_EARTH_VINTAGE = array<vec3<f32>, 16>(
+    // Normal: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.000f, 0.000f, 0.000f), vec3<f32>(0.408f, 0.341f, 0.259f), vec3<f32>(0.373f, 0.529f, 0.373f), vec3<f32>(0.702f, 0.427f, 0.263f),
+    vec3<f32>(0.471f, 0.510f, 0.294f), vec3<f32>(0.733f, 0.467f, 0.267f), vec3<f32>(0.788f, 0.647f, 0.329f), vec3<f32>(0.843f, 0.769f, 0.514f),
+    // Bright: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.400f, 0.400f, 0.400f), vec3<f32>(0.408f, 0.341f, 0.259f), vec3<f32>(0.373f, 0.529f, 0.373f), vec3<f32>(0.702f, 0.427f, 0.263f),
+    vec3<f32>(0.471f, 0.510f, 0.294f), vec3<f32>(0.733f, 0.467f, 0.267f), vec3<f32>(0.788f, 0.647f, 0.329f), vec3<f32>(0.843f, 0.769f, 0.514f)
+);
+
+// Scheme 3: Everforest Dark (16 colors)
+const PAL_EVERFOREST = array<vec3<f32>, 16>(
+    // Normal: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.204f, 0.247f, 0.267f), vec3<f32>(0.902f, 0.494f, 0.502f), vec3<f32>(0.655f, 0.753f, 0.502f), vec3<f32>(0.859f, 0.737f, 0.498f),
+    vec3<f32>(0.498f, 0.733f, 0.702f), vec3<f32>(0.839f, 0.600f, 0.714f), vec3<f32>(0.514f, 0.753f, 0.573f), vec3<f32>(0.827f, 0.776f, 0.667f),
+    // Bright: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.522f, 0.573f, 0.537f), vec3<f32>(0.902f, 0.494f, 0.502f), vec3<f32>(0.655f, 0.753f, 0.502f), vec3<f32>(0.859f, 0.737f, 0.498f),
+    vec3<f32>(0.498f, 0.733f, 0.702f), vec3<f32>(0.839f, 0.600f, 0.714f), vec3<f32>(0.514f, 0.753f, 0.573f), vec3<f32>(0.827f, 0.776f, 0.667f)
+);
+
+// Scheme 4: Deep Ocean / Teal (16 colors)
+const PAL_DEEP_OCEAN = array<vec3<f32>, 16>(
+    // Normal: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.047f, 0.063f, 0.078f), vec3<f32>(0.761f, 0.192f, 0.153f), vec3<f32>(0.165f, 0.659f, 0.537f), vec3<f32>(0.929f, 0.706f, 0.263f),
+    vec3<f32>(0.098f, 0.329f, 0.400f), vec3<f32>(0.306f, 0.318f, 0.400f), vec3<f32>(0.200f, 0.522f, 0.620f), vec3<f32>(0.600f, 0.820f, 0.808f),
+    // Bright: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.047f, 0.063f, 0.078f), vec3<f32>(0.761f, 0.192f, 0.153f), vec3<f32>(0.165f, 0.659f, 0.537f), vec3<f32>(0.929f, 0.706f, 0.263f),
+    vec3<f32>(0.098f, 0.329f, 0.400f), vec3<f32>(0.306f, 0.318f, 0.400f), vec3<f32>(0.200f, 0.522f, 0.620f), vec3<f32>(0.600f, 0.820f, 0.808f)
+);
+
+// Scheme 5: Ayu Mirage (16 colors)
+const PAL_AYU_MIRAGE = array<vec3<f32>, 16>(
+    // Normal: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.090f, 0.106f, 0.141f), vec3<f32>(0.929f, 0.510f, 0.455f), vec3<f32>(0.529f, 0.851f, 0.424f), vec3<f32>(0.980f, 0.800f, 0.431f),
+    vec3<f32>(0.427f, 0.796f, 0.980f), vec3<f32>(0.855f, 0.729f, 0.980f), vec3<f32>(0.565f, 0.882f, 0.776f), vec3<f32>(0.780f, 0.780f, 0.780f),
+    // Bright: black, red, green, yellow, blue, magenta, cyan, white
+    vec3<f32>(0.408f, 0.408f, 0.408f), vec3<f32>(0.949f, 0.529f, 0.475f), vec3<f32>(0.835f, 1.000f, 0.502f), vec3<f32>(1.000f, 0.820f, 0.451f),
+    vec3<f32>(0.451f, 0.816f, 1.000f), vec3<f32>(0.875f, 0.749f, 1.000f), vec3<f32>(0.584f, 0.902f, 0.796f), vec3<f32>(1.000f, 1.000f, 1.000f)
+);
 
 struct ColorDitherUniforms {
     color_steps: f32,
@@ -181,6 +230,41 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
                 if (dist < min_dist) { min_dist = dist; final_rgb = PAL_GRUVBOX[i]; }
             }
         }
+        case 9: { // Warm Muted
+                var min_dist = 999.0f;
+                for (var i = 0u; i < 16u; i = i + 1u) {
+                    let dist = distance(dithered_rgb, PAL_WARM_MUTED[i]);
+                    if (dist < min_dist) { min_dist = dist; final_rgb = PAL_WARM_MUTED[i]; }
+                }
+            }
+            case 10: { // Earth Vintage
+                var min_dist = 999.0f;
+                for (var i = 0u; i < 16u; i = i + 1u) {
+                    let dist = distance(dithered_rgb, PAL_EARTH_VINTAGE[i]);
+                    if (dist < min_dist) { min_dist = dist; final_rgb = PAL_EARTH_VINTAGE[i]; }
+                }
+            }
+            case 11: { // Everforest Dark
+                var min_dist = 999.0f;
+                for (var i = 0u; i < 16u; i = i + 1u) {
+                    let dist = distance(dithered_rgb, PAL_EVERFOREST[i]);
+                    if (dist < min_dist) { min_dist = dist; final_rgb = PAL_EVERFOREST[i]; }
+                }
+            }
+            case 12: { // Deep Ocean
+                var min_dist = 999.0f;
+                for (var i = 0u; i < 16u; i = i + 1u) {
+                    let dist = distance(dithered_rgb, PAL_DEEP_OCEAN[i]);
+                    if (dist < min_dist) { min_dist = dist; final_rgb = PAL_DEEP_OCEAN[i]; }
+                }
+            }
+            case 13: { // Ayu Mirage
+                var min_dist = 999.0f;
+                for (var i = 0u; i < 16u; i = i + 1u) {
+                    let dist = distance(dithered_rgb, PAL_AYU_MIRAGE[i]);
+                    if (dist < min_dist) { min_dist = dist; final_rgb = PAL_AYU_MIRAGE[i]; }
+                }
+            }
         default: {
             final_rgb = dithered_rgb;
         }
