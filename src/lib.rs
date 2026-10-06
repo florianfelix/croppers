@@ -118,6 +118,7 @@ impl ApplicationHandler<Message> for Croppers {
             }
             Message::FileSaved(path) => {
                 info!("Saved file: {:?}", path);
+                self.app_state.action_on_save(path);
             }
         }
         if let Some(renderer) = self.renderer.as_mut() {
@@ -220,13 +221,22 @@ impl Croppers {
                 Key::Character("c") => {
                     self.app_state.crop_toggle();
                 }
+                Key::Character("e") => {
+                    self.app_state.effects_toggle();
+                }
                 Key::Named(NamedKey::Enter) => {
                     self.app_state.send_crop_job();
                 }
                 Key::Character("s") => {
+                    let ctrl = self.modifiers.control_key();
                     let increment = self.modifiers.shift_key();
+                    if ctrl {
+                        self.app_state.save_effect_texture(increment);
+                    }
+                }
 
-                    self.app_state.save_effect_texture(increment);
+                Key::Named(NamedKey::Delete) => {
+                    self.app_state.delete_current_file();
                 }
                 _ => {}
             }

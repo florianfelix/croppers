@@ -250,6 +250,12 @@ impl AppState {
         self.ui_state.crop.enabled = !self.ui_state.crop.enabled;
     }
 
+    pub fn effects_toggle(&mut self) {
+        self.effect_stack.enabled = !self.effect_stack.enabled;
+        self.effect_stack.needs_rebuild = true;
+        self.needs_compute = true;
+    }
+
     pub fn send_crop_job(&mut self) {
         if !self.ui_state.crop.enabled {
             return;

@@ -68,6 +68,10 @@ impl AppState {
         self.set_srcimg_texture_from_source();
         // self.set_srcimg_to_display();
     }
+    pub fn set_src_dirty(&mut self) {
+        self.source_dirty = true;
+        self.set_srcimg_texture_from_source();
+    }
 
     pub fn try_open_file(&mut self, path: &PathBuf) {
         if let Ok(abspath) = fs::canonicalize(path)
@@ -131,6 +135,35 @@ impl AppState {
                         info!("Send SaveJob {:?}", path_for_saving);
                     }
                 };
+            }
+        }
+    }
+    #[tracing::instrument(skip(self))]
+    pub fn action_on_save(&mut self, path: PathBuf) {
+        if let Some(ref source) = self.source {
+            let is_overwrite = source.path.canonicalize().unwrap() == path;
+            info!("is_overwrite {is_overwrite}");
+            if is_overwrite {
+                self.try_open_file(&path);
+                self.effect_stack.enabled = false;
+            }
+        }
+    }
+    pub fn delete_current_file(&mut self) {
+        if let Some(ref folder) = self.folder {
+            if let Some(ref source) = self.source {
+                let images = get_images_in_folder(folder);
+                let next = get_next_image(&source.path.canonicalize().unwrap(), &images);
+
+                if fs::remove_file(&source.path).is_ok() {
+                    // let _ = self.try_open_next();
+                    info!("Deleted file");
+                    if let Some(next) = next {
+                        // info!("NEXT {:?}", next);
+                        self.try_open_file(&next);
+                        self.set_src_dirty();
+                    }
+                }
             }
         }
     }
