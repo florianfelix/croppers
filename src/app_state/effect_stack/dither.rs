@@ -69,7 +69,8 @@ impl EffectContainerObject for DitherContainer {
         ui.indent("dither_settings", |ui| {
             changed |= ui
                 .add(
-                    egui::Slider::new(&mut self.uniforms.color_steps, 2.0..=32.0)
+                    egui::Slider::new(&mut self.uniforms.color_steps, 2.0..=20.0)
+                        .step_by(1.0)
                         .text("color steps"),
                 )
                 .changed();
@@ -77,7 +78,7 @@ impl EffectContainerObject for DitherContainer {
                 .add(egui::Slider::new(&mut self.uniforms.spread, 0.0..=5.0).text("spread"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.pattern_scale, 1.0..=16.0).text("scale"))
+                .add(egui::Slider::new(&mut self.uniforms.pattern_scale, 1.0..=128.0).text("scale"))
                 .changed();
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=13).text("palette"))
