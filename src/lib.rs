@@ -14,7 +14,7 @@ use winit::{
     application::ApplicationHandler,
     event::{ElementState, KeyEvent, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
-    keyboard::{Key, NamedKey},
+    keyboard::{Key, ModifiersState, NamedKey},
     platform::{
         modifier_supplement::KeyEventExtModifierSupplement, wayland::WindowAttributesExtWayland,
     },
@@ -44,6 +44,7 @@ pub struct Croppers {
     renderer: Option<RenderState>,
     app_state: AppState,
     proxy: Option<EventLoopProxy<Message>>,
+    modifiers: ModifiersState,
 }
 
 impl Croppers {
@@ -55,6 +56,7 @@ impl Croppers {
             renderer: None,
             app_state: AppState::new(cli),
             proxy: None,
+            modifiers: ModifiersState::default(),
         }
     }
     pub fn run(&mut self) -> Result<()> {
@@ -162,6 +164,9 @@ impl ApplicationHandler<Message> for Croppers {
                 self.renderer = None;
                 event_loop.exit();
             }
+            WindowEvent::ModifiersChanged(modifiers) => {
+                self.modifiers = modifiers.state();
+            }
             WindowEvent::Resized(physical_size) => renderer.handle_resize(physical_size),
             WindowEvent::RedrawRequested => {
                 if self.app_state.update_before_reddraw() {
@@ -217,6 +222,11 @@ impl Croppers {
                 }
                 Key::Named(NamedKey::Enter) => {
                     self.app_state.send_crop_job();
+                }
+                Key::Character("s") => {
+                    let increment = self.modifiers.shift_key();
+
+                    self.app_state.save_effect_texture(increment);
                 }
                 _ => {}
             }

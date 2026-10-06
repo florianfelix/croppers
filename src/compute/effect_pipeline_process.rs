@@ -5,8 +5,9 @@ use crate::{
     },
     utils::DimHelper,
 };
-use anyhow::Result;
-use std::{collections::HashMap, sync::Arc};
+use anyhow::{Context, Result};
+use image::{DynamicImage, RgbaImage};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tracing::info;
 use wgpu::Device;
 
@@ -143,23 +144,28 @@ impl EffectProcessor {
 use std::path::Path;
 
 impl EffectProcessor {
-    pub fn try_save(&self, path: impl AsRef<Path>) -> Result<()> {
-        if let Some((idx, dims)) = self.last_processed {
-            if let Some(pipe) = &self.compute_pipeline {
-                let texture = &pipe.ping_pong_textures[idx];
-                self.save_texture_to_file(texture, dims.width(), dims.height(), "output.png")?;
-            }
-        }
-        Ok(())
+    pub fn try_save(&self, path: &PathBuf) -> Result<()> {
+        let (idx, dims) = self.last_processed.ok_or_else(|| {
+            anyhow::anyhow!("No processed texture available to save (stack was empty or never run)")
+        })?;
+
+        let pipe = self
+            .compute_pipeline
+            .as_ref()
+            .context("No compute pipeline available")?;
+
+        let texture = &pipe.ping_pong_textures[idx];
+        self.save_texture_to_file(texture, dims.width(), dims.height(), path)
     }
 
     /// Reads a texture back to the CPU and writes it to disk at `path`.
-    pub fn save_texture_to_file<P: AsRef<Path>>(
+    #[tracing::instrument(skip(self, texture, width, height))]
+    pub fn save_texture_to_file(
         &self,
         texture: &wgpu::Texture,
         width: u32,
         height: u32,
-        path: P,
+        path: &PathBuf,
     ) -> Result<()> {
         let bytes_per_pixel = 4u32; // Rgba8Unorm
         let unpadded_bytes_per_row = width * bytes_per_pixel;
@@ -215,30 +221,38 @@ impl EffectProcessor {
 
         // Block worker thread until GPU copy finishes
         self.device.poll(wgpu::PollType::wait_indefinitely());
-        rx.recv()??;
 
-        // 4. Strip row padding into contiguous RGBA buffer
-        let mapped_data = slice.get_mapped_range()?;
-        let mut unpadded_pixels = Vec::with_capacity((unpadded_bytes_per_row * height) as usize);
+        if rx.recv()?.is_ok() {
+            let data = slice.get_mapped_range()?;
 
-        for row in 0..height {
-            let start = (row * padded_bytes_per_row) as usize;
-            let end = start + unpadded_bytes_per_row as usize;
-            unpadded_pixels.extend_from_slice(&mapped_data[start..end]);
+            let mut unpadded_data = Vec::with_capacity((unpadded_bytes_per_row * height) as usize);
+            for chunk in data.chunks_exact(padded_bytes_per_row as usize) {
+                unpadded_data.extend_from_slice(&chunk[..unpadded_bytes_per_row as usize]);
+            }
+
+            drop(data);
+            staging_buffer.unmap();
+
+            let rgba_img = RgbaImage::from_raw(width, height, unpadded_data)
+                .context("Failed to construct image from raw buffer")?;
+
+            let dyn_img = DynamicImage::ImageRgba8(rgba_img);
+
+            let is_jpeg = path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .map(|ext| ext.eq_ignore_ascii_case("jpg") || ext.eq_ignore_ascii_case("jpeg"))
+                .unwrap_or(false);
+
+            if is_jpeg {
+                dyn_img.to_rgb8().save(path)?;
+            } else {
+                dyn_img.save(path)?;
+            }
+
+            Ok(())
+        } else {
+            panic!("Staging Buffer Mapped incorrectly");
         }
-
-        drop(mapped_data);
-        staging_buffer.unmap();
-
-        // 5. Save to disk via the image crate
-        image::save_buffer(
-            path,
-            &unpadded_pixels,
-            width,
-            height,
-            image::ColorType::Rgba8,
-        )?;
-
-        Ok(())
     }
 }

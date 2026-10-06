@@ -110,6 +110,30 @@ impl AppState {
         }
         Ok(())
     }
+
+    #[tracing::instrument(skip(self))]
+    pub fn save_effect_texture(&mut self, increment: bool) {
+        if self.texture_vault.effect_view.is_some() {
+            if let Some(ref source) = self.source {
+                if let Ok(ref current) = source.path.canonicalize() {
+                    let path_for_saving = if increment {
+                        increment_filename(current)
+                    } else {
+                        current.clone()
+                    };
+                    if self
+                        .tx_job
+                        .send(crate::compute::ComputeRequest::SaveLastEffect(
+                            path_for_saving.clone(),
+                        ))
+                        .is_ok()
+                    {
+                        info!("Send SaveJob {:?}", path_for_saving);
+                    }
+                };
+            }
+        }
+    }
 }
 
 fn get_images_in_folder<P: AsRef<Path>>(folder_path: P) -> Vec<PathBuf> {
@@ -153,4 +177,37 @@ fn get_previous_image(current_image: &Path, image_list: &[PathBuf]) -> Option<Pa
     let current_index = image_list.iter().position(|p| p == current_image)?;
     let prev_index = (current_index + image_list.len() - 1) % image_list.len();
     Some(image_list[prev_index].clone())
+}
+
+fn increment_filename(path: &Path) -> PathBuf {
+    if !path.exists() {
+        return path.to_path_buf();
+    }
+
+    // Extract the parent directory, file stem (name without extension), and the extension
+    let parent = path.parent().unwrap_or_else(|| Path::new(""));
+    let file_stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+    let extension = path.extension().and_then(|e| e.to_str());
+
+    let mut counter = 1;
+
+    loop {
+        // Construct the new filename format, e.g., "filename (1)"
+        let new_filename = format!("{}_{:03}", file_stem, counter);
+
+        // Create the new path structure
+        let mut new_path = parent.join(new_filename);
+
+        // Push the original extension back if it had one
+        if let Some(ext) = extension {
+            new_path.set_extension(ext);
+        }
+
+        // If this incremented path doesn't exist, it's safe to use
+        if !new_path.exists() {
+            return new_path;
+        }
+
+        counter += 1;
+    }
 }
