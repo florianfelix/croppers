@@ -28,7 +28,7 @@ pub struct CrtUniforms {
     pub rgb_mask_strength: f32, // Intensität des vertikalen RGB-Pixelgitters (0.0 bis 1.0)
 
     // --- 2. Block (16 Bytes) ---
-    pub _padding1: f32,
+    pub overscan: f32,
     pub _padding2: f32,
     pub _padding3: f32,
     pub _padding4: f32,
@@ -40,7 +40,7 @@ impl Default for CrtUniforms {
             scanline_count: 120.0,
             scanline_strength: 0.5,
             rgb_mask_strength: 0.5,
-            _padding1: 0.0,
+            overscan: 1.0,
             _padding2: 0.0,
             _padding3: 0.0,
             _padding4: 0.0,
@@ -88,6 +88,9 @@ impl EffectContainerObject for CrtContainer {
                     egui::Slider::new(&mut self.uniforms.rgb_mask_strength, 0.0..=1.0)
                         .text("mask strength"),
                 )
+                .changed();
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.overscan, 0.0..=1.0).text("overscan"))
                 .changed();
         });
         changed
