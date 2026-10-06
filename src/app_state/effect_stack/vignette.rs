@@ -24,7 +24,7 @@ pub struct VignetteUniforms {
     pub intensity: f32,
     pub radius: f32,
     pub smoothness: f32,
-    pub _padding: f32,
+    pub scale_y: f32,
 }
 
 impl Default for VignetteUniforms {
@@ -33,7 +33,7 @@ impl Default for VignetteUniforms {
             intensity: 1.0,
             radius: 0.75,
             smoothness: 0.65,
-            _padding: 0.0,
+            scale_y: 1.0,
         }
     }
 }
@@ -66,6 +66,9 @@ impl EffectContainerObject for VignetteContainer {
                 .changed();
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.smoothness, 0.0..=1.0).text("Smoothness"))
+                .changed();
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.scale_y, 0.0..=3.0).text("Scale y"))
                 .changed();
         });
         changed

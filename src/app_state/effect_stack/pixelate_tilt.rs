@@ -75,8 +75,14 @@ impl EffectContainerObject for PixelateTiltContainer {
                 .changed();
             changed |= ui
                 .add(
-                    egui::Slider::new(&mut self.uniforms.angle, 0.0..=std::f32::consts::TAU)
-                        .text("angle"),
+                    egui::Slider::from_get_set(0.0..=360.0, |new_deg| {
+                        if let Some(deg) = new_deg {
+                            self.uniforms.angle = (deg as f32).to_radians();
+                        }
+                        self.uniforms.angle.to_degrees() as f64
+                    })
+                    .suffix("°")
+                    .text("angle"),
                 )
                 .changed();
             changed |= ui
