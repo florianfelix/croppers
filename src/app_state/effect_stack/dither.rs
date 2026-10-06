@@ -96,7 +96,10 @@ impl EffectContainerObject for DitherContainer {
                 "Deep Ocean",
                 "Ayu Mirage",
             ];
-            let txt = pallette[self.uniforms.palette_index as usize];
+            let txt = pallette
+                .get(self.uniforms.palette_index as usize)
+                .copied()
+                .unwrap_or("rgb");
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=13).text(txt))
                 .changed();
