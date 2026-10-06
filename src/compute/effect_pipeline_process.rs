@@ -78,6 +78,10 @@ impl EffectProcessor {
             "vcr".to_string(),
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/vcr_comp.wgsl")),
         );
+        shader_modules.insert(
+            "glitch".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/glitch_comp.wgsl")),
+        );
 
         Self {
             device,

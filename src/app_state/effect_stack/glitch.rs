@@ -1,0 +1,143 @@
+use crate::app_state::effect_stack::EffectContainerObject;
+use std::collections::HashMap;
+
+#[derive(Clone)]
+pub struct GlitchContainer {
+    pub id: usize,
+    pub enabled: bool,
+    pub uniforms: GlitchUniforms,
+}
+
+impl GlitchContainer {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
+            id: 0,
+            enabled: true,
+            uniforms: GlitchUniforms::default(),
+        })
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct GlitchUniforms {
+    pub time: f32,
+    pub line_dropouts: f32,
+    pub block_displace: f32,
+    pub color_burst: f32,
+    pub _padding1: f32,
+    pub _padding2: f32,
+    pub _padding3: f32,
+    pub _padding4: f32,
+}
+
+impl Default for GlitchUniforms {
+    fn default() -> Self {
+        Self {
+            time: 20.0,
+            line_dropouts: 0.1,
+            block_displace: 0.15,
+            color_burst: 0.1,
+            _padding1: 0.1,
+            _padding2: 1.0,
+            _padding3: 0.5,
+            _padding4: 0.5,
+        }
+    }
+}
+
+impl EffectContainerObject for GlitchContainer {
+    fn id(&self) -> usize {
+        self.id
+    }
+    fn set_id(&mut self, id: usize) {
+        self.id = id;
+    }
+    fn name(&self) -> &str {
+        "Glitch"
+    }
+    fn enabled(&self) -> bool {
+        self.enabled
+    }
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
+        let mut changed = false;
+        ui.indent("Glitch_settings", |ui| {
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.time, 0.0..=200.0).text("time"))
+                .changed();
+            changed |= ui
+                .add(
+                    egui::Slider::new(&mut self.uniforms.line_dropouts, 0.0..=1.0)
+                        .text("Signal dropouts"),
+                )
+                .changed();
+            changed |= ui
+                .add(
+                    egui::Slider::new(&mut self.uniforms.block_displace, 0.0..=1.0)
+                        .text("Sync Tearing"),
+                )
+                .changed();
+            changed |= ui
+                .add(
+                    egui::Slider::new(&mut self.uniforms.color_burst, 0.0..=1.0)
+                        .text("Chroma Frying"),
+                )
+                .changed();
+        });
+        changed
+    }
+
+    fn shader_key(&self) -> &str {
+        "glitch"
+    }
+
+    fn build_passes(
+        &self,
+        device: &wgpu::Device,
+        layout: &wgpu::BindGroupLayout,
+        shaders: &HashMap<String, wgpu::ShaderModule>,
+        passes: &mut Vec<crate::compute::effect_pipeline::GpuEffectPass>,
+    ) {
+        use wgpu::util::DeviceExt;
+        let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Glitch Uniform Buffer"),
+            contents: bytemuck::bytes_of(&self.uniforms),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Glitch Pass Layout"),
+            bind_group_layouts: &[Some(layout)],
+            immediate_size: 0,
+        });
+
+        let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("Compute Pipeline Glitch"),
+            layout: Some(&pipeline_layout),
+            module: &shaders[self.shader_key()],
+            entry_point: Some("main"),
+            compilation_options: Default::default(),
+            cache: None,
+        });
+
+        passes.push(crate::compute::effect_pipeline::GpuEffectPass {
+            effect_id: self.id,
+            pipeline,
+            uniform_buffer: buf,
+        });
+    }
+
+    fn update_uniforms(
+        &self,
+        queue: &wgpu::Queue,
+        matching_passes: &[&crate::compute::effect_pipeline::GpuEffectPass],
+    ) {
+        if let Some(pass) = matching_passes.first() {
+            queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
+        }
+    }
+}

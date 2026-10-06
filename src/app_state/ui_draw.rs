@@ -189,6 +189,33 @@ impl AppState {
                             self.effect_stack.needs_rebuild = true;
                             request_redraw = true;
                         }
+                        if ui.selectable_label(false, "Glitch").clicked() {
+                            info!("Glitch selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Glitch.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "Vcr").clicked() {
+                            info!("Vcr selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Vcr.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
+                        if ui.selectable_label(false, "Ascii").clicked() {
+                            info!("Ascii selected");
+                            let mut new_effect: Box<dyn EffectContainerObject> =
+                                EffectSelector::Ascii.into();
+                            new_effect.set_id(self.effect_stack.effects.len());
+                            self.effect_stack.effects.push(new_effect);
+                            self.effect_stack.needs_rebuild = true;
+                            request_redraw = true;
+                        }
                     });
 
                 let mut swap_index = None;
