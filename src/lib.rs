@@ -37,6 +37,7 @@ pub mod utils;
 pub enum Message {
     Empty,
     ComputeResult(ComputeResult),
+    FileSaved(PathBuf),
 }
 
 pub struct Croppers {
@@ -112,6 +113,9 @@ impl ApplicationHandler<Message> for Croppers {
             Message::ComputeResult(compute_result) => {
                 info!("Received Compute Result");
                 self.app_state.handle_compute_result(compute_result);
+            }
+            Message::FileSaved(path) => {
+                info!("Saved file: {:?}", path);
             }
         }
         if let Some(renderer) = self.renderer.as_mut() {

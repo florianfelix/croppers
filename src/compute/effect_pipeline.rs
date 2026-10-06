@@ -134,9 +134,9 @@ impl GpuEffectPipeline {
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         input_view: &wgpu::TextureView,
-    ) -> wgpu::TextureView {
+    ) -> (wgpu::TextureView, Option<usize>) {
         if self.passes.is_empty() {
-            return input_view.clone();
+            return (input_view.clone(), None);
         }
         // info!("Executing");
 
@@ -184,7 +184,8 @@ impl GpuEffectPipeline {
             // Toggle ping-pong index (0 -> 1 -> 0)
             dst_idx = 1 - dst_idx;
         }
+        let last_written_idx = 1 - dst_idx;
 
-        current_src_view
+        (current_src_view, Some(last_written_idx))
     }
 }

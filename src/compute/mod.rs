@@ -5,8 +5,10 @@ use crate::{
         crop_renderer::{CropJob, CropRender, CropResult},
         effect_pipeline_process::{EffectProcessor, EffectsResult},
     },
+    utils::DimHelper,
 };
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
+use tracing::error;
 use winit::{event_loop::EventLoopProxy, window::Window};
 
 pub mod crop_renderer;
@@ -26,6 +28,7 @@ pub fn spawn_worker(
 pub enum ComputeRequest {
     EffectsJob(EffectsJob),
     CropJob(CropJob),
+    SaveLastEffect(PathBuf),
 }
 #[derive(Clone)]
 pub struct EffectsJob {
@@ -69,6 +72,14 @@ pub fn compute_worker(
                     // window.request_redraw();
                 }
             }
+            ComputeRequest::SaveLastEffect(path) => match effect_processor.try_save(&path) {
+                Ok(()) => {
+                    proxy.send_event(Message::FileSaved(path));
+                }
+                Err(e) => {
+                    error!("Failed to Save file {e}");
+                }
+            },
         }
     }
     // window.request_redraw();
