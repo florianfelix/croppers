@@ -83,12 +83,16 @@ impl EffectContainerObject for DitherContainer {
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=13).text("palette"))
                 .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.matrix_type, 0..=1)
-                        .text("matrix type (4x4 vs 8x8)"),
-                )
-                .changed();
+
+            let mut is_8x8 = self.uniforms.matrix_type == 1;
+            let mattype = match is_8x8 {
+                true => "8x8 matrix",
+                false => "4x4 matrix",
+            };
+            if ui.add(egui::Checkbox::new(&mut is_8x8, mattype)).changed() {
+                self.uniforms.matrix_type = is_8x8 as i32;
+                changed = true;
+            }
         });
         changed
     }
