@@ -80,8 +80,25 @@ impl EffectContainerObject for DitherContainer {
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.pattern_scale, 1.0..=128.0).text("scale"))
                 .changed();
+            let pallette = [
+                "rgb",
+                "Game Boy",
+                "CGA",
+                "PICO-8",
+                "Commodore 64",
+                "NES",
+                "Catppuccin Mocha",
+                "Tokyo Night",
+                "Gruvbox Dark",
+                "warm muted",
+                "Earth Vintage",
+                "Everforest Dark",
+                "Deep Ocean",
+                "Ayu Mirage",
+            ];
+            let txt = pallette[self.uniforms.palette_index as usize];
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=13).text("palette"))
+                .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=13).text(txt))
                 .changed();
 
             let mut is_8x8 = self.uniforms.matrix_type == 1;
