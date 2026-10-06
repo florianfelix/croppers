@@ -74,6 +74,11 @@ impl EffectProcessor {
             "ascii".to_string(),
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/ascii_comp.wgsl")),
         );
+        shader_modules.insert(
+            "vcr".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/vcr_comp.wgsl")),
+        );
+
         Self {
             device,
             queue,

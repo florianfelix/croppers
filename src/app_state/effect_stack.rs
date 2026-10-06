@@ -6,7 +6,7 @@ use crate::app_state::effect_stack::{
     ascii::AsciiContainer, blur::BlurContainer, bw::BwContainer, crt::CrtContainer,
     dither::DitherContainer, gamma::GammaContainer, hsv::HsvContainer,
     pixelate_linear::PixelateLinearContainer, pixelate_tilt::PixelateTiltContainer,
-    tiltshift::TiltShiftContainer, vignette::VignetteContainer,
+    tiltshift::TiltShiftContainer, vcr::VcrContainer, vignette::VignetteContainer,
 };
 
 mod ascii;
@@ -19,6 +19,7 @@ mod hsv;
 mod pixelate_linear;
 mod pixelate_tilt;
 mod tiltshift;
+mod vcr;
 pub mod vignette;
 
 pub trait EffectContainerObject: DynClone + Send + Sync {
@@ -60,7 +61,7 @@ pub struct EffectStack {
 
 impl Default for EffectStack {
     fn default() -> Self {
-        let effects = vec![EffectSelector::Ascii.into()];
+        let effects = vec![EffectSelector::Vcr.into()];
         let mut result = Self {
             effects,
             needs_rebuild: true,
@@ -91,6 +92,7 @@ pub enum EffectSelector {
     Dither,
     Crt,
     Ascii,
+    Vcr,
 }
 impl From<EffectSelector> for Box<dyn EffectContainerObject> {
     fn from(value: EffectSelector) -> Self {
@@ -106,6 +108,7 @@ impl From<EffectSelector> for Box<dyn EffectContainerObject> {
             EffectSelector::Gamma => GammaContainer::new(),
             EffectSelector::TiltShift => TiltShiftContainer::new(),
             EffectSelector::Ascii => AsciiContainer::new(),
+            EffectSelector::Vcr => VcrContainer::new(),
         }
     }
 }
