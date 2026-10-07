@@ -1,8 +1,9 @@
+#[allow(unused)]
 use tracing::info;
 
 use crate::app_state::{
     AppState,
-    effect_stack::{EffectContainerObject, EffectSelector},
+    effect_stack::EffectSelector,
     widgets::{CropMode, crop_widget::WidgetCroppers},
 };
 
@@ -151,122 +152,7 @@ impl AppState {
                 let _ = egui::ComboBox::from_label("Add Effect")
                     .selected_text("Add Effect")
                     .show_ui(ui, |ui| {
-                        if ui.selectable_label(false, "Vignette").clicked() {
-                            info!("Vignette selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Vignette.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                        }
-                        if ui.selectable_label(false, "Blur").clicked() {
-                            info!("Blur selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Blur.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "Black and White").clicked() {
-                            info!("Black and White selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Bw.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "HSV").clicked() {
-                            info!("HSV selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Hsv.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "Gamma").clicked() {
-                            info!("Gamma selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Gamma.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "TiltShift").clicked() {
-                            info!("TiltShift selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::TiltShift.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "Pixelate Tilt Shift").clicked() {
-                            info!("PixelateShift selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::PixelateTilt.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "Pixelate Linear").clicked() {
-                            info!("PixelateShift selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::PixelateLinear.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "Dither").clicked() {
-                            info!("Dither selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Dither.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "Crt").clicked() {
-                            info!("Crt selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Crt.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "Glitch").clicked() {
-                            info!("Glitch selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Glitch.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "Vcr").clicked() {
-                            info!("Vcr selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Vcr.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
-                        if ui.selectable_label(false, "Ascii").clicked() {
-                            info!("Ascii selected");
-                            let mut new_effect: Box<dyn EffectContainerObject> =
-                                EffectSelector::Ascii.into();
-                            new_effect.set_id(self.effect_stack.effects.len());
-                            self.effect_stack.effects.push(new_effect);
-                            self.effect_stack.needs_rebuild = true;
-                            request_redraw = true;
-                        }
+                        EffectSelector::draw_all(ui, &mut self.effect_stack);
                     });
 
                 let mut swap_index = None;

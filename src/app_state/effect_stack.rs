@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use dyn_clone::DynClone;
+use enum_iterator::Sequence;
+use itertools::Itertools;
 
 use crate::app_state::effect_stack::{
     ascii::AsciiContainer, blur::BlurContainer, bw::BwContainer, crt::CrtContainer,
@@ -80,7 +82,7 @@ impl EffectStack {
     }
 }
 
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug, Sequence)]
 pub enum EffectSelector {
     Blur,
     Vignette,
@@ -112,6 +114,23 @@ impl From<EffectSelector> for Box<dyn EffectContainerObject> {
             EffectSelector::Ascii => AsciiContainer::new(),
             EffectSelector::Vcr => VcrContainer::new(),
             EffectSelector::Glitch => GlitchContainer::new(),
+        }
+    }
+}
+
+impl EffectSelector {
+    pub fn all() -> Vec<Self> {
+        enum_iterator::all::<Self>().collect_vec()
+    }
+    pub fn draw_all(ui: &mut egui::Ui, effect_stack: &mut EffectStack) {
+        for selector in Self::all() {
+            let name = format!("{:?}", selector);
+            if ui.selectable_label(false, &name).clicked() {
+                let mut new_effect: Box<dyn EffectContainerObject> = selector.into();
+                new_effect.set_id(effect_stack.effects.len());
+                effect_stack.effects.push(new_effect);
+                effect_stack.needs_rebuild = true;
+            }
         }
     }
 }
