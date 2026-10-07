@@ -1,15 +1,17 @@
 struct AsciiUniforms {
-    scale: f32,          // Dynamic pixel size for each text block (e.g., 8.0, 16.0)
-    charset: u32,        // Selects character set: 0, 1, or 2
-    inset: f32,          // Inset padding factor: 0.0 (full block) to 0.45 (tiny character)
-    mult: f32
-}
+    scale: f32,          // Pixel size for each text block (e.g., 8.0, 16.0)
+    charset: u32,        // Character set selector: 0, 1, or 2
+    inset: f32,          // Inset padding factor: 0.0 (full block) to 0.45 (small glyph)
+    mult: f32,           // Multiplier for background image brightness
+};
+
 @group(0) @binding(0) var src_tex: texture_2d<f32>;
 @group(0) @binding(1) var dst_tex: texture_storage_2d<rgba8unorm, write>;
 @group(0) @binding(2) var<uniform> uniforms: AsciiUniforms;
 
+// 8x8 font bitmap glyph table encoded into pairs of 32-bit integers
 const MASTER_GLYPHS = array<vec2<u32>, 16>(
-    vec2<u32>(0x00000000u, 0x00000000u), // 0: ' ' (Empty space)
+    vec2<u32>(0x00000000u, 0x00000000u), // 0: ' ' (Space)
     vec2<u32>(0x00000000u, 0x00181800u), // 1: '.'
     vec2<u32>(0x00181800u, 0x00181800u), // 2: ':'
     vec2<u32>(0x00181800u, 0x00183000u), // 3: ';'
@@ -36,11 +38,11 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let cellSize = max(uniforms.scale, 1.0);
 
-    // 1. Calculate cell grid indices using floating-point math
+    // Map pixel coordinate to cell grid indices
     let currentPixel = vec2<f32>(id.xy);
     let cellIndices = floor(currentPixel / cellSize);
 
-    // 2. Find the center pixel of the dynamic block to sample image colors accurately
+    // Sample source image color and luminance at the center of the cell block
     let src_size = textureDimensions(src_tex);
     let halfCell = cellSize * 0.5;
     let cellCenter = vec2<i32>(
@@ -49,11 +51,10 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     );
     let cellColor = textureLoad(src_tex, cellCenter, 0);
 
-    // Calculate luminance (0.0 to 1.0)
     let luminance = 0.299 * cellColor.r + 0.587 * cellColor.g + 0.114 * cellColor.b;
     let densityFactor = 1.0 - luminance;
 
-    // 3. Map brightness to the selected charset via switch routing
+    // Select character glyph from master font table based on brightness and charset
     var glyphPacked: vec2<u32>;
     switch (uniforms.charset) {
         case 0u: {
@@ -73,27 +74,20 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         }
     }
 
-    // 4. Determine the normalized local coordinate (0.0 to 1.0) inside this specific box
+    // Determine normalized local coordinate inside cell and apply inset padding
     let localUV = (currentPixel - (cellIndices * cellSize)) / cellSize;
-
-    // 5. Apply dynamic inset adjustment
-    // Clamp the layout boundaries to prevent division errors or inside out mirrors
     let clampedInset = clamp(uniforms.inset, 0.0, 0.45);
 
     var bitState: u32 = 0u;
 
-    // Check if the current pixel falls inside the padding/inset boundary zone
+    // Check if pixel lies within glyph boundary and extract active bitmap bit
     if (localUV.x >= clampedInset && localUV.x <= (1.0 - clampedInset) &&
         localUV.y >= clampedInset && localUV.y <= (1.0 - clampedInset)) {
 
-        // Re-scale the coordinates back to a clean 0.0 - 1.0 inner canvas window
         let insetUV = (localUV - clampedInset) / (1.0 - 2.0 * clampedInset);
-
-        // Map the new inner space onto our 8x8 font grid bits
         let localX = u32(clamp(insetUV.x * 8.0, 0.0, 7.0));
         let localY = u32(clamp(insetUV.y * 8.0, 0.0, 7.0));
 
-        // 6. Extract the individual bit state
         if (localY < 4u) {
             let bitIndex = 31u - ((localY * 8u) + localX);
             bitState = (glyphPacked.x >> bitIndex) & 1u;
@@ -103,10 +97,9 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         }
     }
 
-    // 7. Rasterize the finalized output
+    // Blend background image with cell character color based on font bitmask
     var finalColor = textureLoad(src_tex, vec2<i32>(id.xy), 0);
     finalColor = finalColor * uniforms.mult;
-    // var finalColor = vec4<f32>(0.0, 0.0, 0.0, 1.0); // Black background
     if (bitState == 1u) {
         finalColor = vec4<f32>(cellColor.rgb, 1.0);
     }

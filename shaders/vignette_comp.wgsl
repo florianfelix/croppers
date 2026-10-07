@@ -14,16 +14,19 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = textureDimensions(dst_tex);
     if (id.x >= size.x || id.y >= size.y) { return; }
 
+    // Normalize coordinates and sample original pixel color
     let uv = (vec2<f32>(id.xy) + 0.5) / vec2<f32>(size);
     let color = textureLoad(src_tex, vec2<i32>(id.xy), 0);
 
-    // Center offset
+    // Compute distance from center with elliptical aspect scaling
     var delta = uv - vec2<f32>(0.5, 0.5);
-    // Scale distance along the Y axis
     delta.y *= uniforms.scale_y;
-
     let dist = length(delta);
+
+    // Calculate radial falloff factor using smoothstep between inner and outer radius
     let vignette = smoothstep(uniforms.radius, uniforms.radius - uniforms.smoothness, dist);
+
+    // Blend darkened vignette color with original image based on intensity
     let final_rgb = mix(color.rgb * vignette, color.rgb, 1.0 - uniforms.intensity);
 
     textureStore(dst_tex, vec2<i32>(id.xy), vec4<f32>(final_rgb, color.a));

@@ -6,14 +6,14 @@ struct GlitchUniforms {
     burst_grid_size: f32,
     tearing_micro: f32,
     tearing_macro: f32,
-    tearing_blocks: f32
+    tearing_blocks: f32,
 }
 
 @group(0) @binding(0) var src_tex: texture_2d<f32>;
 @group(0) @binding(1) var dst_tex: texture_storage_2d<rgba8unorm, write>;
 @group(0) @binding(2) var<uniform> uniforms: GlitchUniforms;
 
-// Hash noise functions to generate hard, non-smooth random thresholds
+// 1D and 2D pseudo-random hash functions generating values in [0.0, 1.0].
 fn hash11(p: f32) -> f32 {
     return fract(sin(p * 127.1) * 43758.5453123);
 }
@@ -28,50 +28,38 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     if (id.x >= size.x || id.y >= size.y) { return; }
 
     let uv = vec2<f32>(id.xy) / vec2<f32>(size);
-
-    // Use the time float as a static seed offset
     let seed = uniforms.time;
 
-    // --- 1. Macro-Block Displacement Amount ---
-    // The block_displace slider directly dictates the PERCENTAGE of slices that get shifted
+    // 1. Macro-block displacement: partition image into rows and test threshold.
     var offsetUV = uv;
     let blockCount = uniforms.tearing_blocks;
     let blockId = floor(uv.y * blockCount) + seed;
-
-    // Generate a unique value per block row between 0.0 and 1.0
     let blockRoll = hash11(blockId);
 
-    // --- 2.1 Macro Scanline "Teeth" (Tearing) ---
+    // Apply horizontal macro tearing shift to qualifying block rows.
     if (blockRoll < uniforms.block_displace) {
-        // Generate a completely sharp, random shift distance based on this block's ID
         let shiftAmount = (hash11(blockId * 3.7) * 2.0 - 1.0) * 0.12 * uniforms.tearing_macro;
         offsetUV.x = fract(offsetUV.x + shiftAmount);
     }
 
-    // --- 2.2 Micro Scanline "Teeth" (Tearing) ---
-    // High-frequency single-pixel horizontal rips, scaled directly by the displacement slider
+    // 2. Micro scanline tearing: apply high-frequency horizontal rips to individual lines.
     let lineId = floor(uv.y * f32(size.y)) + seed * 7.1;
-    if (hash11(lineId) < (uniforms.block_displace )) {
+    if (hash11(lineId) < uniforms.block_displace) {
         let shiftAmount = (hash11(blockId * 1.9) * 2.0 - 1.0) * 0.12 * uniforms.tearing_micro;
         offsetUV.x = fract(offsetUV.x + shiftAmount);
     }
 
-    // Convert our shifted coordinates back to safe integer texture indexes
+    // Convert displaced UV coordinates to clamped pixel coordinates and sample source texture.
     let sampleCoord = vec2<i32>(
         clamp(i32(offsetUV.x * f32(size.x)), 0, i32(size.x) - 1),
         clamp(i32(offsetUV.y * f32(size.y)), 0, i32(size.y) - 1)
     );
-
     var texColor = textureLoad(src_tex, sampleCoord, 0);
 
-    // --- 3. Scanline Dropouts Amount ---
-    // Individual scanlines are dropped to solid black or white noise
-    // The slider directly controls how many rows out of 160 are corrupted simultaneously
+    // 3. Scanline dropouts: randomly corrupt horizontal scanlines into black tape lines or white noise.
     let dropoutId = floor(uv.y * 160.0) + seed * 11.3;
     let dropoutRoll = hash11(dropoutId);
-
     if (dropoutRoll < uniforms.line_dropouts) {
-        // 80% chance to drop to pure dead analog black tape line, 20% white static strip
         if (hash11(uv.y + seed) > 0.2) {
             texColor = vec4<f32>(0.0, 0.0, 0.0, 1.0);
         } else {
@@ -80,14 +68,10 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         }
     }
 
-    // --- 4. Analog Color Burst Region Amount ---
-    // The slider controls the density of macro regions affected by high-voltage color clipping
-    // The screen is split into a grid; the higher the slider, the more grid cells are fried
+    // 4. Analog color burst: invert and boost color channels within pseudo-random grid tiles.
     let regionGrid = floor(uv * uniforms.burst_grid_size) + seed * 4.2;
     let colorBurstRoll = hash21(regionGrid);
-
     if (colorBurstRoll < uniforms.color_burst) {
-        // High-voltage color frying inversion matrix
         texColor = vec4<f32>(
             1.0 - texColor.g,
             clamp(texColor.b * 1.8, 0.0, 1.0),
@@ -96,5 +80,6 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         );
     }
 
+    // Write final glitched color to destination texture.
     textureStore(dst_tex, vec2<i32>(id.xy), texColor);
 }

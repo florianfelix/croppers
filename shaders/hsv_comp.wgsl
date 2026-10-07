@@ -1,19 +1,19 @@
 struct HsvUniforms {
-    hue: f32,          // 0.5 = Keine Änderung, < 0.5 rotierte Hues, > 0.5 rotierte Hues
-    saturation: f32,   // 1.0 = Keine Änderung, 0.0 = S/W, > 1.0 = Übersättigt
-    value: f32,        // 1.0 = Keine Änderung, 0.0 = Schwarz, > 1.0 = Aufgehellt
-    factor: f32,       // 0.0 = Nur Originalbild, 1.0 = Voller HSV-Effekt
+    hue: f32,          // 0.5 = neutral, < 0.5 rotates hue backwards, > 0.5 rotates hue forward
+    saturation: f32,   // 1.0 = neutral, 0.0 = greyscale, > 1.0 = oversaturated
+    value: f32,        // 1.0 = neutral, 0.0 = black, > 1.0 = brightened
+    factor: f32,       // 0.0 = original image only, 1.0 = full HSV adjustment
 };
 
 @group(0) @binding(0) var src_tex: texture_2d<f32>;
 @group(0) @binding(1) var dst_tex: texture_storage_2d<rgba8unorm, write>;
 @group(0) @binding(2) var<uniform> uniforms: HsvUniforms;
 
-// Hilfsfunktion: Konvertiert RGB zu HSV
+// Converts an RGB color to HSV color space.
 fn rgb_to_hsv(rgb: vec3<f32>) -> vec3<f32> {
     let k = vec4<f32>(0.0f, -1.0f / 3.0f, 2.0f / 3.0f, -1.0f);
 
-    // Vergleiche Kanäle, um Maxima und Minima zu bestimmen (Epsilon-sicher)
+    // Channel comparison to determine max and min components with epsilon safety.
     let p = mix(vec4<f32>(rgb.bg, k.wz), vec4<f32>(rgb.gb, k.xy), step(rgb.b, rgb.g));
     let q = mix(vec4<f32>(p.xyw, rgb.r), vec4<f32>(rgb.r, p.yzx), step(p.x, rgb.r));
 
@@ -23,7 +23,7 @@ fn rgb_to_hsv(rgb: vec3<f32>) -> vec3<f32> {
     return vec3<f32>(abs(q.z + (q.w - q.y) / (6.0f * d + e)), d / (q.x + e), q.x);
 }
 
-// Hilfsfunktion: Konvertiert HSV zurück zu RGB
+// Converts an HSV color back to RGB color space.
 fn hsv_to_rgb(hsv: vec3<f32>) -> vec3<f32> {
     let k = vec4<f32>(1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f);
     let p = abs(fract(hsv.xxx + k.xyz) * 6.0f - k.www);
@@ -34,33 +34,26 @@ fn hsv_to_rgb(hsv: vec3<f32>) -> vec3<f32> {
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = textureDimensions(dst_tex);
 
-    // Validierung der Thread-Grenzen
+    // Bounds check to discard invocations outside destination texture.
     if (id.x >= size.x || id.y >= size.y) {
         return;
     }
 
-    // Originalfarbe einlesen
+    // Load original color and convert RGB to HSV color space.
     let original_color = textureLoad(src_tex, vec2<i32>(id.xy), 0);
-
-    // 1. In den HSV Farbraum wechseln
     var hsv = rgb_to_hsv(original_color.rgb);
 
-    // 2. Modifikationen im HSV-Raum anwenden (Blender-Logik):
-
-    // Hue-Shift: Blender nutzt 0.5 als Standardwert.
-    // Der Shift berechnet sich aus (uniforms.hue - 0.5). fract() hält das Ergebnis im Kreis [0.0, 1.0]
+    // Apply Blender-style hue rotation where 0.5 is neutral and fract() keeps hue in [0.0, 1.0].
     hsv.x = fract(hsv.x + (uniforms.hue - 0.5f));
 
-    // Saturation & Value Modifikation via Multiplikation
+    // Scale saturation and value (brightness).
     hsv.y = clamp(hsv.y * uniforms.saturation, 0.0f, 1.0f);
-    hsv.z = max(hsv.z * uniforms.value, 0.0f); // Value kann theoretisch über 1.0 steigen (HDR/Brightening)
+    hsv.z = max(hsv.z * uniforms.value, 0.0f);
 
-    // 3. Zurück in den RGB Farbraum konvertieren
+    // Convert modified HSV back to RGB and blend with original color using mix factor.
     let hsv_modified_rgb = hsv_to_rgb(hsv);
-
-    // 4. Blend-Factor anwenden (Blenders Mix-Faktor am Node-Ausgang)
     let final_rgb = mix(original_color.rgb, hsv_modified_rgb, uniforms.factor);
 
-    // Alpha-Kanal beibehalten und in Zieltextur schreiben
+    // Preserve original alpha and store resulting pixel.
     textureStore(dst_tex, vec2<i32>(id.xy), vec4<f32>(final_rgb, original_color.a));
 }

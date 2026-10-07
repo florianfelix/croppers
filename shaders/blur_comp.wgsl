@@ -1,7 +1,7 @@
 struct BlurUniforms {
     radius: f32,
-    dir_x: i32, // 1 for horizontal, 0 for vertical
-    dir_y: i32, // 0 for horizontal, 1 for vertical
+    dir_x: i32, // 1 for horizontal pass, 0 for vertical
+    dir_y: i32, // 0 for horizontal pass, 1 for vertical
     _padding: f32,
 };
 
@@ -19,6 +19,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let coords = vec2<i32>(global_id.xy);
     let r = i32(uniforms.radius);
 
+    // Pass through unchanged pixel if blur radius is zero or negative
     if (r <= 0) {
         let color = textureLoad(input_texture, coords, 0);
         textureStore(output_texture, coords, color);
@@ -29,7 +30,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     var count = 0.0;
     let step_dir = vec2<i32>(uniforms.dir_x, uniforms.dir_y);
 
-    // Single 1D loop along step_dir
+    // Accumulate samples along 1D kernel direction within image bounds
     for (var i = -r; i <= r; i++) {
         let sample_pos = coords + (step_dir * i);
         if (sample_pos.x >= 0 && sample_pos.x < i32(dims.x) && sample_pos.y >= 0 && sample_pos.y < i32(dims.y)) {
@@ -38,5 +39,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         }
     }
 
+    // Write averaged color into output texture
     textureStore(output_texture, coords, color_acc / count);
 }

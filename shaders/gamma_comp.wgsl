@@ -13,28 +13,26 @@ struct GammaUniforms {
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = textureDimensions(dst_tex);
 
-    // Validierung der Thread-Grenzen
+    // Bounds check: discard invocations outside destination texture
     if (id.x >= size.x || id.y >= size.y) {
         return;
     }
 
-    // Originalfarbe einlesen
+    // Read input pixel color
     let color = textureLoad(src_tex, vec2<i32>(id.xy), 0);
 
-    // Sichere Gamma-Werte bestimmen (Verhindert Division durch Null und negative Werte)
-    // Blender limitiert Gamma-Werte in der UI üblicherweise auf Werte > 0.001
+    // Clamp gamma above zero to prevent division by zero or negative exponents
     let g_r = max(uniforms.gamma_r, 0.001f);
     let g_g = max(uniforms.gamma_g, 0.001f);
     let g_b = max(uniforms.gamma_b, 0.001f);
 
-    // Per-Kanal Gamma-Korrektur (entspricht exakt der Verschaltung aus dem Screenshot)
-    // pow() benötigt positive Werte für die Basis, daher sichern wir color.rgb mit max() ab
+    // Apply per-channel gamma correction: output = input^(1 / gamma)
     let final_r = pow(max(color.r, 0.0f), 1.0f / g_r);
     let final_g = pow(max(color.g, 0.0f), 1.0f / g_g);
     let final_b = pow(max(color.b, 0.0f), 1.0f / g_b);
 
     let final_rgb = vec3<f32>(final_r, final_g, final_b);
 
-    // Alpha-Kanal beibehalten und in Zieltextur schreiben
+    // Preserve original alpha and write result to destination texture
     textureStore(dst_tex, vec2<i32>(id.xy), vec4<f32>(final_rgb, color.a));
 }
