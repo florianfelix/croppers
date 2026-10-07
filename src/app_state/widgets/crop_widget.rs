@@ -218,11 +218,7 @@ impl Widget for WidgetCroppers {
         }
 
         state.image_rect = self.new_image_rect(&self.canvas_rect, &self.image_size);
-        constrain_crop_rect(
-            state.image_rect,
-            &mut state.crop_rect,
-            state.aspect_ratio,
-        );
+        constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
 
         let handle_radius = 60.0;
         let pointer_pos = ui.input(|i| i.pointer.latest_pos().unwrap_or(Pos2::ZERO));
@@ -273,11 +269,7 @@ impl Widget for WidgetCroppers {
             }
         }
 
-        constrain_crop_rect(
-            state.image_rect,
-            &mut state.crop_rect,
-            state.aspect_ratio,
-        );
+        constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
 
         // Hover & drag cursor feedback
         let active_target = if response.dragged() {
