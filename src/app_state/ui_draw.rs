@@ -274,37 +274,41 @@ impl AppState {
 
                 let len = self.effect_stack.effects.len();
 
-                for (idx, container) in &mut self.effect_stack.effects.iter_mut().enumerate() {
-                    ui.horizontal(|ui| {
-                        let mut is_enabled = container.enabled();
-                        if ui.checkbox(&mut is_enabled, container.name()).changed() {
-                            container.set_enabled(is_enabled);
-                            self.effect_stack.needs_rebuild = true;
-                            self.needs_compute = true;
-                            request_redraw = true;
-                        }
-                        if ui.button("X").clicked() {
-                            remove_idx = Some(idx);
-                            self.effect_stack.needs_rebuild = true;
-                            self.needs_compute = true;
-                            request_redraw = true;
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        for (idx, container) in &mut self.effect_stack.effects.iter_mut().enumerate() {
+                            ui.horizontal(|ui| {
+                                let mut is_enabled = container.enabled();
+                                if ui.checkbox(&mut is_enabled, container.name()).changed() {
+                                    container.set_enabled(is_enabled);
+                                    self.effect_stack.needs_rebuild = true;
+                                    self.needs_compute = true;
+                                    request_redraw = true;
+                                }
+                                if ui.button("X").clicked() {
+                                    remove_idx = Some(idx);
+                                    self.effect_stack.needs_rebuild = true;
+                                    self.needs_compute = true;
+                                    request_redraw = true;
+                                }
+                            });
+
+                            if idx > 0 && ui.small_button("▲").clicked() {
+                                swap_index = Some((idx, idx - 1));
+                            }
+                            if idx + 1 < len && ui.small_button("▼").clicked() {
+                                swap_index = Some((idx, idx + 1));
+                            }
+
+                            if container.enabled() {
+                                if container.draw_ui(ui) {
+                                    self.needs_compute = true;
+                                }
+                            }
+                            ui.separator();
                         }
                     });
-
-                    if idx > 0 && ui.small_button("▲").clicked() {
-                        swap_index = Some((idx, idx - 1));
-                    }
-                    if idx + 1 < len && ui.small_button("▼").clicked() {
-                        swap_index = Some((idx, idx + 1));
-                    }
-
-                    if container.enabled() {
-                        if container.draw_ui(ui) {
-                            self.needs_compute = true;
-                        }
-                    }
-                    ui.separator();
-                }
 
                 if request_redraw {
                     self.request_redraw_wake();
