@@ -234,7 +234,7 @@ impl AppState {
     pub fn crop_toggle(&mut self) {
         self.ui_state.crop.enabled = !self.ui_state.crop.enabled;
     }
-    pub fn set_crop_toggle(&mut self, enabled: bool) {
+    pub fn set_crop_enabled(&mut self, enabled: bool) {
         self.ui_state.crop.enabled = enabled;
     }
 
