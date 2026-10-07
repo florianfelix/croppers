@@ -50,7 +50,7 @@ impl Croppers {
         utils::init_logging();
         let cli = utils::Cli::parse();
 
-        let config = CroppersConfig::load().unwrap();
+        let config = CroppersConfig::load().unwrap_or_default();
 
         info!("{:#?}", cli);
         Self {
