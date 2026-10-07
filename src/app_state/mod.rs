@@ -16,6 +16,7 @@ use crate::{
         crop_renderer::{CropJob, CropResult},
         effect_pipeline_process::EffectsResult,
     },
+    render_state::RenderState,
     utils::{CroppersConfig, DimHelper},
 };
 
@@ -64,6 +65,7 @@ impl AppState {
         if let Some(path) = cli.path {
             app_state.try_open_file(&path);
         };
+
         app_state.apply_startup_config();
         app_state
     }
@@ -82,6 +84,14 @@ impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn update_before_reddraw(&mut self) -> bool {
         let mut request_redraw = false;
+
+        if !self.source.is_some() {
+            if let Some((ref device, ref queue)) = self.gpu {
+                let (texture, view) =
+                    RenderState::create_dummy_texture(device.clone(), queue.clone());
+                self.texture_vault.set_srcimg(texture, view, [1, 1]);
+            }
+        }
 
         if self.source_dirty {
             if let Some(ref _source) = self.source {
