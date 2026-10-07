@@ -27,8 +27,8 @@ pub struct AsciiUniforms {
     pub mult: f32,
     pub glyph_selection: i32,
     pub scale_x: f32,
-    pub _padding1: f32,
-    pub _padding2: f32,
+    pub rain_factor: f32,
+    pub rain_length: f32,
 }
 
 impl Default for AsciiUniforms {
@@ -40,8 +40,8 @@ impl Default for AsciiUniforms {
             mult: 0.0,
             glyph_selection: 0,
             scale_x: 1.0,
-            _padding1: 0.0,
-            _padding2: 0.0,
+            rain_factor: 0.0,
+            rain_length: 20.0,
         }
     }
 }
@@ -83,6 +83,18 @@ impl EffectContainerObject for AsciiContainer {
                 .changed();
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.scale_x, 0.0..=2.0).text("scale x"))
+                .changed();
+            changed |= ui
+                .add(
+                    egui::Slider::new(&mut self.uniforms.rain_factor, 0.0..=1.0)
+                        .text("rain factor"),
+                )
+                .changed();
+            changed |= ui
+                .add(
+                    egui::Slider::new(&mut self.uniforms.rain_length, 1.0..=100.0)
+                        .text("rain length"),
+                )
                 .changed();
         });
         changed

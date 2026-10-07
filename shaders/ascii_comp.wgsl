@@ -5,13 +5,18 @@ struct AsciiUniforms {
     mult: f32,           // Multiplier for background image brightness
     glyph_selection: i32,
     scale_x: f32,
-    rain_amount: f32,
-    rain_length_random: f32,
+    rain_factor: f32,    // 0.0 to 1.0: fraction of columns converted into rain
+    rain_length: f32,    // Length of the rain trail in grid rows
 };
 
 @group(0) @binding(0) var src_tex: texture_2d<f32>;
 @group(0) @binding(1) var dst_tex: texture_storage_2d<rgba8unorm, write>;
 @group(0) @binding(2) var<uniform> uniforms: AsciiUniforms;
+
+// 1D pseudo-random hash function returning values in [0.0, 1.0].
+fn hash11(p: f32) -> f32 {
+    return fract(sin(p * 127.1) * 43758.5453123);
+}
 
 // 8x8 font bitmap glyph table encoded into pairs of 32-bit integers
 const MASTER_GLYPHS = array<vec2<u32>, 16>(
@@ -294,11 +299,30 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         }
     }
 
+    // Determine glyph brightness: modulate columns by Matrix digital rain trail if enabled
+    var glyphBrightness = 1.0;
+    let colHash = hash11(cellIndices.x * 41.17 + 0.5);
+    if (uniforms.rain_factor > 0.0 && colHash < uniforms.rain_factor) {
+        let length = max(uniforms.rain_length, 1.0);
+        let colVar = hash11(cellIndices.x * 23.7 + 1.9);
+        let period = max(length * (1.3 + colVar * 0.7), length + 3.0);
+        let phase = hash11(cellIndices.x * 91.3 + 7.7) * period;
+        let posInCycle = (cellIndices.y + phase) % period;
+
+        if (posInCycle < length) {
+            let trail = 1.0 - (posInCycle / length);
+            let headBoost = select(1.0, 1.4, posInCycle < 1.0);
+            glyphBrightness = pow(trail, 1.6) * headBoost;
+        } else {
+            glyphBrightness = 0.0;
+        }
+    }
+
     // Blend background image with cell character color based on font bitmask
     var finalColor = textureLoad(src_tex, vec2<i32>(id.xy), 0);
     finalColor = finalColor * uniforms.mult;
     if (bitState == 1u) {
-        finalColor = vec4<f32>(cellColor.rgb, 1.0);
+        finalColor = vec4<f32>(cellColor.rgb * glyphBrightness, 1.0);
     }
 
     textureStore(dst_tex, vec2<i32>(id.xy), finalColor);
