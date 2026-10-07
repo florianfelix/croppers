@@ -24,7 +24,7 @@ impl AppState {
         };
 
         self.texture_vault.set_srcimg(texture, view, dims);
-        self.texture_vault.effect_view = self.texture_vault.srcimg_texture_view.clone();
+        self.texture_vault.effect = self.texture_vault.srcimg.clone();
         self.texture_vault.clear_cropped();
         self.needs_compute = true;
     }

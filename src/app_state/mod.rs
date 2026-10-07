@@ -106,12 +106,12 @@ impl AppState {
             request_redraw = true
         }
         if (self.needs_compute || self.effect_stack.needs_rebuild) && !self.is_computing {
-            let res = match self.texture_vault.cropped_texture_view.is_some() {
+            let res = match self.texture_vault.cropped.texture_view.is_some() {
                 true => {
                     info!("Sending cropped view to effects");
-                    self.get_cropped_view()
+                    self.texture_vault.get_cropped_view()
                 }
-                false => self.get_srcimg_view(),
+                false => self.texture_vault.get_srcimg_view(),
             };
 
             if let Some((view, dims)) = res {
@@ -139,8 +139,7 @@ impl AppState {
         match compute_result {
             ComputeResult::FinishedEffects(EffectsResult::Finished((view, dims))) => {
                 info!("Received Effects {:?}", dims);
-                self.texture_vault.effect_view = Some(view);
-                self.texture_vault.effect_dims = dims;
+                self.texture_vault.set_effect_view(view, dims);
                 self.is_computing = false;
                 self.effect_stack.needs_rebuild = false;
             }
@@ -179,10 +178,11 @@ impl AppState {
             return;
         }
         info!("Sending Crop Job");
-        let imgdim = self.texture_vault.srcimg_dims;
+        let imgdim = self.texture_vault.srcimg.dims;
         let view = self
             .texture_vault
-            .srcimg_texture_view
+            .srcimg
+            .texture_view
             .as_ref()
             .unwrap()
             .clone();

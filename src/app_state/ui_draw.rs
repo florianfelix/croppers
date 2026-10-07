@@ -26,7 +26,7 @@ impl AppState {
                     .set_canvas_rect(ui.available_rect_before_wrap());
 
                 if self.ui_state.crop.enabled {
-                    let img_size = self.texture_vault.srcimg_dims;
+                    let img_size = self.texture_vault.srcimg.dims;
                     let image_size = (img_size[0] as f32, img_size[1] as f32);
                     let aspect_ratio = self.ui_state.crop.aspect_ratio(img_size);
                     let test = WidgetCroppers::new(
@@ -114,7 +114,7 @@ impl AppState {
                         _ => {}
                     }
 
-                    let src_dims = self.texture_vault.srcimg_dims;
+                    let src_dims = self.texture_vault.srcimg.dims;
                     if src_dims[0] > 0 && src_dims[1] > 0 {
                         let uv = self.ui_state.crop.uv_rect;
                         let crop_px_w = ((src_dims[0] as f32) * uv.width()).round().max(1.0) as u32;

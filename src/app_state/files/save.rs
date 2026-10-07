@@ -6,7 +6,7 @@ use crate::app_state::AppState;
 impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn save_effect_texture(&mut self, increment: bool) {
-        if self.texture_vault.effect_view.is_some() {
+        if self.texture_vault.effect.texture_view.is_some() {
             if let Some(ref source) = self.source {
                 if let Ok(ref current) = source.path.canonicalize() {
                     let path_for_saving = if increment {
