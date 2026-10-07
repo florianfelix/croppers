@@ -3,7 +3,7 @@ use tracing::info;
 use crate::app_state::{
     AppState,
     effect_stack::{EffectContainerObject, EffectSelector},
-    widgets::crop_widget::WidgetCroppers,
+    widgets::{CropMode, crop_widget::WidgetCroppers},
 };
 
 impl AppState {
@@ -25,25 +25,20 @@ impl AppState {
                     .set_canvas_rect(ui.available_rect_before_wrap());
 
                 if self.ui_state.crop.enabled {
-                    // if let Some(img_size) = self.texture_vault.image_size {
                     let img_size = self.texture_vault.srcimg_dims;
-                    let desired = [
-                        self.ui_state.crop.crop_width,
-                        self.ui_state.crop.crop_height,
-                    ];
                     let image_size = (img_size[0] as f32, img_size[1] as f32);
+                    let aspect_ratio = self.ui_state.crop.aspect_ratio(img_size);
                     let test = WidgetCroppers::new(
                         &idname,
                         ui.available_rect_before_wrap(),
                         image_size,
-                        desired,
+                        aspect_ratio,
                     );
 
                     ui.add(test);
                     if let Some(uv_rect) = WidgetCroppers::get_uv_crop_rect(ui, &idname) {
                         self.ui_state.crop.uv_rect = uv_rect;
                     }
-                    // }
                 }
             });
     }
@@ -67,22 +62,78 @@ impl AppState {
                 ui.separator();
                 ui.indent("Crop", |ui| {
                     ui.checkbox(&mut self.ui_state.crop.enabled, "Crop");
-                    ui.horizontal(|ui| {
-                        ui.add(
-                            egui::DragValue::new(&mut self.ui_state.crop.crop_width)
-                                .range(1..=6000)
-                                .speed(10),
-                        );
-                        ui.label("desired width");
-                    });
-                    ui.horizontal(|ui| {
-                        ui.add(
-                            egui::DragValue::new(&mut self.ui_state.crop.crop_height)
-                                .range(1..=6000)
-                                .speed(10),
-                        );
-                        ui.label("desired height");
-                    });
+
+                    egui::ComboBox::from_label("Mode")
+                        .selected_text(self.ui_state.crop.mode.label())
+                        .show_ui(ui, |ui| {
+                            for mode in CropMode::ALL {
+                                ui.selectable_value(
+                                    &mut self.ui_state.crop.mode,
+                                    mode,
+                                    mode.label(),
+                                );
+                            }
+                        });
+
+                    match self.ui_state.crop.mode {
+                        CropMode::FixedDimensions => {
+                            ui.horizontal(|ui| {
+                                ui.add(
+                                    egui::DragValue::new(&mut self.ui_state.crop.crop_width)
+                                        .range(1..=10000)
+                                        .speed(10),
+                                );
+                                ui.label("target width");
+                            });
+                            ui.horizontal(|ui| {
+                                ui.add(
+                                    egui::DragValue::new(&mut self.ui_state.crop.crop_height)
+                                        .range(1..=10000)
+                                        .speed(10),
+                                );
+                                ui.label("target height");
+                            });
+                        }
+                        CropMode::CustomRatio => {
+                            ui.horizontal(|ui| {
+                                ui.add(
+                                    egui::DragValue::new(&mut self.ui_state.crop.custom_ratio[0])
+                                        .range(1..=100)
+                                        .speed(1),
+                                );
+                                ui.label(":");
+                                ui.add(
+                                    egui::DragValue::new(&mut self.ui_state.crop.custom_ratio[1])
+                                        .range(1..=100)
+                                        .speed(1),
+                                );
+                                ui.label("ratio (W:H)");
+                            });
+                        }
+                        _ => {}
+                    }
+
+                    let src_dims = self.texture_vault.srcimg_dims;
+                    if src_dims[0] > 0 && src_dims[1] > 0 {
+                        let uv = self.ui_state.crop.uv_rect;
+                        let crop_px_w = ((src_dims[0] as f32) * uv.width()).round().max(1.0) as u32;
+                        let crop_px_h =
+                            ((src_dims[1] as f32) * uv.height()).round().max(1.0) as u32;
+
+                        if self.ui_state.crop.mode == CropMode::FixedDimensions {
+                            ui.label(format!("Crop area: {} × {} px", crop_px_w, crop_px_h));
+                            ui.label(format!(
+                                "Output: {} × {} px (scaled)",
+                                self.ui_state.crop.crop_width, self.ui_state.crop.crop_height
+                            ));
+                        } else {
+                            ui.label(format!("Output: {} × {} px", crop_px_w, crop_px_h));
+                        }
+                    }
+
+                    if ui.button("Apply Crop (Enter)").clicked() {
+                        self.send_crop_job();
+                    }
                 });
 
                 ui.separator();

@@ -265,13 +265,11 @@ impl AppState {
             .as_ref()
             .unwrap()
             .clone();
+        let target_dimensions = self.ui_state.crop.target_dimensions(imgdim);
         let job = CropJob {
             src_view: view,
             src_dimensions: imgdim,
-            target_dimensions: [
-                self.ui_state.crop.crop_width,
-                self.ui_state.crop.crop_height,
-            ],
+            target_dimensions,
             uv_rect: self.ui_state.crop.uv_rect,
         };
         let _ = self.tx_job.send(ComputeRequest::CropJob(job));
