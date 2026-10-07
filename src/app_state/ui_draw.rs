@@ -29,14 +29,14 @@ impl AppState {
                     let img_size = self.texture_vault.srcimg.dims;
                     let image_size = (img_size[0] as f32, img_size[1] as f32);
                     let aspect_ratio = self.ui_state.crop.aspect_ratio(img_size);
-                    let test = WidgetCroppers::new(
+                    let crop_widget = WidgetCroppers::new(
                         &idname,
                         ui.available_rect_before_wrap(),
                         image_size,
                         aspect_ratio,
                     );
 
-                    ui.add(test);
+                    ui.add(crop_widget);
                     if let Some(uv_rect) = WidgetCroppers::get_uv_crop_rect(ui, &idname) {
                         self.ui_state.crop.uv_rect = uv_rect;
                     }
