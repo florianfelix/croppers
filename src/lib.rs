@@ -50,7 +50,7 @@ impl Croppers {
         utils::init_logging();
         let cli = utils::Cli::parse();
 
-        let config = CroppersConfig::load().unwrap_or_default();
+        let config = CroppersConfig::load(&cli).unwrap_or_default();
 
         info!("{:#?}", cli);
         Self {
@@ -79,9 +79,22 @@ impl ApplicationHandler<Message> for Croppers {
             return;
         };
 
+        let fullscreen = if self.app_state.config.fullscreen {
+            // If primary monitor is None, gracefully fall back to the first monitor found
+            let monitor = event_loop
+                .primary_monitor()
+                .or_else(|| event_loop.available_monitors().next());
+
+            monitor.map(|m| winit::window::Fullscreen::Borderless(Some(m)))
+        } else {
+            None
+        };
+
         let window_attributes = Window::default_attributes()
-            .with_title("GPU Image Viewer")
-            .with_name("croppers", "");
+            .with_title("Croppers")
+            .with_fullscreen(fullscreen)
+            .with_name(&self.app_state.config.app_id, "de.project.croppers")
+            .with_visible(false);
         let window = Arc::new(
             event_loop
                 .create_window(window_attributes)
@@ -103,6 +116,7 @@ impl ApplicationHandler<Message> for Croppers {
 
         self.app_state.set_srcimg_texture_from_source();
 
+        renderer.window.set_visible(true);
         self.renderer = Some(renderer);
     }
     fn exiting(&mut self, _event_loop: &ActiveEventLoop) {

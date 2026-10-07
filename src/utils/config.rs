@@ -1,7 +1,4 @@
-use std::{
-    fs,
-    io::{Read, Write},
-};
+use std::{fs, io::Write};
 
 use crate::app_state::widgets::CropMode;
 use anyhow::Result;
@@ -12,6 +9,11 @@ use tracing::info;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CroppersConfig {
+    #[serde(skip)]
+    pub app_id: String,
+    #[serde(skip)]
+    pub fullscreen: bool,
+
     pub startup_crop: StartupCrop,
     pub startup_ui: StartupUi,
     pub startup_effects: StartupEffects,
@@ -19,6 +21,8 @@ pub struct CroppersConfig {
 impl Default for CroppersConfig {
     fn default() -> Self {
         Self {
+            app_id: "croppers".to_string(),
+            fullscreen: false,
             startup_crop: StartupCrop::default(),
             startup_ui: StartupUi::default(),
             startup_effects: StartupEffects::default(),
@@ -67,23 +71,27 @@ impl Default for StartupCrop {
 }
 
 impl CroppersConfig {
-    pub fn load() -> Result<Self> {
-        if let Some(proj_dirs) = ProjectDirs::from("de", "croppers", "croppers") {
+    pub fn load(cli: &super::Cli) -> Result<Self> {
+        let mut conf = if let Some(proj_dirs) = ProjectDirs::from("de", &cli.app_id, &cli.app_id) {
             let confdir = proj_dirs.config_dir();
-            if !confdir.exists() {
-                fs::create_dir_all(confdir)?;
-            }
             let path = confdir.join("conf.toml");
             if path.exists() {
-                let mut file = fs::OpenOptions::new().read(true).open(path)?;
-                let mut content = String::new();
-                file.read_to_string(&mut content)?;
-                let conf = toml::from_str(&content)?;
-                return Ok(conf);
+                let content = fs::read_to_string(&path)?;
+                toml::from_str::<Self>(&content)?
+            } else {
+                info!("No config found. Using defaults");
+                Self::default()
             }
-        }
-        info!("No config found. Using defaults");
-        Ok(Self::default())
+        } else {
+            info!("No config found. Using defaults");
+            Self::default()
+        };
+
+        // Merge runtime CLI value
+        conf.app_id = cli.app_id.clone();
+        conf.fullscreen = cli.fullscreen;
+
+        Ok(conf)
     }
 
     pub fn save_defaults() -> Result<()> {
