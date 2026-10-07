@@ -14,9 +14,15 @@ enum DragTarget {
     TopRight,
     BottomLeft,
     BottomRight,
+    DrawNew(Pos2),
 }
 impl DragTarget {
-    fn current_target(crop_rect: &Rect, handle_radius: f32, pointer_pos: Pos2) -> Self {
+    fn current_target(
+        crop_rect: &Rect,
+        handle_radius: f32,
+        pointer_pos: Pos2,
+        image_rect: Rect,
+    ) -> Self {
         if crop_rect
             .top_left_handle(handle_radius)
             .contains(pointer_pos)
@@ -52,7 +58,11 @@ impl DragTarget {
         else if crop_rect.shrink(handle_radius / 2.).contains(pointer_pos) {
             DragTarget::Center
         } else {
-            DragTarget::None
+            let start = Pos2 {
+                x: pointer_pos.x.clamp(image_rect.min.x, image_rect.max.x),
+                y: pointer_pos.y.clamp(image_rect.min.y, image_rect.max.y),
+            };
+            DragTarget::DrawNew(start)
         }
     }
 }
@@ -208,24 +218,43 @@ impl Widget for WidgetCroppers {
         }
 
         state.image_rect = self.new_image_rect(&self.canvas_rect, &self.image_size);
-        constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
+        constrain_crop_rect(
+            state.image_rect,
+            &mut state.crop_rect,
+            state.aspect_ratio,
+        );
 
-        let painter = ui.painter();
         let handle_radius = 60.0;
-
         let pointer_pos = ui.input(|i| i.pointer.latest_pos().unwrap_or(Pos2::ZERO));
         let delta = ui.input(|i| i.pointer.delta());
 
         if response.dragged() {
             if response.drag_started() {
-                state.drag_target =
-                    DragTarget::current_target(&state.crop_rect, handle_radius, pointer_pos);
+                state.drag_target = DragTarget::current_target(
+                    &state.crop_rect,
+                    handle_radius,
+                    pointer_pos,
+                    state.image_rect,
+                );
             }
-            if let Some(target_aspect) = state.aspect_ratio {
-                resize_constrained(&mut state, delta, target_aspect);
-            } else {
-                resize_freeform(&mut state, delta);
+            match state.drag_target {
+                DragTarget::DrawNew(start_pos) => {
+                    if pointer_pos.distance(start_pos) >= 5.0 {
+                        draw_new_rect(&mut state, start_pos, pointer_pos);
+                    }
+                }
+                _ => {
+                    if let Some(target_aspect) = state.aspect_ratio {
+                        resize_constrained(&mut state, delta, target_aspect);
+                    } else {
+                        resize_freeform(&mut state, delta);
+                    }
+                }
             }
+        }
+
+        if response.drag_stopped() {
+            state.drag_target = DragTarget::None;
         }
 
         if response.double_clicked() {
@@ -244,10 +273,39 @@ impl Widget for WidgetCroppers {
             }
         }
 
-        constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
+        constrain_crop_rect(
+            state.image_rect,
+            &mut state.crop_rect,
+            state.aspect_ratio,
+        );
+
+        // Hover & drag cursor feedback
+        let active_target = if response.dragged() {
+            state.drag_target
+        } else {
+            DragTarget::current_target(
+                &state.crop_rect,
+                handle_radius,
+                pointer_pos,
+                state.image_rect,
+            )
+        };
+        let cursor = match active_target {
+            DragTarget::Center => egui::CursorIcon::Move,
+            DragTarget::Top | DragTarget::Bottom => egui::CursorIcon::ResizeVertical,
+            DragTarget::Left | DragTarget::Right => egui::CursorIcon::ResizeHorizontal,
+            DragTarget::TopLeft | DragTarget::BottomRight => egui::CursorIcon::ResizeNwSe,
+            DragTarget::TopRight | DragTarget::BottomLeft => egui::CursorIcon::ResizeNeSw,
+            DragTarget::DrawNew(_) => egui::CursorIcon::Crosshair,
+            DragTarget::None => egui::CursorIcon::Default,
+        };
+        if response.hovered() || response.dragged() {
+            ui.ctx().set_cursor_icon(cursor);
+        }
 
         ui.data_mut(|d| d.insert_persisted(self.id, state));
 
+        let painter = ui.painter();
         painter.rect_stroke(
             state.crop_rect,
             0.0,
@@ -292,6 +350,69 @@ impl Widget for WidgetCroppers {
         }
 
         response
+    }
+}
+
+fn draw_new_rect(state: &mut WidgetCroppersState, start_pos: Pos2, current_pos: Pos2) {
+    let img = state.image_rect;
+    let dx = current_pos.x - start_pos.x;
+    let dy = current_pos.y - start_pos.y;
+
+    if let Some(target_aspect) = state.aspect_ratio {
+        let sign_x = if dx >= 0.0 { 1.0 } else { -1.0 };
+        let sign_y = if dy >= 0.0 { 1.0 } else { -1.0 };
+
+        let max_w_avail = if sign_x > 0.0 {
+            (img.max.x - start_pos.x).max(0.0)
+        } else {
+            (start_pos.x - img.min.x).max(0.0)
+        };
+        let max_h_avail = if sign_y > 0.0 {
+            (img.max.y - start_pos.y).max(0.0)
+        } else {
+            (start_pos.y - img.min.y).max(0.0)
+        };
+
+        let max_w = max_w_avail.min(max_h_avail * target_aspect);
+        if max_w <= 0.0 {
+            return;
+        }
+
+        let desired_w_from_x = dx.abs();
+        let desired_w_from_y = dy.abs() * target_aspect;
+        let desired_w = desired_w_from_x.max(desired_w_from_y);
+
+        let min_w = 20.0_f32.min(max_w);
+        let w = desired_w.clamp(min_w, max_w);
+        let h = w / target_aspect;
+
+        let end_x = start_pos.x + sign_x * w;
+        let end_y = start_pos.y + sign_y * h;
+
+        state.crop_rect = Rect::from_two_pos(start_pos, Pos2::new(end_x, end_y));
+    } else {
+        let curr = Pos2 {
+            x: current_pos.x.clamp(img.min.x, img.max.x),
+            y: current_pos.y.clamp(img.min.y, img.max.y),
+        };
+        let mut r = Rect::from_two_pos(start_pos, curr);
+        if r.width() < 20.0 {
+            let needed = 20.0 - r.width();
+            if curr.x >= start_pos.x {
+                r.max.x = (r.max.x + needed).min(img.max.x);
+            } else {
+                r.min.x = (r.min.x - needed).max(img.min.x);
+            }
+        }
+        if r.height() < 20.0 {
+            let needed = 20.0 - r.height();
+            if curr.y >= start_pos.y {
+                r.max.y = (r.max.y + needed).min(img.max.y);
+            } else {
+                r.min.y = (r.min.y - needed).max(img.min.y);
+            }
+        }
+        state.crop_rect = r;
     }
 }
 
@@ -495,6 +616,7 @@ fn resize_freeform(state: &mut WidgetCroppersState, delta: Vec2) {
                 .min(img.max.y)
                 .max(state.crop_rect.min.y + min_size);
         }
+        DrawNew(_) => {}
     }
 }
 
@@ -561,5 +683,6 @@ fn resize_constrained(state: &mut WidgetCroppersState, delta: Vec2, target_aspec
             let center = state.crop_rect.center();
             state.crop_rect = Rect::from_center_size(center, Vec2::new(new_width, new_height));
         }
+        DrawNew(_) => {}
     }
 }
