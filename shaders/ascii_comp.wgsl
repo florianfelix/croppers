@@ -3,6 +3,10 @@ struct AsciiUniforms {
     charset: u32,        // Character set selector: 0, 1, or 2
     inset: f32,          // Inset padding factor: 0.0 (full block) to 0.45 (small glyph)
     mult: f32,           // Multiplier for background image brightness
+    glyph_selection: i32,
+    _padding_1: f32,
+    _padding_2: f32,
+    _padding_3: f32,
 };
 
 @group(0) @binding(0) var src_tex: texture_2d<f32>;
