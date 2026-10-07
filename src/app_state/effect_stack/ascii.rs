@@ -25,6 +25,10 @@ pub struct AsciiUniforms {
     pub charset: u32,
     pub inset: f32,
     pub mult: f32,
+    pub glyph_selection: i32,
+    pub scale_x: f32,
+    pub _padding1: f32,
+    pub _padding2: f32,
 }
 
 impl Default for AsciiUniforms {
@@ -34,6 +38,10 @@ impl Default for AsciiUniforms {
             charset: 0,
             inset: 0.1,
             mult: 0.0,
+            glyph_selection: 0,
+            scale_x: 1.0,
+            _padding1: 0.0,
+            _padding2: 0.0,
         }
     }
 }
@@ -69,6 +77,12 @@ impl EffectContainerObject for AsciiContainer {
                 .changed();
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.mult, 0.0..=1.0).text("original bg"))
+                .changed();
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).text("glyph set"))
+                .changed();
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.scale_x, 0.0..=2.0).text("scale x"))
                 .changed();
         });
         changed

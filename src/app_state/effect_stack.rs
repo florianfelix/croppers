@@ -64,7 +64,7 @@ pub struct EffectStack {
 
 impl Default for EffectStack {
     fn default() -> Self {
-        let effects = vec![EffectSelector::Glitch.into()];
+        let effects = vec![EffectSelector::Ascii.into()];
         let mut result = Self {
             effects,
             needs_rebuild: true,
