@@ -277,7 +277,9 @@ impl AppState {
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
-                        for (idx, container) in &mut self.effect_stack.effects.iter_mut().enumerate() {
+                        for (idx, container) in
+                            &mut self.effect_stack.effects.iter_mut().enumerate()
+                        {
                             ui.horizontal(|ui| {
                                 let mut is_enabled = container.enabled();
                                 if ui.checkbox(&mut is_enabled, container.name()).changed() {
