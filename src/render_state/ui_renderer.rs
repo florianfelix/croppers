@@ -1,6 +1,8 @@
 use crate::app_state::AppState;
 use egui::{FontData, FontDefinitions, FontFamily};
 use std::sync::Arc;
+#[allow(unused)]
+use tracing::info;
 use wgpu::{Device, Queue, SurfaceConfiguration};
 use winit::window::Window;
 
