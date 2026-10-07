@@ -16,12 +16,13 @@ use crate::{
         crop_renderer::{CropJob, CropResult},
         effect_pipeline_process::EffectsResult,
     },
-    utils::DimHelper,
+    utils::{CroppersConfig, DimHelper},
 };
 
-mod widgets;
+pub mod widgets;
 
 pub struct AppState {
+    pub config: CroppersConfig,
     pub gpu: Option<(Arc<wgpu::Device>, Arc<wgpu::Queue>)>,
     pub source: Option<ImageSource>,
     pub source_dirty: bool,
@@ -43,9 +44,10 @@ pub mod ui_draw;
 pub mod ui_state;
 
 impl AppState {
-    pub fn new(cli: crate::utils::Cli) -> Self {
+    pub fn new(cli: crate::utils::Cli, config: CroppersConfig) -> Self {
         let (tx_job, rx_job) = crossbeam_channel::bounded::<ComputeRequest>(1);
         let mut app_state = Self {
+            config,
             gpu: None,
             source: None,
             source_dirty: false,
@@ -62,7 +64,19 @@ impl AppState {
         if let Some(path) = cli.path {
             app_state.try_open_file(&path);
         };
+        app_state.apply_startup_config();
         app_state
+    }
+
+    pub fn apply_startup_config(&mut self) {
+        self.ui_state.crop.enabled = self.config.startup_crop.enabled;
+        self.ui_state.crop.mode = self.config.startup_crop.default_crop_mode;
+        self.ui_state.crop.crop_width = self.config.startup_crop.fixed_crop_width;
+        self.ui_state.crop.crop_height = self.config.startup_crop.fixed_crop_height;
+
+        self.ui_state.show_panel = self.config.startup_ui.show_panel;
+
+        self.effect_stack.enabled = self.config.startup_effects.enabled;
     }
 
     #[tracing::instrument(skip(self))]
@@ -245,6 +259,9 @@ impl AppState {
 
     pub fn crop_toggle(&mut self) {
         self.ui_state.crop.enabled = !self.ui_state.crop.enabled;
+    }
+    pub fn set_crop_toggle(&mut self, enabled: bool) {
+        self.ui_state.crop.enabled = enabled;
     }
 
     pub fn effects_toggle(&mut self) {

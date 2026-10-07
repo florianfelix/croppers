@@ -2,7 +2,8 @@
     clippy::new_without_default,
     clippy::collapsible_match,
     clippy::collapsible_if,
-    clippy::single_match
+    clippy::single_match,
+    clippy::derivable_impls
 )]
 // #![allow(unused)]
 use std::{path::PathBuf, sync::Arc};
@@ -21,7 +22,9 @@ use winit::{
     window::Window,
 };
 
-use crate::{app_state::AppState, compute::ComputeResult, render_state::RenderState};
+use crate::{
+    app_state::AppState, compute::ComputeResult, render_state::RenderState, utils::CroppersConfig,
+};
 
 pub mod app_state;
 pub mod compute;
@@ -46,10 +49,13 @@ impl Croppers {
     pub fn new() -> Self {
         utils::init_logging();
         let cli = utils::Cli::parse();
+
+        let config = CroppersConfig::load().unwrap();
+
         info!("{:#?}", cli);
         Self {
             renderer: None,
-            app_state: AppState::new(cli),
+            app_state: AppState::new(cli, config),
             proxy: None,
             modifiers: ModifiersState::default(),
         }

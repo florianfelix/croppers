@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 pub mod crop_widget;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CropMode {
     Freeform,
     FixedDimensions,
