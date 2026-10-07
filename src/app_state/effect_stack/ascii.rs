@@ -92,7 +92,7 @@ impl EffectContainerObject for AsciiContainer {
                 .changed();
             changed |= ui
                 .add(
-                    egui::Slider::new(&mut self.uniforms.rain_length, 1.0..=100.0)
+                    egui::Slider::new(&mut self.uniforms.rain_length, 1.0..=200.0)
                         .text("rain length"),
                 )
                 .changed();
