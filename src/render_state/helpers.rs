@@ -50,7 +50,7 @@ impl RenderState {
     pub fn create_dummy_texture(
         device: Arc<wgpu::Device>,
         queue: Arc<wgpu::Queue>,
-    ) -> (Arc<wgpu::Texture>, Arc<wgpu::TextureView>) {
+    ) -> (Arc<wgpu::Texture>, Arc<wgpu::TextureView>, [u32; 2]) {
         let texture_size = wgpu::Extent3d {
             width: 1,
             height: 1,
@@ -85,6 +85,6 @@ impl RenderState {
 
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        (Arc::new(texture), Arc::new(texture_view))
+        (Arc::new(texture), Arc::new(texture_view), [1, 1])
     }
 }

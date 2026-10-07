@@ -102,7 +102,7 @@ impl ApplicationHandler<Message> for Croppers {
         );
         let window_clone = window.clone();
 
-        let renderer = pollster::block_on(RenderState::new(window_clone));
+        let renderer = pollster::block_on(RenderState::new(window_clone, &mut self.app_state));
 
         let device = renderer.device.clone();
         let queue = renderer.queue.clone();

@@ -4,7 +4,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-use tracing::info;
+use tracing::{error, info};
 
 use crate::app_state::AppState;
 
@@ -22,6 +22,7 @@ impl std::fmt::Debug for ImageSource {
 }
 
 impl ImageSource {
+    #[tracing::instrument]
     pub fn from_path(path: &PathBuf) -> Result<Self> {
         let img = ImageReader::open(path)?.decode()?;
         let name = match path.file_name() {
@@ -30,6 +31,13 @@ impl ImageSource {
         };
         let rgba = img.to_rgba8();
         let (width, height) = rgba.dimensions();
+        // if width == 0 || height == 0 {
+        //     return Err(anyhow::anyhow!("Image dimensions are zero"));
+        // }
+        // if width > 8192 || height > 8192 {
+        //     return Err(anyhow::anyhow!("Image dimensions too large"));
+        // }
+
         let image_size = (width, height);
         Ok(Self {
             path: path.to_owned(),
@@ -80,9 +88,12 @@ impl AppState {
             let abs_folder = abspath.parent().map(|p| p.to_owned());
             self.folder = abs_folder
         }
-        if let Ok(source) = ImageSource::from_path(path) {
-            info!("Setting new Source Image {:?}", path);
-            self.source = Some(source);
+        match ImageSource::from_path(path) {
+            Ok(source) => {
+                info!("Setting new Source Image {:?}", path);
+                self.source = Some(source);
+            }
+            Err(e) => error!("Failed to load image {e}"),
         }
     }
 

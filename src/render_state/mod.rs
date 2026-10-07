@@ -21,11 +21,11 @@ pub struct RenderState {
     pub adapter: wgpu::Adapter,
     pub ui_renderer: UiRenderer,
     pub canvas_renderer: CanvasRenderer,
-    pub dummy: (Arc<wgpu::Texture>, Arc<wgpu::TextureView>),
+    pub dummy: (Arc<wgpu::Texture>, Arc<wgpu::TextureView>, [u32; 2]),
 }
 
 impl RenderState {
-    pub async fn new(window: Arc<Window>) -> Self {
+    pub async fn new(window: Arc<Window>, app_state: &mut AppState) -> Self {
         let size = window.inner_size();
         let instance = wgpu::Instance::default();
         let surface = instance.create_surface(window.clone()).unwrap();
@@ -71,8 +71,11 @@ impl RenderState {
         };
         surface.configure(&device, &config);
 
-        let (dummy_texture, dummy_texture_view) =
+        let (dummy_texture, dummy_texture_view, dims) =
             Self::create_dummy_texture(device.clone(), queue.clone());
+        app_state
+            .texture_vault
+            .set_srcimg(dummy_texture.clone(), dummy_texture_view.clone(), dims);
 
         let ui_renderer = UiRenderer::new(&device, &config, &window);
         let canvas_renderer = CanvasRenderer::new(
@@ -93,7 +96,7 @@ impl RenderState {
 
             ui_renderer,
             canvas_renderer,
-            dummy: (dummy_texture, dummy_texture_view),
+            dummy: (dummy_texture, dummy_texture_view, dims),
         }
     }
     #[tracing::instrument(skip(self, _app_state))]
