@@ -8,8 +8,7 @@ use winit::event_loop::EventLoopProxy;
 use crate::{
     Message,
     app_state::{
-        effect_stack::EffectStack, files::ImageSource, texture_vault::TextureVault,
-        ui_state::UiState,
+        effect_stack::EffectStack, files::ImageSource, textures::TextureVault, ui_state::UiState,
     },
     compute::{
         ComputeRequest, ComputeResult, EffectsJob,
@@ -40,7 +39,7 @@ pub struct AppState {
 
 pub mod effect_stack;
 pub mod files;
-pub mod texture_vault;
+pub mod textures;
 pub mod ui_draw;
 pub mod ui_state;
 
