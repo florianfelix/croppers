@@ -2,11 +2,12 @@
 """
 Rasterizes TTF fonts into 1-bit bitmaps and formats them as WGSL hex constants
 for 8x8, 8x16, 16x16, and 16x32 resolutions.
-"""
+"""  # noqa: EXE001
 
-import sys
 import os
-from PIL import Image, ImageDraw, ImageFont
+import sys
+
+from PIL import Image, ImageDraw, ImageFont  # pyright: ignore[reportMissingImports]
 
 CHARS = [' ', '.', ':', ';', '-', '=', '+', 'x', 'X', '8', '0', 'S', '*', '%', '#', '@']
 
