@@ -17,6 +17,13 @@ pub struct TextureVault {
     pub cropped_texture_view: Option<Arc<wgpu::TextureView>>,
 }
 
+#[derive(Default)]
+pub struct TextureSet {
+    pub texture: Option<Arc<wgpu::Texture>>,
+    pub texture_view: Option<Arc<wgpu::TextureView>>,
+    pub dims: [u32; 2],
+}
+
 impl TextureVault {
     #[tracing::instrument(skip(self))]
     pub fn set_srcimg(
