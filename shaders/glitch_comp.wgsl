@@ -1,8 +1,8 @@
 struct GlitchUniforms {
-    time: f32,              // Used as a static seed number (change value to roll a new glitch layout)
-    line_dropouts: f32,     // intensity1: 0.0 (none) to 1.0 (tons of dead/black horizontal lines)
-    block_displace: f32,    // intensity2: 0.0 (none) to 1.0 (heavy amount of horizontal block slicing)
-    color_burst: f32,       // intensity3: 0.0 (none) to 1.0 (fills more screen regions with color frying)
+    time: f32,
+    line_dropouts: f32,
+    block_displace: f32,
+    color_burst: f32,
     burst_grid_size: f32,
     tearing_micro: f32,
     tearing_macro: f32,
