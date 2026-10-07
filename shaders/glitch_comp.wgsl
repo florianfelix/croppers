@@ -3,10 +3,10 @@ struct GlitchUniforms {
     line_dropouts: f32,     // intensity1: 0.0 (none) to 1.0 (tons of dead/black horizontal lines)
     block_displace: f32,    // intensity2: 0.0 (none) to 1.0 (heavy amount of horizontal block slicing)
     color_burst: f32,       // intensity3: 0.0 (none) to 1.0 (fills more screen regions with color frying)
-    _padding1: f32,
-    _padding2: f32,
-    _padding3: f32,
-    _padding4: f32
+    burst_grid_size: f32,
+    tearing_micro: f32,
+    tearing_macro: f32,
+    tearing_blocks: f32
 }
 
 @group(0) @binding(0) var src_tex: texture_2d<f32>;
@@ -35,24 +35,25 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     // --- 1. Macro-Block Displacement Amount ---
     // The block_displace slider directly dictates the PERCENTAGE of slices that get shifted
     var offsetUV = uv;
-    let blockCount = 32.0;
+    let blockCount = uniforms.tearing_blocks;
     let blockId = floor(uv.y * blockCount) + seed;
 
     // Generate a unique value per block row between 0.0 and 1.0
     let blockRoll = hash11(blockId);
 
-    // If the roll falls under the user's slider value, tear it sideways
+    // --- 2.1 Macro Scanline "Teeth" (Tearing) ---
     if (blockRoll < uniforms.block_displace) {
         // Generate a completely sharp, random shift distance based on this block's ID
-        let shiftAmount = (hash11(blockId * 3.7) * 2.0 - 1.0) * 0.12;
+        let shiftAmount = (hash11(blockId * 3.7) * 2.0 - 1.0) * 0.12 * uniforms.tearing_macro;
         offsetUV.x = fract(offsetUV.x + shiftAmount);
     }
 
-    // --- 2. Micro Scanline "Teeth" (Tearing) ---
+    // --- 2.2 Micro Scanline "Teeth" (Tearing) ---
     // High-frequency single-pixel horizontal rips, scaled directly by the displacement slider
     let lineId = floor(uv.y * f32(size.y)) + seed * 7.1;
-    if (hash11(lineId) < (uniforms.block_displace * 0.25)) {
-        offsetUV.x = fract(offsetUV.x + (hash11(lineId * 1.9) * 0.015));
+    if (hash11(lineId) < (uniforms.block_displace )) {
+        let shiftAmount = (hash11(blockId * 1.9) * 2.0 - 1.0) * 0.12 * uniforms.tearing_micro;
+        offsetUV.x = fract(offsetUV.x + shiftAmount);
     }
 
     // Convert our shifted coordinates back to safe integer texture indexes
@@ -82,7 +83,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     // --- 4. Analog Color Burst Region Amount ---
     // The slider controls the density of macro regions affected by high-voltage color clipping
     // The screen is split into a grid; the higher the slider, the more grid cells are fried
-    let regionGrid = floor(uv * 8.0) + seed * 4.2;
+    let regionGrid = floor(uv * uniforms.burst_grid_size) + seed * 4.2;
     let colorBurstRoll = hash21(regionGrid);
 
     if (colorBurstRoll < uniforms.color_burst) {
