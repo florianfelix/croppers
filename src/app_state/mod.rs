@@ -149,6 +149,9 @@ impl AppState {
                 self.is_computing = false;
                 self.effect_stack.needs_rebuild = false;
             }
+            ComputeResult::FinishedEffects(EffectsResult::Empty(e)) => {
+                error!("Effect compute error {e}")
+            }
             ComputeResult::FinishedCrop(CropResult::Finished { texture, view }) => {
                 info!("Received Cropped {:?}", [texture.width(), texture.height()]);
                 self.texture_vault.set_cropped(texture, view);
@@ -160,7 +163,6 @@ impl AppState {
                 .ui_state
                 .notifications
                 .push(&format!("Crop failed: {e}"), true),
-            _ => {}
         }
     }
 
