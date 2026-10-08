@@ -113,26 +113,29 @@ impl CroppersConfig {
         Ok(conf)
     }
 
-    pub fn save_defaults() -> Result<()> {
-        let test = CroppersConfig::default();
-        if let Some(proj_dirs) = ProjectDirs::from("de", "croppers", "croppers") {
+    pub fn save(&self) -> Result<()> {
+        if let Some(proj_dirs) = ProjectDirs::from("de", "ff", "croppers") {
             let confdir = proj_dirs.config_dir();
             if !confdir.exists() {
                 fs::create_dir_all(confdir)?;
             }
             let path = confdir.join("conf.toml");
-            let txt = toml::to_string(&test)?;
+            let txt = toml::to_string(&self)?;
 
             let mut file = fs::OpenOptions::new()
                 .create(true)
                 .write(true)
                 .truncate(true)
-                .open(path)?;
+                .open(&path)?;
 
             file.write_all(txt.as_bytes())?;
+            info!("Saved config to {:?}", path);
         }
-
-        info!("Saved defaults\n{:#?}", test);
         Ok(())
+    }
+
+    pub fn save_defaults() -> Result<()> {
+        let test = CroppersConfig::default();
+        test.save()
     }
 }

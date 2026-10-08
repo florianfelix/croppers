@@ -12,6 +12,7 @@ pub enum GizmoSelection {
 pub struct UiState {
     pub canvas_rect: Option<egui::Rect>,
     pub show_panel: bool,
+    pub show_settings: bool,
     pub active_gizmo: GizmoSelection,
     pub crop: CropSettings,
     pub notifications: Notifications,
@@ -27,11 +28,15 @@ pub struct UiActions {
     pub needs_compute: bool,
     pub needs_rebuild: bool,
     pub request_redraw: bool,
+    pub save_config: bool,
 }
 
 impl UiState {
     pub fn toggle_panel(&mut self) {
         self.show_panel = !self.show_panel;
+    }
+    pub fn toggle_settings(&mut self) {
+        self.show_settings = !self.show_settings;
     }
     pub fn set_canvas_rect(&mut self, rect: egui::Rect) {
         self.canvas_rect = Some(rect);
@@ -51,6 +56,7 @@ impl Default for UiState {
         Self {
             canvas_rect: None,
             show_panel: true,
+            show_settings: false,
             active_gizmo: GizmoSelection::Empty,
             crop: CropSettings::default(),
             notifications: Notifications::new(),

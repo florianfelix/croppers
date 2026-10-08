@@ -227,8 +227,13 @@ impl ApplicationHandler<Message> for Croppers {
 impl Croppers {
     pub fn handle_keyboard_event(&mut self, event: KeyEvent, event_loop: &ActiveEventLoop) {
         if event.state == ElementState::Pressed && !event.repeat {
+            if event.logical_key.as_ref() == Key::Character("?") {
+                self.app_state.ui_state.toggle_settings();
+                return;
+            }
             match event.key_without_modifiers().as_ref() {
                 Key::Character("w") => self.app_state.ui_state.toggle_panel(),
+                Key::Character("?") => self.app_state.ui_state.toggle_settings(),
                 Key::Character("q") => {
                     self.renderer = None; // Clean up before exit
                     event_loop.exit();
