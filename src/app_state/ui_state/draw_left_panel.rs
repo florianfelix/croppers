@@ -52,21 +52,23 @@ impl UiState {
                 ));
 
                 ui.add_space(4.0);
-                ui.horizontal(|ui| {
-                    if ui
-                        .button("Save")
-                        .on_hover_text("Save / Overwrite Original")
-                        .clicked()
-                    {
-                        actions.save_overwrite = true;
-                    }
-                    if ui
-                        .button("Save Increment")
-                        .on_hover_text("Save as new file (e.g. filename_001)")
-                        .clicked()
-                    {
-                        actions.save_increment = true;
-                    }
+                ui.add_enabled_ui(!self.crop.enabled, |ui| {
+                    ui.horizontal(|ui| {
+                        if ui
+                            .button("Save")
+                            .on_hover_text("Save / Overwrite Original")
+                            .clicked()
+                        {
+                            actions.save_overwrite = true;
+                        }
+                        if ui
+                            .button("Save Increment")
+                            .on_hover_text("Save as new file (e.g. filename_001)")
+                            .clicked()
+                        {
+                            actions.save_increment = true;
+                        }
+                    });
                 });
             });
         }
@@ -80,6 +82,10 @@ impl UiState {
     ) {
         ui.indent("Crop", |ui| {
             ui.checkbox(&mut self.crop.enabled, "Crop");
+
+            if !self.crop.enabled {
+                return;
+            }
 
             egui::ComboBox::from_label("Mode")
                 .selected_text(self.crop.mode.label())
@@ -146,6 +152,7 @@ impl UiState {
             if ui.button("Apply Crop (Enter)").clicked() {
                 actions.apply_crop = true;
             }
+            // }
         });
     }
 
@@ -155,6 +162,10 @@ impl UiState {
         effect_stack: &mut EffectStack,
         actions: &mut UiActions,
     ) {
+        if self.crop.enabled {
+            return;
+        }
+
         if ui.checkbox(&mut effect_stack.enabled, "Enabled").changed() {
             actions.needs_rebuild = true;
             actions.needs_compute = true;
