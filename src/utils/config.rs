@@ -17,6 +17,7 @@ pub struct CroppersConfig {
     pub startup_crop: StartupCrop,
     pub startup_ui: StartupUi,
     pub startup_effects: StartupEffects,
+    pub on_image_load: OnImageLoad,
 }
 impl Default for CroppersConfig {
     fn default() -> Self {
@@ -26,7 +27,19 @@ impl Default for CroppersConfig {
             startup_crop: StartupCrop::default(),
             startup_ui: StartupUi::default(),
             startup_effects: StartupEffects::default(),
+            on_image_load: OnImageLoad::default(),
         }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(default)]
+pub struct OnImageLoad {
+    pub crop_enabled: bool,
+}
+impl Default for OnImageLoad {
+    fn default() -> Self {
+        Self { crop_enabled: true }
     }
 }
 
