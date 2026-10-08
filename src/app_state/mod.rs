@@ -96,6 +96,10 @@ impl AppState {
                 self.needs_compute = true;
                 self.effect_stack.needs_rebuild = true;
                 self.ui_state.crop.enabled = self.config.on_image_load.crop_enabled;
+                self.effect_stack.enabled = self.config.on_image_load.effects_enabled;
+                if self.config.on_image_load.empty_effects {
+                    self.effect_stack.effects.clear()
+                }
             }
             self.texture_vault.clear_cropped();
             self.source_dirty = false;

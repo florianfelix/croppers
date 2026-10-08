@@ -36,10 +36,16 @@ impl Default for CroppersConfig {
 #[serde(default)]
 pub struct OnImageLoad {
     pub crop_enabled: bool,
+    pub effects_enabled: bool,
+    pub empty_effects: bool,
 }
 impl Default for OnImageLoad {
     fn default() -> Self {
-        Self { crop_enabled: true }
+        Self {
+            crop_enabled: true,
+            effects_enabled: true,
+            empty_effects: false,
+        }
     }
 }
 
