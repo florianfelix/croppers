@@ -16,7 +16,7 @@ pub struct EffectStack {
 
 impl Default for EffectStack {
     fn default() -> Self {
-        let effects = vec![effects::EffectSelector::Ascii.into()];
+        let effects = vec![effects::EffectSelector::Vignette.into()];
         let mut result = Self {
             effects,
             needs_rebuild: true,
