@@ -3,7 +3,7 @@ use tracing::info;
 
 use crate::app_state::{
     AppState,
-    effect_stack::EffectSelector,
+    effect_stack::effects::EffectSelector,
     widgets::{CropMode, crop_widget::WidgetCroppers},
 };
 
