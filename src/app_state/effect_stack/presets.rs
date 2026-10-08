@@ -85,55 +85,55 @@ pub struct SavedEffectStack {
 pub enum EffectConfig {
     Blur {
         enabled: bool,
-        uniforms: effects::blur::BlurUniforms,
+        uniforms: BlurUniforms,
     },
     Vignette {
         enabled: bool,
-        uniforms: effects::vignette::VignetteUniforms,
+        uniforms: VignetteUniforms,
     },
     Bw {
         enabled: bool,
-        uniforms: effects::bw::BwUniforms,
+        uniforms: BwUniforms,
     },
     Hsv {
         enabled: bool,
-        uniforms: effects::hsv::HsvUniforms,
+        uniforms: HsvUniforms,
     },
     Gamma {
         enabled: bool,
-        uniforms: effects::gamma::GammaUniforms,
+        uniforms: GammaUniforms,
     },
     TiltShift {
         enabled: bool,
-        uniforms: effects::tiltshift::TiltShiftUniforms,
+        uniforms: TiltShiftUniforms,
     },
     PixelateTilt {
         enabled: bool,
-        uniforms: effects::pixelate_tilt::PixelateTiltUniforms,
+        uniforms: PixelateTiltUniforms,
     },
     PixelateLinear {
         enabled: bool,
-        uniforms: effects::pixelate_linear::PixelateLinearUniforms,
+        uniforms: PixelateLinearUniforms,
     },
     Dither {
         enabled: bool,
-        uniforms: effects::dither::ColorDitherUniforms,
+        uniforms: ColorDitherUniforms,
     },
     Crt {
         enabled: bool,
-        uniforms: effects::crt::CrtUniforms,
+        uniforms: CrtUniforms,
     },
     Ascii {
         enabled: bool,
-        uniforms: effects::ascii::AsciiUniforms,
+        uniforms: AsciiUniforms,
     },
     Vcr {
         enabled: bool,
-        uniforms: effects::vcr::VcrUniforms,
+        uniforms: VcrUniforms,
     },
     Glitch {
         enabled: bool,
-        uniforms: effects::glitch::GlitchUniforms,
+        uniforms: GlitchUniforms,
     },
 }
 

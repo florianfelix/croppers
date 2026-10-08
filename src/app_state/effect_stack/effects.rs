@@ -1,19 +1,19 @@
 use dyn_clone::DynClone;
 use std::collections::HashMap;
 
-pub mod ascii;
-pub mod blur;
-pub mod bw;
-pub mod crt;
-pub mod dither;
-pub mod gamma;
-pub mod glitch;
-pub mod hsv;
-pub mod pixelate_linear;
-pub mod pixelate_tilt;
-pub mod tiltshift;
-pub mod vcr;
-pub mod vignette;
+mod ascii;
+mod blur;
+mod bw;
+mod crt;
+mod dither;
+mod gamma;
+mod glitch;
+mod hsv;
+mod pixelate_linear;
+mod pixelate_tilt;
+mod tiltshift;
+mod vcr;
+mod vignette;
 pub mod prelude {
     pub use super::ascii::*;
     pub use super::blur::*;
