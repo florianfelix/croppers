@@ -310,8 +310,8 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         let posInCycle = (cellIndices.y + phase) % period;
 
         if (posInCycle < length) {
-            let trail = 1.0 - (posInCycle / length);
-            let headBoost = select(1.0, 1.4, posInCycle < 1.0);
+            let trail = posInCycle / length;
+            let headBoost = select(1.0, 1.4, posInCycle > length - 1.0);
             glyphBrightness = pow(trail, 1.6) * headBoost;
         } else {
             glyphBrightness = 0.0;
