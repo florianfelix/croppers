@@ -25,32 +25,8 @@ impl UiRenderer {
             None,
         );
 
-        // --- CENTRAL STYLING AND THEMING ---
-        let mut visuals = egui::Visuals::dark(); // Or egui::Visuals::light()
-
-        // Customize global colors
-        visuals.window_fill = egui::Color32::from_rgb(30, 30, 30);
-        visuals.panel_fill = egui::Color32::from_rgb(24, 24, 28);
-        visuals.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(40, 40, 45);
-        visuals.selection.bg_fill = egui::Color32::from_rgb(40, 40, 40); // Accent color
-        visuals.slider_trailing_fill = true;
-        egui_ctx.set_visuals(visuals);
-
-        // Customize widget geometry, spacing, and rounding centrally
-        egui_ctx.global_style_mut(|style| {
-            style.animation_time = 0.0;
-            style.spacing.item_spacing = egui::vec2(4.0, 2.0);
-            style.spacing.button_padding = egui::vec2(4.0, 2.0);
-
-            // Modify rounding for a modern look
-            // style.visuals.slider_trailing_fill = true;
-            style.visuals.widgets.active.corner_radius = egui::CornerRadius::same(1);
-            style.visuals.widgets.hovered.corner_radius = egui::CornerRadius::same(1);
-            style.visuals.widgets.inactive.corner_radius = egui::CornerRadius::same(1);
-        });
-
-        // egui_ctx.set_style(style);
-        // -----------------------------------
+        // Apply modern minimalist theme
+        MinimalistTheme::default().apply(&egui_ctx);
 
         let egui_render_options = egui_wgpu::RendererOptions {
             msaa_samples: 1,
@@ -163,4 +139,84 @@ pub fn setup_custom_fonts(ctx: &egui::Context) {
 
     // Apply font definitions to egui context
     ctx.set_fonts(fonts);
+}
+
+pub struct MinimalistTheme {
+    pub window_fill: egui::Color32,
+    pub panel_fill: egui::Color32,
+    pub widget_bg: egui::Color32,
+    pub accent: egui::Color32,
+    pub accent_hover: egui::Color32,
+    pub stroke_color: egui::Color32,
+    pub text_primary: egui::Color32,
+    pub corner_radius: u8,
+    pub item_spacing: egui::Vec2,
+    pub button_padding: egui::Vec2,
+}
+
+impl Default for MinimalistTheme {
+    fn default() -> Self {
+        Self {
+            window_fill: egui::Color32::from_rgb(26, 26, 28),
+            panel_fill: egui::Color32::from_rgb(20, 20, 22),
+            widget_bg: egui::Color32::from_rgb(32, 32, 35),
+            accent: egui::Color32::from_rgb(80, 140, 200), // Clean modern blue accent
+            accent_hover: egui::Color32::from_rgb(100, 160, 220),
+            stroke_color: egui::Color32::from_rgb(50, 50, 55),
+            text_primary: egui::Color32::from_rgb(230, 230, 235),
+            corner_radius: 4, // Subtle rounded corners
+            item_spacing: egui::vec2(8.0, 6.0),
+            button_padding: egui::vec2(8.0, 4.0),
+        }
+    }
+}
+
+impl MinimalistTheme {
+    pub fn apply(&self, ctx: &egui::Context) {
+        let mut visuals = egui::Visuals::dark();
+
+        // Colors
+        visuals.window_fill = self.window_fill;
+        visuals.panel_fill = self.panel_fill;
+        visuals.widgets.noninteractive.bg_fill = self.widget_bg;
+        visuals.widgets.inactive.bg_fill = self.widget_bg;
+        visuals.widgets.hovered.bg_fill = self.accent_hover;
+        visuals.widgets.active.bg_fill = self.accent;
+        visuals.selection.bg_fill = self.accent;
+
+        // Clean strokes
+        visuals.widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0, self.stroke_color);
+        visuals.widgets.inactive.bg_stroke = egui::Stroke::new(1.0, self.stroke_color);
+        visuals.widgets.hovered.bg_stroke = egui::Stroke::new(1.0, self.accent_hover);
+        visuals.widgets.active.bg_stroke = egui::Stroke::new(1.0, self.accent);
+        visuals.selection.stroke = egui::Stroke::new(1.0, self.accent);
+
+        // Text
+        visuals.widgets.noninteractive.fg_stroke.color = self.text_primary;
+        visuals.widgets.inactive.fg_stroke.color = self.text_primary;
+        visuals.widgets.hovered.fg_stroke.color = egui::Color32::WHITE;
+        visuals.widgets.active.fg_stroke.color = egui::Color32::WHITE;
+
+        // Override text color on selection and strong backgrounds specifically
+        visuals.selection.stroke.color = egui::Color32::WHITE;
+
+        // Modern shape geometry
+        visuals.slider_trailing_fill = true;
+        let radius = egui::CornerRadius::same(self.corner_radius);
+        visuals.window_corner_radius = radius;
+        visuals.menu_corner_radius = radius;
+        visuals.widgets.noninteractive.corner_radius = radius;
+        visuals.widgets.inactive.corner_radius = radius;
+        visuals.widgets.hovered.corner_radius = radius;
+        visuals.widgets.active.corner_radius = radius;
+
+        ctx.set_visuals(visuals);
+
+        // Spacing & Animation
+        ctx.global_style_mut(|style| {
+            style.animation_time = 0.0; // Smooth but snappy transitions
+            style.spacing.item_spacing = self.item_spacing;
+            style.spacing.button_padding = self.button_padding;
+        });
+    }
 }
