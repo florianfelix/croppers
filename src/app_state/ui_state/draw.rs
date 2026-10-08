@@ -21,17 +21,39 @@ impl UiState {
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE)
             .show(ctx, |ui| {
-                self.set_canvas_rect(ui.available_rect_before_wrap());
+                let rect = ui.available_rect_before_wrap();
+                self.set_canvas_rect(rect);
+
+                // Handle Pan and Zoom
+                let response = ui.interact(
+                    rect,
+                    ui.id().with("canvas_interact"),
+                    egui::Sense::click_and_drag(),
+                );
+
+                // Middle click pan
+                if response.dragged_by(egui::PointerButton::Middle) {
+                    self.pan += response.drag_delta();
+                }
+
+                // Scroll zoom
+                if response.hovered() {
+                    let scroll = ui.input(|i| i.smooth_scroll_delta);
+                    if scroll.y != 0.0 {
+                        let zoom_factor = (scroll.y * 0.002).exp();
+                        self.zoom *= zoom_factor;
+                        self.zoom = self.zoom.clamp(0.1, 100.0);
+                    }
+                }
 
                 if self.crop.enabled {
                     let image_size = (src_dims[0] as f32, src_dims[1] as f32);
                     let aspect_ratio = self.crop.aspect_ratio(src_dims);
-                    let crop_widget = WidgetCroppers::new(
-                        &idname,
-                        ui.available_rect_before_wrap(),
-                        image_size,
-                        aspect_ratio,
-                    );
+                    let mut crop_widget =
+                        WidgetCroppers::new(&idname, rect, image_size, aspect_ratio);
+
+                    // Let crop widget know about current transform
+                    crop_widget = crop_widget.with_transform(self.zoom, self.pan);
 
                     ui.add(crop_widget);
                     if let Some(uv_rect) = WidgetCroppers::get_uv_crop_rect(ui, &idname) {

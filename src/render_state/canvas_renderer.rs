@@ -163,39 +163,49 @@ impl CanvasRenderer {
         });
     }
 
-    /// Scales the quad mesh aspect ratio to fit within the target UI viewport.
+    /// Scales the quad mesh aspect ratio to fit within the target UI viewport, applying zoom and pan.
     pub fn update_quad_aspect(
         &mut self,
-        // queue: &wgpu::Queue,
         img_width: f32,
         img_height: f32,
         viewport_w: f32,
         viewport_h: f32,
+        zoom: f32,
+        pan: egui::Vec2,
     ) {
         let canvas_aspect = viewport_w / viewport_h;
         let image_aspect = img_width / img_height;
 
-        let (scale_x, scale_y) = if image_aspect > canvas_aspect {
+        let (mut scale_x, mut scale_y) = if image_aspect > canvas_aspect {
             (1.0, canvas_aspect / image_aspect)
         } else {
             (image_aspect / canvas_aspect, 1.0)
         };
 
+        // Apply zoom
+        scale_x *= zoom;
+        scale_y *= zoom;
+
+        // Apply pan translation relative to normalized device coordinates (-1.0 to 1.0)
+        // egui pan is in pixels. Convert pan pixels to NDC offset:
+        let offset_x = (pan.x / viewport_w) * 2.0;
+        let offset_y = -(pan.y / viewport_h) * 2.0; // NDC Y is up, Egui Y is down
+
         let vertices = [
             Vertex {
-                position: [-scale_x, -scale_y],
+                position: [-scale_x + offset_x, -scale_y + offset_y],
                 uv: [0.0, 1.0],
             },
             Vertex {
-                position: [scale_x, -scale_y],
+                position: [scale_x + offset_x, -scale_y + offset_y],
                 uv: [1.0, 1.0],
             },
             Vertex {
-                position: [-scale_x, scale_y],
+                position: [-scale_x + offset_x, scale_y + offset_y],
                 uv: [0.0, 0.0],
             },
             Vertex {
-                position: [scale_x, scale_y],
+                position: [scale_x + offset_x, scale_y + offset_y],
                 uv: [1.0, 0.0],
             },
         ];
@@ -210,6 +220,8 @@ impl CanvasRenderer {
         render_pass: &mut RenderPass<'a>,
         target_rect: &Option<Rect>,
         image_size: Option<(f32, f32)>,
+        zoom: f32,
+        pan: egui::Vec2,
     ) {
         if let Some(rect) = target_rect {
             let scale = self.window.scale_factor() as f32;
@@ -217,7 +229,7 @@ impl CanvasRenderer {
             let viewport_h = rect.height() * scale;
 
             if let Some((img_width, img_height)) = image_size {
-                self.update_quad_aspect(img_width, img_height, viewport_w, viewport_h);
+                self.update_quad_aspect(img_width, img_height, viewport_w, viewport_h, zoom, pan);
             }
 
             let x = rect.min.x * scale;

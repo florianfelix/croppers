@@ -82,6 +82,8 @@ pub struct WidgetCroppers {
     canvas_rect: Rect,
     image_size: Vec2,
     aspect_ratio: Option<f32>,
+    zoom: f32,
+    pan: Vec2,
 }
 impl WidgetCroppers {
     pub fn new(
@@ -96,18 +98,29 @@ impl WidgetCroppers {
             canvas_rect,
             image_size: image_size.into(),
             aspect_ratio,
+            zoom: 1.0,
+            pan: Vec2::ZERO,
         }
+    }
+
+    pub fn with_transform(mut self, zoom: f32, pan: Vec2) -> Self {
+        self.zoom = zoom;
+        self.pan = pan;
+        self
     }
 
     fn new_image_rect(&self, current_canvas: &Rect, image_size: &Vec2) -> Rect {
         let canvas_aspect = current_canvas.width() / current_canvas.height();
         let image_aspect = image_size.x / image_size.y;
 
-        let (scale_x, scale_y) = if image_aspect > canvas_aspect {
+        let (mut scale_x, mut scale_y) = if image_aspect > canvas_aspect {
             (1.0, canvas_aspect / image_aspect)
         } else {
             (image_aspect / canvas_aspect, 1.0)
         };
+
+        scale_x *= self.zoom;
+        scale_y *= self.zoom;
 
         let scaled_x = current_canvas.width() * scale_x;
         let scaled_y = current_canvas.height() * scale_y;
@@ -115,8 +128,8 @@ impl WidgetCroppers {
         let diff_x: f32 = current_canvas.width() - scaled_x;
         let diff_y: f32 = current_canvas.height() - scaled_y;
 
-        let x = current_canvas.min.x + diff_x / 2.;
-        let y = current_canvas.min.y + diff_y / 2.;
+        let x = current_canvas.min.x + diff_x / 2. + self.pan.x;
+        let y = current_canvas.min.y + diff_y / 2. + self.pan.y;
 
         Rect {
             min: Pos2 { x, y },
@@ -191,6 +204,30 @@ impl Widget for WidgetCroppers {
             d.get_persisted::<WidgetCroppersState>(self.id)
                 .unwrap_or_else(|| self.fresh_state())
         });
+        // 1. Calculate the image rect for this frame (which incorporates pan and zoom)
+        let new_image_rect = self.new_image_rect(&self.canvas_rect, &self.image_size);
+
+        // 2. Remap the crop_rect into the new image_rect if the image_rect has changed
+        if new_image_rect != state.image_rect {
+            if state.image_rect.width() > 0.0 && state.image_rect.height() > 0.0 {
+                let u_min = (state.crop_rect.min.x - state.image_rect.min.x) / state.image_rect.width();
+                let v_min = (state.crop_rect.min.y - state.image_rect.min.y) / state.image_rect.height();
+                let u_max = (state.crop_rect.max.x - state.image_rect.min.x) / state.image_rect.width();
+                let v_max = (state.crop_rect.max.y - state.image_rect.min.y) / state.image_rect.height();
+
+                let new_min_x = new_image_rect.min.x + u_min * new_image_rect.width();
+                let new_min_y = new_image_rect.min.y + v_min * new_image_rect.height();
+                let new_max_x = new_image_rect.min.x + u_max * new_image_rect.width();
+                let new_max_y = new_image_rect.min.y + v_max * new_image_rect.height();
+
+                state.crop_rect = Rect::from_min_max(
+                    Pos2::new(new_min_x, new_min_y),
+                    Pos2::new(new_max_x, new_max_y),
+                );
+            }
+            state.image_rect = new_image_rect;
+        }
+
 
         let aspect_changed = match (state.aspect_ratio, self.aspect_ratio) {
             (Some(a), Some(b)) => (a - b).abs() > 0.0001,
