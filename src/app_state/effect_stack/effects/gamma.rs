@@ -26,6 +26,7 @@ impl GammaContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct GammaUniforms {
     pub gr: f32,
     pub gg: f32,

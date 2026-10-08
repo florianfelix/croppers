@@ -24,6 +24,7 @@ impl TiltShiftContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct TiltShiftUniforms {
     // --- 1. Block (16 Bytes) ---
     pub max_radius: f32,

@@ -24,6 +24,7 @@ impl CrtContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct CrtUniforms {
     // --- (16 Bytes) ---
     pub curvature: f32,

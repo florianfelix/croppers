@@ -25,6 +25,7 @@ impl AsciiContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AsciiUniforms {
     pub scale: f32,
     pub charset: u32,

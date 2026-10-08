@@ -24,6 +24,7 @@ impl VignetteContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct VignetteUniforms {
     pub intensity: f32,
     pub radius: f32,

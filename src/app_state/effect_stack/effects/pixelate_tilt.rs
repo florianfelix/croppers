@@ -24,6 +24,7 @@ impl PixelateTiltContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct PixelateTiltUniforms {
     pub max_pixel_size: f32,
     pub angle: f32,

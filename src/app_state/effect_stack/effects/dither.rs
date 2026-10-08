@@ -24,6 +24,7 @@ impl DitherContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct ColorDitherUniforms {
     pub color_steps: f32,
     pub spread: f32,

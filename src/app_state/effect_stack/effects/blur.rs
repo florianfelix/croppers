@@ -24,6 +24,7 @@ impl BlurContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)] // or bytemuck::Pod, bytemuck::Zeroable
+#[serde(default)]
 pub struct BlurUniforms {
     pub radius: f32,
     pub dir_x: i32,

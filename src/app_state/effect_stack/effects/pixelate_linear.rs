@@ -24,6 +24,7 @@ impl PixelateLinearContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct PixelateLinearUniforms {
     pub max_pixel_size: f32,
     pub angle: f32,

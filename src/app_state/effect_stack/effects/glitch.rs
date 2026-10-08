@@ -24,6 +24,7 @@ impl GlitchContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct GlitchUniforms {
     pub time: f32,
     pub line_dropouts: f32,

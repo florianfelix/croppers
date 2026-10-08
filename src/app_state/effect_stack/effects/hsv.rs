@@ -24,6 +24,7 @@ impl HsvContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct HsvUniforms {
     pub hue: f32,
     pub saturation: f32,

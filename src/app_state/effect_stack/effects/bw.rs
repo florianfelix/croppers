@@ -24,6 +24,7 @@ impl BwContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct BwUniforms {
     pub select: i32,
     pub _padding1: i32,

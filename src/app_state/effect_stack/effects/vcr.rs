@@ -24,6 +24,7 @@ impl VcrContainer {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
+#[serde(default)]
 pub struct VcrUniforms {
     pub time: f32,
     pub jitter: f32,
