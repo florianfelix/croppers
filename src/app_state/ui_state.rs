@@ -36,6 +36,10 @@ impl UiState {
     pub fn canvas_rect(&self) -> &Option<egui::Rect> {
         &self.canvas_rect
     }
+    pub fn reset_view(&mut self) {
+        self.zoom = 1.0;
+        self.pan = egui::vec2(0.0, 0.0);
+    }
 }
 
 #[allow(clippy::derivable_impls)]

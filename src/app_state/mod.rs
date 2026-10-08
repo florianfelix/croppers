@@ -101,8 +101,7 @@ impl AppState {
                 if self.config.on_image_load.empty_effects {
                     self.effect_stack.effects.clear()
                 }
-                self.ui_state.zoom = 1.0;
-                self.ui_state.pan = egui::vec2(0.0, 0.0);
+                self.ui_state.reset_view();
             }
             self.texture_vault.clear_cropped();
             self.source_dirty = false;

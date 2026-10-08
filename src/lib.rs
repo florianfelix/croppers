@@ -238,6 +238,9 @@ impl Croppers {
                 Key::Character("e") => {
                     self.app_state.effects_toggle();
                 }
+                Key::Character("r") => {
+                    self.app_state.ui_state.reset_view();
+                }
                 Key::Named(NamedKey::Enter) => {
                     self.app_state.send_crop_job();
                 }
@@ -248,7 +251,6 @@ impl Croppers {
                         self.app_state.save_effect_texture(increment);
                     }
                 }
-
                 Key::Named(NamedKey::Delete) => {
                     self.app_state.delete_current_file();
                 }
