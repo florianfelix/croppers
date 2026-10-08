@@ -43,7 +43,7 @@ impl UiState {
                 if is_hovered {
                     let scroll = ui.input(|i| i.smooth_scroll_delta);
                     if scroll.y != 0.0 {
-                        let zoom_factor = (scroll.y * 0.002).exp();
+                        let zoom_factor = (scroll.y * 0.006).exp();
                         self.zoom *= zoom_factor;
                         self.zoom = self.zoom.clamp(0.1, 100.0);
                     }
