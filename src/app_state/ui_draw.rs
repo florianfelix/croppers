@@ -55,11 +55,45 @@ impl AppState {
             .default_size(280.0)
             .show(ctx, |ui| {
                 ui.heading("Image Controls");
-                ui.separator();
+
+                let mut do_save = false;
+                let mut do_save_increment = false;
+
                 if let Some(ref source) = self.source {
-                    ui.label(source.name.to_string());
-                    ui.label(format!("{}x{}", source.image_size.0, source.image_size.1));
+                    ui.group(|ui| {
+                        ui.strong(&source.name);
+                        ui.label(format!(
+                            "Resolution: {} × {}",
+                            source.image_size.0, source.image_size.1
+                        ));
+
+                        ui.add_space(4.0);
+                        ui.horizontal(|ui| {
+                            if ui
+                                .button("Save")
+                                .on_hover_text("Save / Overwrite Original")
+                                .clicked()
+                            {
+                                do_save = true;
+                            }
+                            if ui
+                                .button("Save Increment")
+                                .on_hover_text("Save as new file (e.g. filename_001)")
+                                .clicked()
+                            {
+                                do_save_increment = true;
+                            }
+                        });
+                    });
                 }
+
+                if do_save {
+                    self.save_effect_texture(false);
+                }
+                if do_save_increment {
+                    self.save_effect_texture(true);
+                }
+
                 ui.separator();
                 ui.indent("Crop", |ui| {
                     ui.checkbox(&mut self.ui_state.crop.enabled, "Crop");
