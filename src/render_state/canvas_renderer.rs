@@ -1,9 +1,20 @@
-use std::sync::Arc;
-
 use crate::utils::Vertex;
 use egui::Rect;
+use std::sync::Arc;
 use wgpu::{RenderPass, util::DeviceExt};
 use winit::window::Window;
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct CanvasUniforms {
+    pub image_bounds: [f32; 4],
+    pub bg_color: [f32; 4],
+    pub shadow_color: [f32; 4],
+    pub radius: f32,
+    pub shadow_offset: f32,
+    pub _padding2: f32,
+    pub _padding3: f32,
+}
 
 pub struct CanvasRenderer {
     pub device: Arc<wgpu::Device>,
@@ -11,9 +22,11 @@ pub struct CanvasRenderer {
     pub queue: Arc<wgpu::Queue>,
     pub render_pipeline: wgpu::RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
+    pub uniform_buffer: wgpu::Buffer,
     pub sampler: wgpu::Sampler,
     pub bind_group_layout: wgpu::BindGroupLayout,
     pub bind_group: wgpu::BindGroup,
+    pub canvas_uniforms: CanvasUniforms,
 }
 
 impl CanvasRenderer {
@@ -46,7 +59,14 @@ impl CanvasRenderer {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Quad Vertex Buffer"),
             contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Canvas Uniform Buffer"),
+            size: std::mem::size_of::<CanvasUniforms>() as wgpu::BufferAddress,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         });
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -76,6 +96,16 @@ impl CanvasRenderer {
                     ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
         });
 
@@ -90,6 +120,10 @@ impl CanvasRenderer {
                 wgpu::BindGroupEntry {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: uniform_buffer.as_entire_binding(),
                 },
             ],
         });
@@ -133,19 +167,29 @@ impl CanvasRenderer {
             cache: None,
         });
 
+        let canvas_uniforms = CanvasUniforms {
+            image_bounds: [0.0, 0.0, 0.0, 0.0],
+            bg_color: [0.08, 0.08, 0.09, 1.0],
+            shadow_color: [0.04, 0.04, 0.04, 0.6],
+            radius: 100.0,
+            shadow_offset: 10.0,
+            _padding2: 0.0,
+            _padding3: 0.0,
+        };
         Self {
             device,
             window,
             queue,
             render_pipeline,
             vertex_buffer,
+            uniform_buffer,
             sampler,
             bind_group_layout,
             bind_group,
+            canvas_uniforms,
         }
     }
 
-    /// Rebinds the texture view outputting from compute passes to the render pipeline.
     pub fn update_texture_binding(&mut self, processed_view: &Arc<wgpu::TextureView>) {
         self.bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Processed Image Bind Group"),
@@ -159,59 +203,12 @@ impl CanvasRenderer {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&self.sampler),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: self.uniform_buffer.as_entire_binding(),
+                },
             ],
         });
-    }
-
-    /// Scales the quad mesh aspect ratio to fit within the target UI viewport, applying zoom and pan.
-    pub fn update_quad_aspect(
-        &mut self,
-        img_width: f32,
-        img_height: f32,
-        viewport_w: f32,
-        viewport_h: f32,
-        zoom: f32,
-        pan: egui::Vec2,
-    ) {
-        let canvas_aspect = viewport_w / viewport_h;
-        let image_aspect = img_width / img_height;
-
-        let (mut scale_x, mut scale_y) = if image_aspect > canvas_aspect {
-            (1.0, canvas_aspect / image_aspect)
-        } else {
-            (image_aspect / canvas_aspect, 1.0)
-        };
-
-        // Apply zoom
-        scale_x *= zoom;
-        scale_y *= zoom;
-
-        // Apply pan translation relative to normalized device coordinates (-1.0 to 1.0)
-        // egui pan is in pixels. Convert pan pixels to NDC offset:
-        let offset_x = (pan.x / viewport_w) * 2.0;
-        let offset_y = -(pan.y / viewport_h) * 2.0; // NDC Y is up, Egui Y is down
-
-        let vertices = [
-            Vertex {
-                position: [-scale_x + offset_x, -scale_y + offset_y],
-                uv: [0.0, 1.0],
-            },
-            Vertex {
-                position: [scale_x + offset_x, -scale_y + offset_y],
-                uv: [1.0, 1.0],
-            },
-            Vertex {
-                position: [-scale_x + offset_x, scale_y + offset_y],
-                uv: [0.0, 0.0],
-            },
-            Vertex {
-                position: [scale_x + offset_x, scale_y + offset_y],
-                uv: [1.0, 0.0],
-            },
-        ];
-
-        self.queue
-            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -227,15 +224,43 @@ impl CanvasRenderer {
             let scale = self.window.scale_factor() as f32;
             let viewport_w = rect.width() * scale;
             let viewport_h = rect.height() * scale;
+            let viewport_x = rect.min.x * scale;
+            let viewport_y = rect.min.y * scale;
 
             if let Some((img_width, img_height)) = image_size {
-                self.update_quad_aspect(img_width, img_height, viewport_w, viewport_h, zoom, pan);
+                let canvas_aspect = viewport_w / viewport_h;
+                let image_aspect = img_width / img_height;
+
+                let (mut scale_x, mut scale_y) = if image_aspect > canvas_aspect {
+                    (1.0, canvas_aspect / image_aspect)
+                } else {
+                    (image_aspect / canvas_aspect, 1.0)
+                };
+
+                scale_x *= zoom;
+                scale_y *= zoom;
+
+                let half_w = scale_x * (viewport_w / 2.0);
+                let half_h = scale_y * (viewport_h / 2.0);
+
+                let center_x = viewport_x + (viewport_w / 2.0) + pan.x * scale;
+                let center_y = viewport_y + (viewport_h / 2.0) + pan.y * scale;
+
+                self.canvas_uniforms.image_bounds = [
+                    center_x - half_w,
+                    center_y - half_h,
+                    center_x + half_w,
+                    center_y + half_h,
+                ];
+
+                self.queue.write_buffer(
+                    &self.uniform_buffer,
+                    0,
+                    bytemuck::bytes_of(&self.canvas_uniforms),
+                );
             }
 
-            let x = rect.min.x * scale;
-            let y = rect.min.y * scale;
-
-            render_pass.set_viewport(x, y, viewport_w, viewport_h, 0.0, 1.0);
+            render_pass.set_viewport(viewport_x, viewport_y, viewport_w, viewport_h, 0.0, 1.0);
         }
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
