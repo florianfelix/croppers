@@ -1,3 +1,4 @@
+use directories::ProjectDirs;
 use tracing_subscriber::{Registry, fmt, prelude::*};
 
 // use crate::DATA_DIR;
@@ -6,35 +7,38 @@ pub fn init_logging() {
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| "warn,croppers=debug".into());
 
-    let log_path = "croppers.log";
-    let log_file = std::fs::File::create(log_path).expect("Failed to create log file");
-    let panic_log_file = log_file
-        .try_clone()
-        .expect("Failed to clone log file handle");
+    if let Some(proj_dirs) = ProjectDirs::from("de", "ff", "croppers") {
+        let confdir = proj_dirs.config_dir();
+        let log_path = confdir.join("croppers.log");
+        let log_file = std::fs::File::create(log_path).expect("Failed to create log file");
+        let panic_log_file = log_file
+            .try_clone()
+            .expect("Failed to clone log file handle");
 
-    let stdout_layer = fmt::layer()
-        .with_writer(std::io::stdout)
-        .with_ansi(true)
-        .without_time()
-        .with_target(false)
-        .with_line_number(true);
+        let stdout_layer = fmt::layer()
+            .with_writer(std::io::stdout)
+            .with_ansi(true)
+            .without_time()
+            .with_target(false)
+            .with_line_number(true);
 
-    let file_layer = fmt::layer()
-        .with_writer(log_file)
-        .with_ansi(false)
-        .pretty()
-        .without_time()
-        .with_file(true)
-        .with_target(false)
-        .with_line_number(true);
+        let file_layer = fmt::layer()
+            .with_writer(log_file)
+            .with_ansi(false)
+            .pretty()
+            .without_time()
+            .with_file(true)
+            .with_target(false)
+            .with_line_number(true);
 
-    Registry::default()
-        .with(env_filter)
-        .with(stdout_layer)
-        .with(file_layer)
-        .init();
+        Registry::default()
+            .with(env_filter)
+            .with(stdout_layer)
+            .with(file_layer)
+            .init();
 
-    setup_panic_hook(Some(panic_log_file));
+        setup_panic_hook(Some(panic_log_file));
+    }
 }
 
 fn setup_panic_hook(log_file: Option<std::fs::File>) {
