@@ -59,6 +59,9 @@ impl AppState {
             rx_job,
             proxy: None,
         };
+        if app_state.config.is_new_config {
+            app_state.ui_state.show_settings = true;
+        }
         if let Some(path) = cli.path {
             app_state.try_open_file(&path);
         };

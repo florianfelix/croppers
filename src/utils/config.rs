@@ -13,6 +13,8 @@ pub struct CroppersConfig {
     pub app_id: String,
     #[serde(skip)]
     pub fullscreen: bool,
+    #[serde(skip)]
+    pub is_new_config: bool,
 
     pub startup_crop: StartupCrop,
     pub startup_ui: StartupUi,
@@ -24,6 +26,7 @@ impl Default for CroppersConfig {
         Self {
             app_id: "croppers".to_string(),
             fullscreen: false,
+            is_new_config: false,
             startup_crop: StartupCrop::default(),
             startup_ui: StartupUi::default(),
             startup_effects: StartupEffects::default(),
@@ -99,11 +102,15 @@ impl CroppersConfig {
                 toml::from_str::<Self>(&content)?
             } else {
                 info!("No config found. Using defaults");
-                Self::default()
+                let mut conf = Self::default();
+                conf.is_new_config = true;
+                conf
             }
         } else {
             info!("No config found. Using defaults");
-            Self::default()
+            let mut conf = Self::default();
+            conf.is_new_config = true;
+            conf
         };
 
         // Merge runtime CLI value

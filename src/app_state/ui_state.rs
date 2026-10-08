@@ -1,7 +1,10 @@
-pub mod draw;
-pub mod notifications;
-use crate::app_state::widgets::CropSettings;
 use self::notifications::Notifications;
+use crate::app_state::widgets::CropSettings;
+
+pub mod draw_canvas;
+pub mod draw_left_panel;
+pub mod draw_settings;
+pub mod notifications;
 
 pub enum GizmoSelection {
     Empty,

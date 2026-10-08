@@ -3,7 +3,8 @@
     clippy::collapsible_match,
     clippy::collapsible_if,
     clippy::single_match,
-    clippy::derivable_impls
+    clippy::derivable_impls,
+    clippy::field_reassign_with_default
 )]
 // #![allow(unused)]
 use std::{path::PathBuf, sync::Arc};
