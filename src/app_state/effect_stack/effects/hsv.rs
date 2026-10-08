@@ -1,54 +1,48 @@
 use serde::{Deserialize, Serialize};
 
-use crate::app_state::effect_stack::EffectContainerObject;
+use crate::app_state::effect_stack::presets::EffectConfig;
+
+use super::EffectContainerObject;
 use std::collections::HashMap;
 
 #[derive(Clone)]
-pub struct VcrContainer {
+pub struct HsvContainer {
     pub id: usize,
     pub enabled: bool,
-    pub uniforms: VcrUniforms,
+    pub uniforms: HsvUniforms,
 }
 
-impl VcrContainer {
+impl HsvContainer {
     pub fn new() -> Box<Self> {
         Box::new(Self {
             id: 0,
             enabled: true,
-            uniforms: VcrUniforms::default(),
+            uniforms: HsvUniforms::default(),
         })
     }
 }
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
-pub struct VcrUniforms {
-    pub time: f32,
-    pub jitter: f32,
-    pub glitch: f32,
-    pub glitch_noise: f32,
-    pub head_switch: f32,
-    pub head_switch_noise: f32,
-    pub tape_roll: f32,
-    pub chroma_decay: f32,
+pub struct HsvUniforms {
+    pub hue: f32,
+    pub saturation: f32,
+    pub value: f32,
+    pub factor: f32,
 }
 
-impl Default for VcrUniforms {
+impl Default for HsvUniforms {
     fn default() -> Self {
         Self {
-            time: 20.0,
-            jitter: 1.0,
-            glitch: 3.0,
-            glitch_noise: 1.0,
-            head_switch: 5.0,
-            head_switch_noise: 0.1,
-            tape_roll: 1.0,
-            chroma_decay: 0.5,
+            hue: 0.5, // Neutral in Blender
+            saturation: 1.0,
+            value: 1.0,
+            factor: 1.0,
         }
     }
 }
 
-impl EffectContainerObject for VcrContainer {
+impl EffectContainerObject for HsvContainer {
     fn id(&self) -> usize {
         self.id
     }
@@ -56,7 +50,7 @@ impl EffectContainerObject for VcrContainer {
         self.id = id;
     }
     fn name(&self) -> &str {
-        "Vcr"
+        "HSV"
     }
     fn enabled(&self) -> bool {
         self.enabled
@@ -67,49 +61,25 @@ impl EffectContainerObject for VcrContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("Vcr_settings", |ui| {
+        ui.indent("hsv_settings", |ui| {
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.time, 0.0..=200.0).text("time"))
+                .add(egui::Slider::new(&mut self.uniforms.hue, 0.0..=1.0).text("hue"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.jitter, 0.0..=5.0).text("jitter"))
+                .add(egui::Slider::new(&mut self.uniforms.saturation, 0.0..=2.0).text("saturation"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.glitch, 0.0..=10.0).text("glitch"))
+                .add(egui::Slider::new(&mut self.uniforms.value, 0.0..=2.0).text("value"))
                 .changed();
             changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.glitch_noise, 0.0..=3.0)
-                        .text("glitch noise"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.head_switch, 0.0..=10.0)
-                        .text("head-switch"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.head_switch_noise, 0.0..=3.0)
-                        .text("head-switch noise"),
-                )
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.tape_roll, 0.0..=10.0).text("tape roll"))
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.chroma_decay, 0.0..=1.0)
-                        .text("chroma decay"),
-                )
+                .add(egui::Slider::new(&mut self.uniforms.factor, 0.0..=1.0).text("factor"))
                 .changed();
         });
         changed
     }
 
     fn shader_key(&self) -> &str {
-        "vcr"
+        "hsv"
     }
 
     fn build_passes(
@@ -121,19 +91,19 @@ impl EffectContainerObject for VcrContainer {
     ) {
         use wgpu::util::DeviceExt;
         let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vcr Uniform Buffer"),
+            label: Some("Hsv Uniform Buffer"),
             contents: bytemuck::bytes_of(&self.uniforms),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Vcr Pass Layout"),
+            label: Some("Hsv Pass Layout"),
             bind_group_layouts: &[Some(layout)],
             immediate_size: 0,
         });
 
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: Some("Compute Pipeline Vcr"),
+            label: Some("Compute Pipeline Hsv"),
             layout: Some(&pipeline_layout),
             module: &shaders[self.shader_key()],
             entry_point: Some("main"),
@@ -157,8 +127,8 @@ impl EffectContainerObject for VcrContainer {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
         }
     }
-    fn to_config(&self) -> super::EffectConfig {
-        super::EffectConfig::Vcr {
+    fn to_config(&self) -> EffectConfig {
+        EffectConfig::Hsv {
             enabled: self.enabled,
             uniforms: self.uniforms,
         }

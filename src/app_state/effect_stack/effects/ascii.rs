@@ -1,55 +1,57 @@
 use serde::{Deserialize, Serialize};
 
-use crate::app_state::effect_stack::EffectContainerObject;
 use std::collections::HashMap;
 
+use crate::app_state::effect_stack::presets::EffectConfig;
+
+use super::EffectContainerObject;
+
 #[derive(Clone)]
-pub struct PixelateLinearContainer {
+pub struct AsciiContainer {
     pub id: usize,
     pub enabled: bool,
-    pub uniforms: PixelateLinearUniforms,
+    pub uniforms: AsciiUniforms,
 }
 
-impl PixelateLinearContainer {
+impl AsciiContainer {
     pub fn new() -> Box<Self> {
         Box::new(Self {
             id: 0,
             enabled: true,
-            uniforms: PixelateLinearUniforms::default(),
+            uniforms: AsciiUniforms::default(),
         })
     }
 }
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
-pub struct PixelateLinearUniforms {
-    pub max_pixel_size: f32,
-    pub angle: f32,
-    pub start_x: f32,
-    pub start_y: f32,
-
-    pub length: f32,
-    pub invert: i32,
-    pub _padding1: f32,
-    pub _padding2: f32,
+pub struct AsciiUniforms {
+    pub scale: f32,
+    pub charset: u32,
+    pub inset: f32,
+    pub mult: f32,
+    pub glyph_selection: i32,
+    pub scale_x: f32,
+    pub rain_factor: f32,
+    pub rain_length: f32,
 }
 
-impl Default for PixelateLinearUniforms {
+impl Default for AsciiUniforms {
     fn default() -> Self {
         Self {
-            max_pixel_size: 64.0,
-            angle: 0.0,
-            start_x: 0.0,
-            start_y: 0.5,
-            length: 0.8,
-            invert: 0,
-            _padding1: 0.0,
-            _padding2: 0.0,
+            scale: 20.0,
+            charset: 0,
+            inset: 0.1,
+            mult: 0.0,
+            glyph_selection: 2,
+            scale_x: 1.0,
+            rain_factor: 0.0,
+            rain_length: 20.0,
         }
     }
 }
 
-impl EffectContainerObject for PixelateLinearContainer {
+impl EffectContainerObject for AsciiContainer {
     fn id(&self) -> usize {
         self.id
     }
@@ -57,7 +59,7 @@ impl EffectContainerObject for PixelateLinearContainer {
         self.id = id;
     }
     fn name(&self) -> &str {
-        "Pixelate Linear"
+        "Ascii"
     }
     fn enabled(&self) -> bool {
         self.enabled
@@ -68,49 +70,48 @@ impl EffectContainerObject for PixelateLinearContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("pixelate_linear_settings", |ui| {
+        ui.indent("Ascii_settings", |ui| {
             changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.max_pixel_size, 1.0..=128.0)
-                        .text("pixel size"),
-                )
+                .add(egui::Slider::new(&mut self.uniforms.scale, 0.0..=200.0).text("Scale"))
                 .changed();
             changed |= ui
-                .add(
-                    egui::Slider::from_get_set(0.0..=360.0, |new_deg| {
-                        if let Some(deg) = new_deg {
-                            self.uniforms.angle = (deg as f32).to_radians();
-                        }
-                        self.uniforms.angle.to_degrees() as f64
-                    })
-                    .suffix("°")
-                    .text("angle"),
-                )
+                .add(egui::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).text("glyph set"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.length, 0.0..=1.0).text("length"))
+                .add(egui::Slider::new(&mut self.uniforms.charset, 0..=2).text("atlas"))
                 .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.start_x, 0.0..=1.0).text("start x"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.start_y, 0.0..=1.0).text("start y"))
-                .changed();
+            ui.separator();
 
-            let mut is_inverted = self.uniforms.invert == 1;
-            if ui
-                .add(egui::Checkbox::new(&mut is_inverted, "invert"))
-                .changed()
-            {
-                self.uniforms.invert = is_inverted as i32;
-                changed = true;
-            }
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.inset, 0.0..=0.45).text("inset"))
+                .changed();
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.scale_x, 0.0..=2.0).text("scale x"))
+                .changed();
+            ui.separator();
+            changed |= ui
+                .add(
+                    egui::Slider::new(&mut self.uniforms.rain_factor, 0.0..=1.0)
+                        .text("rain factor"),
+                )
+                .changed();
+            changed |= ui
+                .add(
+                    egui::Slider::new(&mut self.uniforms.rain_length, 1.0..=200.0)
+                        .text("rain length"),
+                )
+                .changed();
+            ui.separator();
+
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.mult, 0.0..=1.0).text("original bg"))
+                .changed();
         });
         changed
     }
 
     fn shader_key(&self) -> &str {
-        "pixelate_linear"
+        "ascii"
     }
 
     fn build_passes(
@@ -122,19 +123,19 @@ impl EffectContainerObject for PixelateLinearContainer {
     ) {
         use wgpu::util::DeviceExt;
         let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Pixelate Linear Uniform Buffer"),
+            label: Some("Ascii Uniform Buffer"),
             contents: bytemuck::bytes_of(&self.uniforms),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Pixelate Linear Layout"),
+            label: Some("Ascii Pass Layout"),
             bind_group_layouts: &[Some(layout)],
             immediate_size: 0,
         });
 
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: Some("Compute Pipeline Pixelate Linear"),
+            label: Some("Compute Pipeline Ascii"),
             layout: Some(&pipeline_layout),
             module: &shaders[self.shader_key()],
             entry_point: Some("main"),
@@ -158,8 +159,8 @@ impl EffectContainerObject for PixelateLinearContainer {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
         }
     }
-    fn to_config(&self) -> super::EffectConfig {
-        super::EffectConfig::PixelateLinear {
+    fn to_config(&self) -> EffectConfig {
+        EffectConfig::Ascii {
             enabled: self.enabled,
             uniforms: self.uniforms,
         }

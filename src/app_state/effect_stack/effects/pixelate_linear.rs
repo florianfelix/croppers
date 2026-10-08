@@ -1,46 +1,57 @@
 use serde::{Deserialize, Serialize};
 
-use crate::app_state::effect_stack::EffectContainerObject;
+use crate::app_state::effect_stack::presets::EffectConfig;
+
+use super::EffectContainerObject;
 use std::collections::HashMap;
 
 #[derive(Clone)]
-pub struct HsvContainer {
+pub struct PixelateLinearContainer {
     pub id: usize,
     pub enabled: bool,
-    pub uniforms: HsvUniforms,
+    pub uniforms: PixelateLinearUniforms,
 }
 
-impl HsvContainer {
+impl PixelateLinearContainer {
     pub fn new() -> Box<Self> {
         Box::new(Self {
             id: 0,
             enabled: true,
-            uniforms: HsvUniforms::default(),
+            uniforms: PixelateLinearUniforms::default(),
         })
     }
 }
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
-pub struct HsvUniforms {
-    pub hue: f32,
-    pub saturation: f32,
-    pub value: f32,
-    pub factor: f32,
+pub struct PixelateLinearUniforms {
+    pub max_pixel_size: f32,
+    pub angle: f32,
+    pub start_x: f32,
+    pub start_y: f32,
+
+    pub length: f32,
+    pub invert: i32,
+    pub _padding1: f32,
+    pub _padding2: f32,
 }
 
-impl Default for HsvUniforms {
+impl Default for PixelateLinearUniforms {
     fn default() -> Self {
         Self {
-            hue: 0.5, // Neutral in Blender
-            saturation: 1.0,
-            value: 1.0,
-            factor: 1.0,
+            max_pixel_size: 64.0,
+            angle: 0.0,
+            start_x: 0.0,
+            start_y: 0.5,
+            length: 0.8,
+            invert: 0,
+            _padding1: 0.0,
+            _padding2: 0.0,
         }
     }
 }
 
-impl EffectContainerObject for HsvContainer {
+impl EffectContainerObject for PixelateLinearContainer {
     fn id(&self) -> usize {
         self.id
     }
@@ -48,7 +59,7 @@ impl EffectContainerObject for HsvContainer {
         self.id = id;
     }
     fn name(&self) -> &str {
-        "HSV"
+        "Pixelate Linear"
     }
     fn enabled(&self) -> bool {
         self.enabled
@@ -59,25 +70,49 @@ impl EffectContainerObject for HsvContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("hsv_settings", |ui| {
+        ui.indent("pixelate_linear_settings", |ui| {
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.hue, 0.0..=1.0).text("hue"))
+                .add(
+                    egui::Slider::new(&mut self.uniforms.max_pixel_size, 1.0..=128.0)
+                        .text("pixel size"),
+                )
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.saturation, 0.0..=2.0).text("saturation"))
+                .add(
+                    egui::Slider::from_get_set(0.0..=360.0, |new_deg| {
+                        if let Some(deg) = new_deg {
+                            self.uniforms.angle = (deg as f32).to_radians();
+                        }
+                        self.uniforms.angle.to_degrees() as f64
+                    })
+                    .suffix("°")
+                    .text("angle"),
+                )
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.value, 0.0..=2.0).text("value"))
+                .add(egui::Slider::new(&mut self.uniforms.length, 0.0..=1.0).text("length"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.factor, 0.0..=1.0).text("factor"))
+                .add(egui::Slider::new(&mut self.uniforms.start_x, 0.0..=1.0).text("start x"))
                 .changed();
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.start_y, 0.0..=1.0).text("start y"))
+                .changed();
+
+            let mut is_inverted = self.uniforms.invert == 1;
+            if ui
+                .add(egui::Checkbox::new(&mut is_inverted, "invert"))
+                .changed()
+            {
+                self.uniforms.invert = is_inverted as i32;
+                changed = true;
+            }
         });
         changed
     }
 
     fn shader_key(&self) -> &str {
-        "hsv"
+        "pixelate_linear"
     }
 
     fn build_passes(
@@ -89,19 +124,19 @@ impl EffectContainerObject for HsvContainer {
     ) {
         use wgpu::util::DeviceExt;
         let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Hsv Uniform Buffer"),
+            label: Some("Pixelate Linear Uniform Buffer"),
             contents: bytemuck::bytes_of(&self.uniforms),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Hsv Pass Layout"),
+            label: Some("Pixelate Linear Layout"),
             bind_group_layouts: &[Some(layout)],
             immediate_size: 0,
         });
 
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: Some("Compute Pipeline Hsv"),
+            label: Some("Compute Pipeline Pixelate Linear"),
             layout: Some(&pipeline_layout),
             module: &shaders[self.shader_key()],
             entry_point: Some("main"),
@@ -125,8 +160,8 @@ impl EffectContainerObject for HsvContainer {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
         }
     }
-    fn to_config(&self) -> super::EffectConfig {
-        super::EffectConfig::Hsv {
+    fn to_config(&self) -> EffectConfig {
+        EffectConfig::PixelateLinear {
             enabled: self.enabled,
             uniforms: self.uniforms,
         }

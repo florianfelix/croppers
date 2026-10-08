@@ -1,6 +1,5 @@
-use std::{path::PathBuf, sync::Arc};
-
 use crossbeam_channel::{Receiver, Sender};
+use std::{path::PathBuf, sync::Arc};
 #[allow(unused)]
 use tracing::{error, info, trace};
 use winit::event_loop::EventLoopProxy;
@@ -19,6 +18,11 @@ use crate::{
     utils::{CroppersConfig, DimHelper},
 };
 
+pub mod effect_stack;
+pub mod files;
+pub mod textures;
+pub mod ui_draw;
+pub mod ui_state;
 pub mod widgets;
 
 pub struct AppState {
@@ -36,12 +40,6 @@ pub struct AppState {
     pub rx_job: Receiver<ComputeRequest>,
     pub proxy: Option<EventLoopProxy<Message>>,
 }
-
-pub mod effect_stack;
-pub mod files;
-pub mod textures;
-pub mod ui_draw;
-pub mod ui_state;
 
 impl AppState {
     pub fn new(cli: crate::utils::Cli, config: CroppersConfig) -> Self {
@@ -197,4 +195,3 @@ impl AppState {
         self.ui_state.crop.enabled = false;
     }
 }
-

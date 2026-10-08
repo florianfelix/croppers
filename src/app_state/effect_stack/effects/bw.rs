@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::app_state::effect_stack::EffectContainerObject;
+use crate::app_state::effect_stack::presets::EffectConfig;
+
+use super::EffectContainerObject;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -116,8 +118,8 @@ impl EffectContainerObject for BwContainer {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
         }
     }
-    fn to_config(&self) -> super::EffectConfig {
-        super::EffectConfig::Bw {
+    fn to_config(&self) -> EffectConfig {
+        EffectConfig::Bw {
             enabled: self.enabled,
             uniforms: self.uniforms,
         }

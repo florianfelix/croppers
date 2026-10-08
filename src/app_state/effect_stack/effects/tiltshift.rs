@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::app_state::effect_stack::EffectContainerObject;
+use crate::app_state::effect_stack::presets::EffectConfig;
+
+use super::EffectContainerObject;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -171,8 +173,8 @@ impl EffectContainerObject for TiltShiftContainer {
             queue.write_buffer(&v_pass.uniform_buffer, 0, bytemuck::bytes_of(&v_uniforms));
         }
     }
-    fn to_config(&self) -> super::EffectConfig {
-        super::EffectConfig::TiltShift {
+    fn to_config(&self) -> EffectConfig {
+        EffectConfig::TiltShift {
             enabled: self.enabled,
             uniforms: self.uniforms,
         }

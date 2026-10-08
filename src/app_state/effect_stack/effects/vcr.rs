@@ -1,56 +1,56 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
-use crate::app_state::effect_stack::EffectContainerObject;
+use crate::app_state::effect_stack::presets::EffectConfig;
+
+use super::EffectContainerObject;
+use std::collections::HashMap;
 
 #[derive(Clone)]
-pub struct CrtContainer {
+pub struct VcrContainer {
     pub id: usize,
     pub enabled: bool,
-    pub uniforms: CrtUniforms, // Ihre bestehende Struct
+    pub uniforms: VcrUniforms,
 }
-impl CrtContainer {
+
+impl VcrContainer {
     pub fn new() -> Box<Self> {
         Box::new(Self {
             id: 0,
             enabled: true,
-            uniforms: CrtUniforms::default(),
+            uniforms: VcrUniforms::default(),
         })
     }
 }
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
-pub struct CrtUniforms {
-    // --- (16 Bytes) ---
-    pub curvature: f32,
-    pub scanline_count: f32,
-    pub scanline_strength: f32,
-    pub rgb_mask_strength: f32,
-
-    // --- (16 Bytes) ---
-    pub overscan: f32,
-    pub _padding2: f32,
-    pub _padding3: f32,
-    pub _padding4: f32,
+pub struct VcrUniforms {
+    pub time: f32,
+    pub jitter: f32,
+    pub glitch: f32,
+    pub glitch_noise: f32,
+    pub head_switch: f32,
+    pub head_switch_noise: f32,
+    pub tape_roll: f32,
+    pub chroma_decay: f32,
 }
-impl Default for CrtUniforms {
+
+impl Default for VcrUniforms {
     fn default() -> Self {
         Self {
-            curvature: 0.1,
-            scanline_count: 120.0,
-            scanline_strength: 0.5,
-            rgb_mask_strength: 0.5,
-            overscan: 1.0,
-            _padding2: 0.0,
-            _padding3: 0.0,
-            _padding4: 0.0,
+            time: 20.0,
+            jitter: 1.0,
+            glitch: 3.0,
+            glitch_noise: 1.0,
+            head_switch: 5.0,
+            head_switch_noise: 0.1,
+            tape_roll: 1.0,
+            chroma_decay: 0.5,
         }
     }
 }
 
-impl EffectContainerObject for CrtContainer {
+impl EffectContainerObject for VcrContainer {
     fn id(&self) -> usize {
         self.id
     }
@@ -58,7 +58,7 @@ impl EffectContainerObject for CrtContainer {
         self.id = id;
     }
     fn name(&self) -> &str {
-        "Crt"
+        "Vcr"
     }
     fn enabled(&self) -> bool {
         self.enabled
@@ -69,31 +69,41 @@ impl EffectContainerObject for CrtContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("crt_settings", |ui| {
+        ui.indent("Vcr_settings", |ui| {
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.curvature, 0.0..=1.0).text("curvature"))
+                .add(egui::Slider::new(&mut self.uniforms.time, 0.0..=200.0).text("time"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.overscan, 0.0..=1.0).text("overscan"))
+                .add(egui::Slider::new(&mut self.uniforms.jitter, 0.0..=5.0).text("jitter"))
                 .changed();
-            ui.separator();
-
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.glitch, 0.0..=10.0).text("glitch"))
+                .changed();
             changed |= ui
                 .add(
-                    egui::Slider::new(&mut self.uniforms.scanline_count, 0.0..=1000.0)
-                        .text("scanlines"),
+                    egui::Slider::new(&mut self.uniforms.glitch_noise, 0.0..=3.0)
+                        .text("glitch noise"),
                 )
                 .changed();
             changed |= ui
                 .add(
-                    egui::Slider::new(&mut self.uniforms.scanline_strength, 0.0..=1.0)
-                        .text("scanline strength"),
+                    egui::Slider::new(&mut self.uniforms.head_switch, 0.0..=10.0)
+                        .text("head-switch"),
                 )
                 .changed();
             changed |= ui
                 .add(
-                    egui::Slider::new(&mut self.uniforms.rgb_mask_strength, 0.0..=1.0)
-                        .text("mask strength"),
+                    egui::Slider::new(&mut self.uniforms.head_switch_noise, 0.0..=3.0)
+                        .text("head-switch noise"),
+                )
+                .changed();
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.tape_roll, 0.0..=10.0).text("tape roll"))
+                .changed();
+            changed |= ui
+                .add(
+                    egui::Slider::new(&mut self.uniforms.chroma_decay, 0.0..=1.0)
+                        .text("chroma decay"),
                 )
                 .changed();
         });
@@ -101,7 +111,7 @@ impl EffectContainerObject for CrtContainer {
     }
 
     fn shader_key(&self) -> &str {
-        "crt"
+        "vcr"
     }
 
     fn build_passes(
@@ -112,21 +122,20 @@ impl EffectContainerObject for CrtContainer {
         passes: &mut Vec<crate::compute::effect_pipeline::GpuEffectPass>,
     ) {
         use wgpu::util::DeviceExt;
-
         let buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Crt Uniform Buffer"),
+            label: Some("Vcr Uniform Buffer"),
             contents: bytemuck::bytes_of(&self.uniforms),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Crt Pass Layout"),
+            label: Some("Vcr Pass Layout"),
             bind_group_layouts: &[Some(layout)],
             immediate_size: 0,
         });
 
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: Some("Compute Pipeline Crt"),
+            label: Some("Compute Pipeline Vcr"),
             layout: Some(&pipeline_layout),
             module: &shaders[self.shader_key()],
             entry_point: Some("main"),
@@ -150,8 +159,8 @@ impl EffectContainerObject for CrtContainer {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
         }
     }
-    fn to_config(&self) -> super::EffectConfig {
-        super::EffectConfig::Crt {
+    fn to_config(&self) -> EffectConfig {
+        EffectConfig::Vcr {
             enabled: self.enabled,
             uniforms: self.uniforms,
         }
