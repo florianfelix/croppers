@@ -1,10 +1,8 @@
 use serde::{Deserialize, Serialize};
-
 use std::collections::HashMap;
 
-use crate::app_state::effect_stack::presets::EffectConfig;
-
 use super::EffectContainerObject;
+use crate::app_state::effect_stack::presets::EffectConfig;
 
 #[derive(Clone)]
 pub struct AsciiContainer {

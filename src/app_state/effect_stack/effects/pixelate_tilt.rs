@@ -1,9 +1,8 @@
 use serde::{Deserialize, Serialize};
-
-use crate::app_state::effect_stack::presets::EffectConfig;
+use std::collections::HashMap;
 
 use super::EffectContainerObject;
-use std::collections::HashMap;
+use crate::app_state::effect_stack::presets::EffectConfig;
 
 #[derive(Clone)]
 pub struct PixelateTiltContainer {
