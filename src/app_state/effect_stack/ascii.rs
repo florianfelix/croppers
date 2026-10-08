@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::app_state::effect_stack::EffectContainerObject;
 use std::collections::HashMap;
 
@@ -19,7 +21,7 @@ impl AsciiContainer {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
 pub struct AsciiUniforms {
     pub scale: f32,
     pub charset: u32,
@@ -38,7 +40,7 @@ impl Default for AsciiUniforms {
             charset: 0,
             inset: 0.1,
             mult: 0.0,
-            glyph_selection: 0,
+            glyph_selection: 2,
             scale_x: 1.0,
             rain_factor: 0.0,
             rain_length: 20.0,
@@ -152,6 +154,12 @@ impl EffectContainerObject for AsciiContainer {
     ) {
         if let Some(pass) = matching_passes.first() {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
+        }
+    }
+    fn to_config(&self) -> super::EffectConfig {
+        super::EffectConfig::Ascii {
+            enabled: self.enabled,
+            uniforms: self.uniforms,
         }
     }
 }

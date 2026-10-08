@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::app_state::effect_stack::EffectContainerObject;
 use std::collections::HashMap;
 
@@ -19,7 +21,7 @@ impl BwContainer {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
 pub struct BwUniforms {
     pub select: i32,
     pub _padding1: i32,
@@ -112,6 +114,12 @@ impl EffectContainerObject for BwContainer {
     ) {
         if let Some(pass) = matching_passes.first() {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
+        }
+    }
+    fn to_config(&self) -> super::EffectConfig {
+        super::EffectConfig::Bw {
+            enabled: self.enabled,
+            uniforms: self.uniforms,
         }
     }
 }

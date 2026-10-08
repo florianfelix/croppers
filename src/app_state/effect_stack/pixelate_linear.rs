@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::app_state::effect_stack::EffectContainerObject;
 use std::collections::HashMap;
 
@@ -19,7 +21,7 @@ impl PixelateLinearContainer {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
 pub struct PixelateLinearUniforms {
     pub max_pixel_size: f32,
     pub angle: f32,
@@ -154,6 +156,12 @@ impl EffectContainerObject for PixelateLinearContainer {
     ) {
         if let Some(pass) = matching_passes.first() {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
+        }
+    }
+    fn to_config(&self) -> super::EffectConfig {
+        super::EffectConfig::PixelateLinear {
+            enabled: self.enabled,
+            uniforms: self.uniforms,
         }
     }
 }

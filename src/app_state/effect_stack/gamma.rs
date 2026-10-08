@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::app_state::effect_stack::EffectContainerObject;
 use std::collections::HashMap;
 
@@ -21,7 +23,7 @@ impl GammaContainer {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
 pub struct GammaUniforms {
     pub gr: f32,
     pub gg: f32,
@@ -148,6 +150,12 @@ impl EffectContainerObject for GammaContainer {
     ) {
         if let Some(pass) = matching_passes.first() {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
+        }
+    }
+    fn to_config(&self) -> super::EffectConfig {
+        super::EffectConfig::Gamma {
+            enabled: self.enabled,
+            uniforms: self.uniforms,
         }
     }
 }

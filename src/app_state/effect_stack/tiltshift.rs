@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::app_state::effect_stack::EffectContainerObject;
 use std::collections::HashMap;
 
@@ -19,7 +21,7 @@ impl TiltShiftContainer {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
 pub struct TiltShiftUniforms {
     // --- 1. Block (16 Bytes) ---
     pub max_radius: f32,
@@ -167,6 +169,12 @@ impl EffectContainerObject for TiltShiftContainer {
             v_uniforms.dir_x = 0;
             v_uniforms.dir_y = 1;
             queue.write_buffer(&v_pass.uniform_buffer, 0, bytemuck::bytes_of(&v_uniforms));
+        }
+    }
+    fn to_config(&self) -> super::EffectConfig {
+        super::EffectConfig::TiltShift {
+            enabled: self.enabled,
+            uniforms: self.uniforms,
         }
     }
 }

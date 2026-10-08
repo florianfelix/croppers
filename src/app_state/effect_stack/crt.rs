@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
 use crate::app_state::effect_stack::EffectContainerObject;
 
 #[derive(Clone)]
@@ -19,7 +21,7 @@ impl CrtContainer {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)]
 pub struct CrtUniforms {
     // --- (16 Bytes) ---
     pub curvature: f32,
@@ -146,6 +148,12 @@ impl EffectContainerObject for CrtContainer {
     ) {
         if let Some(pass) = matching_passes.first() {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
+        }
+    }
+    fn to_config(&self) -> super::EffectConfig {
+        super::EffectConfig::Crt {
+            enabled: self.enabled,
+            uniforms: self.uniforms,
         }
     }
 }

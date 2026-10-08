@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
 use crate::app_state::effect_stack::EffectContainerObject;
 
 #[derive(Clone)]
@@ -19,7 +21,7 @@ impl BlurContainer {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)] // or bytemuck::Pod, bytemuck::Zeroable
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Serialize, Deserialize)] // or bytemuck::Pod, bytemuck::Zeroable
 pub struct BlurUniforms {
     pub radius: f32,
     pub dir_x: i32,
@@ -149,6 +151,12 @@ impl EffectContainerObject for BlurContainer {
                 _padding: 0.0,
             };
             queue.write_buffer(&v_pass.uniform_buffer, 0, bytemuck::bytes_of(&v_uniforms));
+        }
+    }
+    fn to_config(&self) -> super::EffectConfig {
+        super::EffectConfig::Blur {
+            enabled: self.enabled,
+            uniforms: self.uniforms,
         }
     }
 }

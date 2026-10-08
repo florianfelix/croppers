@@ -72,7 +72,7 @@ impl Default for StartupCrop {
 
 impl CroppersConfig {
     pub fn load(cli: &super::Cli) -> Result<Self> {
-        let mut conf = if let Some(proj_dirs) = ProjectDirs::from("de", &cli.app_id, &cli.app_id) {
+        let mut conf = if let Some(proj_dirs) = ProjectDirs::from("de", "ff", "croppers") {
             let confdir = proj_dirs.config_dir();
             let path = confdir.join("conf.toml");
             if path.exists() {
