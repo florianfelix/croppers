@@ -1,0 +1,18 @@
+--- src/app_state/widgets/crop_widget.rs
++++ src/app_state/widgets/crop_widget.rs
+@@ -1,13 +1,11 @@
++#![allow(unused)]
+ use crate::app_state::widgets::drag_target::DragTarget;
+-use crate::app_state::widgets::rect_helper::RectHelper;
+-#![allow(unused)]
+-use egui::{Color32, Id, Pos2, Rect, Sense, Stroke, Vec2, Widget, util::IdTypeMap};
++use egui::{Color32, Id, Pos2, Rect, Sense, Stroke, Vec2, Widget};
+ use tracing::info;
+ 
+-#[derive(Debug, Clone, Copy, PartialEq)]
+-
+-#[derive(Clone, Copy, Debug)]
++#[derive(Debug, Clone, Copy, PartialEq)]
+ struct WidgetCroppersState {
+     pub image_rect: Rect,
+     pub crop_rect: Rect,

@@ -1,73 +1,9 @@
 #![allow(unused)]
-use egui::{Color32, Id, Pos2, Rect, Sense, Stroke, Vec2, Widget, util::IdTypeMap};
+use crate::app_state::widgets::drag_target::DragTarget;
+use egui::{Color32, Id, Pos2, Rect, Sense, Stroke, Vec2, Widget};
 use tracing::info;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum DragTarget {
-    None,
-    Center,
-    Top,
-    Bottom,
-    Left,
-    Right,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-    DrawNew(Pos2),
-}
-impl DragTarget {
-    fn current_target(
-        crop_rect: &Rect,
-        handle_radius: f32,
-        pointer_pos: Pos2,
-        image_rect: Rect,
-    ) -> Self {
-        if crop_rect
-            .top_left_handle(handle_radius)
-            .contains(pointer_pos)
-        {
-            DragTarget::TopLeft
-        } else if crop_rect
-            .top_right_handle(handle_radius)
-            .contains(pointer_pos)
-        {
-            DragTarget::TopRight
-        } else if crop_rect
-            .bottom_left_handle(handle_radius)
-            .contains(pointer_pos)
-        {
-            DragTarget::BottomLeft
-        } else if crop_rect
-            .bottom_right_handle(handle_radius)
-            .contains(pointer_pos)
-        {
-            DragTarget::BottomRight
-        }
-        // Edges
-        else if crop_rect.top_handle(handle_radius).contains(pointer_pos) {
-            DragTarget::Top
-        } else if crop_rect.bottom_handle(handle_radius).contains(pointer_pos) {
-            DragTarget::Bottom
-        } else if crop_rect.right_handle(handle_radius).contains(pointer_pos) {
-            DragTarget::Right
-        } else if crop_rect.left_handle(handle_radius).contains(pointer_pos) {
-            DragTarget::Left
-        }
-        // Center Body
-        else if crop_rect.shrink(handle_radius / 2.).contains(pointer_pos) {
-            DragTarget::Center
-        } else {
-            let start = Pos2 {
-                x: pointer_pos.x.clamp(image_rect.min.x, image_rect.max.x),
-                y: pointer_pos.y.clamp(image_rect.min.y, image_rect.max.y),
-            };
-            DragTarget::DrawNew(start)
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
 struct WidgetCroppersState {
     pub image_rect: Rect,
     pub crop_rect: Rect,
@@ -195,19 +131,11 @@ impl WidgetCroppers {
     }
 }
 
-impl Widget for WidgetCroppers {
-    #[tracing::instrument(name = "WidgetCroppers", skip(self, ui))]
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let (rect, response) =
-            ui.allocate_exact_size(self.canvas_rect.size(), Sense::click_and_drag());
-        let mut state = ui.data_mut(|d| {
-            d.get_persisted::<WidgetCroppersState>(self.id)
-                .unwrap_or_else(|| self.fresh_state())
-        });
-        // 1. Calculate the image rect for this frame (which incorporates pan and zoom)
+
+impl WidgetCroppers {
+    fn update_image_rect_and_remap(&self, state: &mut WidgetCroppersState) {
         let new_image_rect = self.new_image_rect(&self.canvas_rect, &self.image_size);
 
-        // 2. Remap the crop_rect into the new image_rect if the image_rect has changed
         if new_image_rect != state.image_rect {
             if state.image_rect.width() > 0.0 && state.image_rect.height() > 0.0 {
                 let u_min = (state.crop_rect.min.x - state.image_rect.min.x) / state.image_rect.width();
@@ -227,8 +155,9 @@ impl Widget for WidgetCroppers {
             }
             state.image_rect = new_image_rect;
         }
+    }
 
-
+    fn handle_aspect_ratio_change(&self, state: &mut WidgetCroppersState) {
         let aspect_changed = match (state.aspect_ratio, self.aspect_ratio) {
             (Some(a), Some(b)) => (a - b).abs() > 0.0001,
             (None, None) => false,
@@ -253,16 +182,20 @@ impl Widget for WidgetCroppers {
                     Rect::from_center_size(current_center, Vec2::new(new_width, new_height));
             }
         }
+    }
 
-        state.image_rect = self.new_image_rect(&self.canvas_rect, &self.image_size);
-        constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
-
+    fn handle_interactions(
+        &self,
+        ui: &egui::Ui,
+        response: &egui::Response,
+        state: &mut WidgetCroppersState,
+    ) {
         let handle_radius = 60.0;
         let pointer_pos = ui.input(|i| i.pointer.latest_pos().unwrap_or(Pos2::ZERO));
         let delta = ui.input(|i| i.pointer.delta());
 
-        if response.dragged() {
-            if response.drag_started() {
+        if response.dragged_by(egui::PointerButton::Primary) {
+            if response.drag_started_by(egui::PointerButton::Primary) {
                 state.drag_target = DragTarget::current_target(
                     &state.crop_rect,
                     handle_radius,
@@ -273,20 +206,20 @@ impl Widget for WidgetCroppers {
             match state.drag_target {
                 DragTarget::DrawNew(start_pos) => {
                     if pointer_pos.distance(start_pos) >= 5.0 {
-                        draw_new_rect(&mut state, start_pos, pointer_pos);
+                        draw_new_rect(state, start_pos, pointer_pos);
                     }
                 }
                 _ => {
                     if let Some(target_aspect) = state.aspect_ratio {
-                        resize_constrained(&mut state, delta, target_aspect);
+                        resize_constrained(state, delta, target_aspect);
                     } else {
-                        resize_freeform(&mut state, delta);
+                        resize_freeform(state, delta);
                     }
                 }
             }
         }
 
-        if response.drag_stopped() {
+        if response.drag_stopped_by(egui::PointerButton::Primary) {
             state.drag_target = DragTarget::None;
         }
 
@@ -305,11 +238,17 @@ impl Widget for WidgetCroppers {
                 state.drag_target = DragTarget::None;
             }
         }
+    }
 
-        constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
-
-        // Hover & drag cursor feedback
-        let active_target = if response.dragged() {
+    fn update_cursor(
+        &self,
+        ui: &egui::Ui,
+        response: &egui::Response,
+        state: &WidgetCroppersState,
+    ) {
+        let handle_radius = 60.0;
+        let pointer_pos = ui.input(|i| i.pointer.latest_pos().unwrap_or(Pos2::ZERO));
+        let active_target = if response.dragged_by(egui::PointerButton::Primary) {
             state.drag_target
         } else {
             DragTarget::current_target(
@@ -328,12 +267,12 @@ impl Widget for WidgetCroppers {
             DragTarget::DrawNew(_) => egui::CursorIcon::Crosshair,
             DragTarget::None => egui::CursorIcon::Default,
         };
-        if response.hovered() || response.dragged() {
+        if response.hovered() || response.dragged_by(egui::PointerButton::Primary) {
             ui.ctx().set_cursor_icon(cursor);
         }
+    }
 
-        ui.data_mut(|d| d.insert_persisted(self.id, state));
-
+    fn draw(&self, ui: &mut egui::Ui, state: &WidgetCroppersState) {
         let painter = ui.painter();
         painter.rect_stroke(
             state.crop_rect,
@@ -377,6 +316,32 @@ impl Widget for WidgetCroppers {
                 painter.rect_filled(right_rect, 0.0, dim_color);
             }
         }
+    }
+}
+
+impl Widget for WidgetCroppers {
+    #[tracing::instrument(name = "WidgetCroppers", skip(self, ui))]
+    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+        let (rect, response) =
+            ui.allocate_exact_size(self.canvas_rect.size(), Sense::click_and_drag());
+            
+        let mut state = ui.data_mut(|d| {
+            d.get_persisted::<WidgetCroppersState>(self.id)
+                .unwrap_or_else(|| self.fresh_state())
+        });
+        
+        self.update_image_rect_and_remap(&mut state);
+        self.handle_aspect_ratio_change(&mut state);
+        
+        constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
+        self.handle_interactions(ui, &response, &mut state);
+        constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
+        
+        self.update_cursor(ui, &response, &state);
+        
+        ui.data_mut(|d| d.insert_persisted(self.id, state));
+        
+        self.draw(ui, &state);
 
         response
     }
@@ -497,80 +462,7 @@ fn constrain_crop_rect(image_rect: Rect, crop_rect: &mut Rect, aspect_ratio: Opt
     crop_rect.max.y = crop_rect.max.y.min(image_rect.max.y);
 }
 
-pub trait RectHelper {
-    fn top_handle(&self, size: f32) -> Rect;
-    fn bottom_handle(&self, size: f32) -> Rect;
-    fn right_handle(&self, size: f32) -> Rect;
-    fn left_handle(&self, size: f32) -> Rect;
-    fn top_left_handle(&self, size: f32) -> Rect;
-    fn top_right_handle(&self, size: f32) -> Rect;
-    fn bottom_left_handle(&self, size: f32) -> Rect;
-    fn bottom_right_handle(&self, size: f32) -> Rect;
-}
 
-impl RectHelper for Rect {
-    fn top_handle(&self, size: f32) -> Rect {
-        let min = Pos2 {
-            x: self.min.x + size,
-            y: self.min.y - size / 2.0,
-        };
-        let max = Pos2 {
-            x: self.min.x + self.width() - size,
-            y: self.min.y + size / 2.0,
-        };
-        Rect { min, max }
-    }
-    fn bottom_handle(&self, size: f32) -> Rect {
-        let min = Pos2 {
-            x: self.max.x - self.width() + size,
-            y: self.max.y - size / 2.0,
-        };
-        let max = Pos2 {
-            x: self.max.x - size,
-            y: self.max.y + size / 2.0,
-        };
-        Rect { min, max }
-    }
-
-    fn right_handle(&self, size: f32) -> Rect {
-        let min = Pos2 {
-            x: self.max.x - size / 2.0,
-            y: self.max.y - self.height() + size,
-        };
-        let max = Pos2 {
-            x: self.max.x + size / 2.0,
-            y: self.max.y - size,
-        };
-        Rect { min, max }
-    }
-
-    fn left_handle(&self, size: f32) -> Rect {
-        let min = Pos2 {
-            x: self.min.x - size / 2.0,
-            y: self.min.y + size,
-        };
-        let max = Pos2 {
-            x: self.min.x + size / 2.0,
-            y: self.min.y + self.height() - size,
-        };
-        Rect { min, max }
-    }
-    fn top_left_handle(&self, size: f32) -> Rect {
-        Rect::from_center_size(self.left_top(), Vec2::splat(size))
-    }
-
-    fn top_right_handle(&self, size: f32) -> Rect {
-        Rect::from_center_size(self.right_top(), Vec2::splat(size))
-    }
-
-    fn bottom_left_handle(&self, size: f32) -> Rect {
-        Rect::from_center_size(self.left_bottom(), Vec2::splat(size))
-    }
-
-    fn bottom_right_handle(&self, size: f32) -> Rect {
-        Rect::from_center_size(self.right_bottom(), Vec2::splat(size))
-    }
-}
 
 fn resize_freeform(state: &mut WidgetCroppersState, delta: Vec2) {
     use DragTarget::*;

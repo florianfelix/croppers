@@ -25,19 +25,22 @@ impl UiState {
                 self.set_canvas_rect(rect);
 
                 // Handle Pan and Zoom
-                let response = ui.interact(
-                    rect,
-                    ui.id().with("canvas_interact"),
-                    egui::Sense::click_and_drag(),
-                );
+                // Create an invisible, sense-less interaction just for hovering.
+                // We don't use Sense::click_and_drag() because that steals the click focus
+                // from the crop widget that is rendered below it.
+                let _response =
+                    ui.interact(rect, ui.id().with("canvas_interact"), egui::Sense::hover());
 
-                // Middle click pan
-                if response.dragged_by(egui::PointerButton::Middle) {
-                    self.pan += response.drag_delta();
+                // For panning, we can poll the pointer globally if hovered, or rely on Middle button explicitly.
+                let pointer_pos = ui.input(|i| i.pointer.hover_pos());
+                let is_hovered = pointer_pos.is_some_and(|pos| rect.contains(pos));
+
+                if is_hovered && ui.input(|i| i.pointer.button_down(egui::PointerButton::Middle)) {
+                    self.pan += ui.input(|i| i.pointer.delta());
                 }
 
                 // Scroll zoom
-                if response.hovered() {
+                if is_hovered {
                     let scroll = ui.input(|i| i.smooth_scroll_delta);
                     if scroll.y != 0.0 {
                         let zoom_factor = (scroll.y * 0.002).exp();
