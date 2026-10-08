@@ -41,21 +41,22 @@ impl EffectStack {
 
     pub fn save_to_file(&mut self, path: &std::path::Path) -> anyhow::Result<()> {
         let saved = self.to_saved_stack();
-        let ron_or_json = toml::to_string_pretty(&saved)?;
-        std::fs::write(path, ron_or_json)?;
+        let pretty = ron::ser::PrettyConfig::default();
+        let ron_str = ron::ser::to_string_pretty(&saved, pretty)?;
+        std::fs::write(path, ron_str)?;
         self.refresh_presets();
         Ok(())
     }
 
     pub fn load_from_file(path: &std::path::Path) -> anyhow::Result<Self> {
         let content = std::fs::read_to_string(path)?;
-        let saved: SavedEffectStack = toml::from_str(&content)?;
+        let saved: SavedEffectStack = ron::from_str(&content)?;
         Ok(Self::from_saved_stack(saved))
     }
 
     pub fn load_preset_by_path(&mut self, path: &std::path::Path) -> anyhow::Result<()> {
         let content = std::fs::read_to_string(path)?;
-        let saved: SavedEffectStack = toml::from_str(&content)?;
+        let saved: SavedEffectStack = ron::from_str(&content)?;
         self.enabled = saved.enabled;
         self.effects = saved.effects.into_iter().map(Into::into).collect();
         self.needs_rebuild = true;
@@ -70,7 +71,7 @@ impl EffectStack {
                     .flatten()
                     .filter_map(|entry| {
                         let path = entry.path();
-                        if path.is_file() && path.extension().is_some_and(|ext| ext == "toml") {
+                        if path.is_file() && path.extension().is_some_and(|ext| ext == "ron") {
                             Some(path)
                         } else {
                             None
@@ -204,7 +205,7 @@ impl EffectStack {
                 let trimmed = self.preset_name_input.trim().to_string();
                 if !trimmed.is_empty() {
                     if let Some(presets_dir) = Self::presets_directory() {
-                        let filename = format!("{trimmed}.toml");
+                        let filename = format!("{trimmed}.ron");
                         let path = presets_dir.join(filename);
                         if let Err(err) = self.save_to_file(&path) {
                             tracing::error!("Failed to save preset: {err}");
