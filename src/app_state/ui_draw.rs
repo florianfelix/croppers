@@ -30,5 +30,7 @@ impl AppState {
         if actions.request_redraw {
             self.request_redraw_wake();
         }
+        
+        self.ui_state.notifications.draw(ctx.ctx());
     }
 }

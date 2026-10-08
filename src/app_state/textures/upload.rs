@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use tracing::info;
+use tracing::{error, info};
 
 use crate::{
     app_state::{AppState, files::ImageSource},
@@ -18,6 +18,9 @@ impl AppState {
 
         let (width, height) = img.image_size;
         let (texture, view, dims) = if width == 0 || height == 0 || width > 8192 || height > 8192 {
+            let msg = format!("Invalid image size {width}x{height}");
+            error!("{msg}");
+            self.ui_state.notifications.push(&msg, true);
             RenderState::create_dummy_texture(device.clone(), queue.clone())
         } else {
             texture_and_view_from_source_img(img, device.clone(), queue.clone())

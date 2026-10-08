@@ -1,5 +1,7 @@
 pub mod draw;
+pub mod notifications;
 use crate::app_state::widgets::CropSettings;
+use self::notifications::Notifications;
 
 pub enum GizmoSelection {
     Empty,
@@ -12,6 +14,7 @@ pub struct UiState {
     pub show_panel: bool,
     pub active_gizmo: GizmoSelection,
     pub crop: CropSettings,
+    pub notifications: Notifications,
     pub pan: egui::Vec2,
     pub zoom: f32,
 }
@@ -50,6 +53,7 @@ impl Default for UiState {
             show_panel: true,
             active_gizmo: GizmoSelection::Empty,
             crop: CropSettings::default(),
+            notifications: Notifications::new(),
             pan: egui::vec2(0.0, 0.0),
             zoom: 1.0,
         }

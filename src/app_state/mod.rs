@@ -156,6 +156,10 @@ impl AppState {
                 self.needs_compute = true;
                 self.effect_stack.needs_rebuild = true;
             }
+            ComputeResult::FinishedCrop(CropResult::Empty(e)) => self
+                .ui_state
+                .notifications
+                .push(&format!("Crop failed: {e}"), true),
             _ => {}
         }
     }

@@ -76,6 +76,7 @@ pub fn compute_worker(
                 }
                 Err(e) => {
                     error!("Failed to Save file {e}");
+                    let _ = proxy.send_event(Message::FileSaveError(e.to_string()));
                 }
             },
         }

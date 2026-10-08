@@ -36,6 +36,7 @@ pub enum Message {
     Empty,
     ComputeResult(ComputeResult),
     FileSaved(PathBuf),
+    FileSaveError(String),
 }
 
 pub struct Croppers {
@@ -133,6 +134,12 @@ impl ApplicationHandler<Message> for Croppers {
             Message::FileSaved(path) => {
                 info!("Saved file: {:?}", path);
                 self.app_state.action_on_save(path);
+            }
+            Message::FileSaveError(e) => {
+                self.app_state
+                    .ui_state
+                    .notifications
+                    .push(&format!("Failed to save: {}", e), true);
             }
         }
         if let Some(renderer) = self.renderer.as_mut() {

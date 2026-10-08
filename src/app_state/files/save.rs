@@ -30,6 +30,15 @@ impl AppState {
 
     #[tracing::instrument(skip(self))]
     pub fn action_on_save(&mut self, path: PathBuf) {
+        let filename = path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+        self.ui_state
+            .notifications
+            .push(&format!("Saved: {}", filename), false);
+
         if let Some(ref source) = self.source {
             let is_overwrite = source.path.canonicalize().unwrap() == path;
             info!("is_overwrite {is_overwrite}");
