@@ -51,11 +51,16 @@ impl UiState {
                     "Resolution: {} × {}",
                     src.image_size.0, src.image_size.1
                 ));
-                
+
                 ui.add_space(4.0);
-                if ui.button("Open File").on_hover_text("Ctrl + O").clicked() {
-                    actions.open_file_dialog = true;
-                }
+                ui.horizontal(|ui| {
+                    if ui.button("Open File").on_hover_text("Ctrl + O").clicked() {
+                        actions.open_file_dialog = true;
+                    }
+                    if ui.button("Settings").on_hover_text("?").clicked() {
+                        actions.toggle_settings = true;
+                    }
+                });
 
                 ui.add_space(4.0);
                 ui.add_enabled_ui(!self.crop.enabled, |ui| {

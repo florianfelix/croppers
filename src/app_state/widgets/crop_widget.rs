@@ -131,17 +131,20 @@ impl WidgetCroppers {
     }
 }
 
-
 impl WidgetCroppers {
     fn update_image_rect_and_remap(&self, state: &mut WidgetCroppersState) {
         let new_image_rect = self.new_image_rect(&self.canvas_rect, &self.image_size);
 
         if new_image_rect != state.image_rect {
             if state.image_rect.width() > 0.0 && state.image_rect.height() > 0.0 {
-                let u_min = (state.crop_rect.min.x - state.image_rect.min.x) / state.image_rect.width();
-                let v_min = (state.crop_rect.min.y - state.image_rect.min.y) / state.image_rect.height();
-                let u_max = (state.crop_rect.max.x - state.image_rect.min.x) / state.image_rect.width();
-                let v_max = (state.crop_rect.max.y - state.image_rect.min.y) / state.image_rect.height();
+                let u_min =
+                    (state.crop_rect.min.x - state.image_rect.min.x) / state.image_rect.width();
+                let v_min =
+                    (state.crop_rect.min.y - state.image_rect.min.y) / state.image_rect.height();
+                let u_max =
+                    (state.crop_rect.max.x - state.image_rect.min.x) / state.image_rect.width();
+                let v_max =
+                    (state.crop_rect.max.y - state.image_rect.min.y) / state.image_rect.height();
 
                 let new_min_x = new_image_rect.min.x + u_min * new_image_rect.width();
                 let new_min_y = new_image_rect.min.y + v_min * new_image_rect.height();
@@ -240,12 +243,7 @@ impl WidgetCroppers {
         }
     }
 
-    fn update_cursor(
-        &self,
-        ui: &egui::Ui,
-        response: &egui::Response,
-        state: &WidgetCroppersState,
-    ) {
+    fn update_cursor(&self, ui: &egui::Ui, response: &egui::Response, state: &WidgetCroppersState) {
         let handle_radius = 60.0;
         let pointer_pos = ui.input(|i| i.pointer.latest_pos().unwrap_or(Pos2::ZERO));
         let active_target = if response.dragged_by(egui::PointerButton::Primary) {
@@ -324,23 +322,23 @@ impl Widget for WidgetCroppers {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let (rect, response) =
             ui.allocate_exact_size(self.canvas_rect.size(), Sense::click_and_drag());
-            
+
         let mut state = ui.data_mut(|d| {
             d.get_persisted::<WidgetCroppersState>(self.id)
                 .unwrap_or_else(|| self.fresh_state())
         });
-        
+
         self.update_image_rect_and_remap(&mut state);
         self.handle_aspect_ratio_change(&mut state);
-        
+
         constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
         self.handle_interactions(ui, &response, &mut state);
         constrain_crop_rect(state.image_rect, &mut state.crop_rect, state.aspect_ratio);
-        
+
         self.update_cursor(ui, &response, &state);
-        
+
         ui.data_mut(|d| d.insert_persisted(self.id, state));
-        
+
         self.draw(ui, &state);
 
         response
@@ -461,8 +459,6 @@ fn constrain_crop_rect(image_rect: Rect, crop_rect: &mut Rect, aspect_ratio: Opt
     crop_rect.max.x = crop_rect.max.x.min(image_rect.max.x);
     crop_rect.max.y = crop_rect.max.y.min(image_rect.max.y);
 }
-
-
 
 fn resize_freeform(state: &mut WidgetCroppersState, delta: Vec2) {
     use DragTarget::*;

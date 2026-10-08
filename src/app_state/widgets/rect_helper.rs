@@ -1,4 +1,4 @@
-use egui::{Rect, Pos2, Vec2};
+use egui::{Pos2, Rect, Vec2};
 pub trait RectHelper {
     fn top_handle(&self, size: f32) -> Rect;
     fn bottom_handle(&self, size: f32) -> Rect;

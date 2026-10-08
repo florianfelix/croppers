@@ -33,9 +33,9 @@ impl AppState {
     pub fn open_file_dialog(&self) {
         if let Some(proxy) = &self.proxy {
             let proxy = proxy.clone();
-            let mut dialog = rfd::FileDialog::new()
-                .add_filter("Images", &["png", "jpg", "jpeg", "webp"]);
-            
+            let mut dialog =
+                rfd::FileDialog::new().add_filter("Images", &["png", "jpg", "jpeg", "webp"]);
+
             if let Some(folder) = &self.folder {
                 dialog = dialog.set_directory(folder);
             }

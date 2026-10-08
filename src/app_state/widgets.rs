@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+pub mod crop_widget;
 pub mod drag_target;
 pub mod rect_helper;
-pub mod crop_widget;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CropMode {

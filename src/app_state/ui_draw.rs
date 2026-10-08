@@ -11,7 +11,6 @@ impl AppState {
         let settings_actions = self.ui_state.draw_settings_panel(ctx, &mut self.config);
         actions.save_config = actions.save_config || settings_actions.save_config;
 
-
         self.ui_state
             .draw_canvas(ctx, self.source.as_ref(), src_dims);
 
@@ -26,9 +25,13 @@ impl AppState {
         }
         if actions.save_config {
             if let Err(e) = self.config.save() {
-                self.ui_state.notifications.push(&format!("Failed to save config: {}", e), true);
+                self.ui_state
+                    .notifications
+                    .push(&format!("Failed to save config: {}", e), true);
             } else {
-                self.ui_state.notifications.push("Config saved successfully", false);
+                self.ui_state
+                    .notifications
+                    .push("Config saved successfully", false);
             }
         }
         if actions.needs_rebuild {
@@ -44,7 +47,10 @@ impl AppState {
         if actions.request_redraw {
             self.request_redraw_wake();
         }
-        
+        if actions.toggle_settings {
+            self.ui_state.toggle_settings();
+        }
+
         self.ui_state.notifications.draw(ctx.ctx());
     }
 }
