@@ -1,17 +1,12 @@
+pub mod draw;
 use crate::app_state::widgets::CropSettings;
-
-pub enum GizmoSelection {
-    Empty,
-    CropHandle(usize),
-    VignetteCenter,
-}
 
 pub struct UiState {
     pub canvas_rect: Option<egui::Rect>,
     pub show_panel: bool,
-    pub active_gizmo: GizmoSelection,
     pub crop: CropSettings,
 }
+
 impl UiState {
     pub fn toggle_panel(&mut self) {
         self.show_panel = !self.show_panel;
@@ -30,8 +25,17 @@ impl Default for UiState {
         Self {
             canvas_rect: None,
             show_panel: true,
-            active_gizmo: GizmoSelection::Empty,
             crop: CropSettings::default(),
         }
     }
+}
+
+#[derive(Default)]
+pub struct UiActions {
+    pub save_overwrite: bool,
+    pub save_increment: bool,
+    pub apply_crop: bool,
+    pub needs_compute: bool,
+    pub needs_rebuild: bool,
+    pub request_redraw: bool,
 }
