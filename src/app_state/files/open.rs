@@ -30,6 +30,24 @@ impl AppState {
         }
     }
 
+    pub fn open_file_dialog(&self) {
+        if let Some(proxy) = &self.proxy {
+            let proxy = proxy.clone();
+            let mut dialog = rfd::FileDialog::new()
+                .add_filter("Images", &["png", "jpg", "jpeg", "webp"]);
+            
+            if let Some(folder) = &self.folder {
+                dialog = dialog.set_directory(folder);
+            }
+
+            std::thread::spawn(move || {
+                if let Some(path) = dialog.pick_file() {
+                    let _ = proxy.send_event(crate::Message::FileOpened(path));
+                }
+            });
+        }
+    }
+
     pub fn set_src_dirty(&mut self) {
         info!("Setting source dirty");
         self.source_dirty = true;

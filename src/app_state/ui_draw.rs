@@ -36,17 +36,7 @@ impl AppState {
             self.effect_stack.validate_ids();
         }
         if actions.open_file_dialog {
-            if let Some(proxy) = &self.proxy {
-                let proxy = proxy.clone();
-                std::thread::spawn(move || {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("Images", &["png", "jpg", "jpeg", "webp"])
-                        .pick_file() 
-                    {
-                        let _ = proxy.send_event(crate::Message::FileOpened(path));
-                    }
-                });
-            }
+            self.open_file_dialog();
         }
         if actions.needs_compute {
             self.needs_compute = true;

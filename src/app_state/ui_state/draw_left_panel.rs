@@ -45,11 +45,17 @@ impl UiState {
     ) {
         if let Some(src) = source {
             ui.group(|ui| {
+                ui.set_min_width(ui.available_width());
                 ui.strong(&src.name);
                 ui.label(format!(
                     "Resolution: {} × {}",
                     src.image_size.0, src.image_size.1
                 ));
+                
+                ui.add_space(4.0);
+                if ui.button("Open File").on_hover_text("Ctrl + O").clicked() {
+                    actions.open_file_dialog = true;
+                }
 
                 ui.add_space(4.0);
                 ui.add_enabled_ui(!self.crop.enabled, |ui| {

@@ -281,33 +281,15 @@ impl Croppers {
                     self.app_state.send_crop_job();
                 }
                 Key::Character("o") => {
-                    let ctrl = self.modifiers.control_key();
-                    if ctrl {
-                        if let Some(proxy) = &self.proxy {
-                            let proxy = proxy.clone();
-                            std::thread::spawn(move || {
-                                if let Some(path) = rfd::FileDialog::new()
-                                    .add_filter("Images", &["png", "jpg", "jpeg", "webp"])
-                                    .pick_file() 
-                                {
-                                    let _ = proxy.send_event(Message::FileOpened(path));
-                                }
-                            });
-                        }
+                    if self.modifiers.control_key() {
+                        self.app_state.open_file_dialog();
                     }
                 }
                 Key::Character("s") => {
                     let ctrl = self.modifiers.control_key();
                     let increment = self.modifiers.shift_key();
                     if ctrl {
-                        if self.app_state.ui_state.crop.enabled {
-                            self.app_state
-                                .ui_state
-                                .notifications
-                                .push("Cannot save while crop mode is active.", true);
-                        } else {
-                            self.app_state.save_effect_texture(increment);
-                        }
+                        self.app_state.save_keyboard_shortcut(increment);
                     }
                 }
                 Key::Named(NamedKey::Delete) => {

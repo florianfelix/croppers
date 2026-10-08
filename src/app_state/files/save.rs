@@ -4,6 +4,16 @@ use tracing::info;
 use crate::app_state::AppState;
 
 impl AppState {
+    pub fn save_keyboard_shortcut(&mut self, increment: bool) {
+        if self.ui_state.crop.enabled {
+            self.ui_state
+                .notifications
+                .push("Cannot save while crop mode is active.", true);
+        } else {
+            self.save_effect_texture(increment);
+        }
+    }
+
     #[tracing::instrument(skip(self))]
     pub fn save_effect_texture(&mut self, increment: bool) {
         if self.texture_vault.effect.texture_view.is_some() {
