@@ -4,6 +4,7 @@ use tracing::{error, info};
 use crate::app_state::{AppState, files::ImageSource};
 
 impl AppState {
+    #[tracing::instrument(skip(self))]
     pub fn try_open_file(&mut self, path: &PathBuf) {
         if let Ok(abspath) = fs::canonicalize(path)
             && path.is_file()
@@ -19,6 +20,7 @@ impl AppState {
             Ok(source) => {
                 info!("Setting new Source Image {:?}", path);
                 self.source = Some(source);
+                self.set_src_dirty();
             }
             Err(e) => {
                 let msg = format!("Failed to load image {e}");
@@ -29,6 +31,7 @@ impl AppState {
     }
 
     pub fn set_src_dirty(&mut self) {
+        info!("Setting source dirty");
         self.source_dirty = true;
         self.set_srcimg_texture_from_source();
     }

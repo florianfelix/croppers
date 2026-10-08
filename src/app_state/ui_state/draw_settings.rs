@@ -100,6 +100,9 @@ impl UiState {
                             .num_columns(2)
                             .spacing([20.0, 4.0])
                             .show(ui, |ui| {
+                                ui.label("Open File");
+                                ui.label(egui::RichText::new("Ctrl + O").monospace());
+                                ui.end_row();
                                 ui.label("Toggle Left Panel");
                                 ui.label(egui::RichText::new("W").monospace());
                                 ui.end_row();

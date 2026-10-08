@@ -32,6 +32,7 @@ pub struct UiActions {
     pub needs_rebuild: bool,
     pub request_redraw: bool,
     pub save_config: bool,
+    pub open_file_dialog: bool,
 }
 
 impl UiState {

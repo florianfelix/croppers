@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 wgpu = { version = "30.0.1", features = ["webgl"] }
-winit = { version = "0.30", features = ["rwh_06", ] }
+winit = { version = "0.30", features = ["rwh_06"] }
 bytemuck = { version = "1.25.2", features = ["derive"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 egui = "0.36.2"
@@ -26,6 +26,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 toml = { version = "1.1.7", features = ["preserve_order"] }
 directories = "6.0.0"
 ron = "0.12.2"
+rfd = "0.17.2"
 
 [profile.release]
 opt-level = 3

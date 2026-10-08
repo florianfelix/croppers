@@ -11,7 +11,10 @@ use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Result;
 use clap::Parser;
+use tracing::warn;
 use tracing::{info, trace};
+#[cfg(target_os = "linux")]
+use winit::platform::{wayland::ActiveEventLoopExtWayland, x11::ActiveEventLoopExtX11};
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, KeyEvent, WindowEvent},
@@ -38,6 +41,7 @@ pub enum Message {
     ComputeResult(ComputeResult),
     FileSaved(PathBuf),
     FileSaveError(String),
+    FileOpened(PathBuf),
 }
 
 pub struct Croppers {
@@ -74,6 +78,12 @@ impl Croppers {
 impl ApplicationHandler<Message> for Croppers {
     #[tracing::instrument(skip_all)]
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        #[cfg(target_os = "linux")]
+        if event_loop.is_x11() {
+            warn!("Winit is running on X11 (XWayland).");
+        } else if event_loop.is_wayland() {
+            warn!("Winit is running on Wayland.");
+        }
         if self.renderer.is_some() {
             return;
         }
@@ -142,6 +152,10 @@ impl ApplicationHandler<Message> for Croppers {
                     .notifications
                     .push(&format!("Failed to save: {}", e), true);
             }
+            Message::FileOpened(path) => {
+                info!("Opening file from dialog: {:?}", path);
+                self.app_state.try_open_file(&path);
+            }
         }
         if let Some(renderer) = self.renderer.as_mut() {
             renderer.window.request_redraw();
@@ -186,6 +200,15 @@ impl ApplicationHandler<Message> for Croppers {
             WindowEvent::CloseRequested => {
                 self.renderer = None;
                 event_loop.exit();
+            }
+            WindowEvent::HoveredFile(path) => {
+                info!("Hovered file: {:?}", path);
+                renderer.window.request_redraw();
+                // self.app_state.hovered_file = Some(path)
+            }
+            WindowEvent::DroppedFile(path) => {
+                info!("Dropped file: {:?}", path);
+                renderer.window.request_redraw();
             }
             WindowEvent::ModifiersChanged(modifiers) => {
                 self.modifiers = modifiers.state();
@@ -257,12 +280,31 @@ impl Croppers {
                 Key::Named(NamedKey::Enter) => {
                     self.app_state.send_crop_job();
                 }
+                Key::Character("o") => {
+                    let ctrl = self.modifiers.control_key();
+                    if ctrl {
+                        if let Some(proxy) = &self.proxy {
+                            let proxy = proxy.clone();
+                            std::thread::spawn(move || {
+                                if let Some(path) = rfd::FileDialog::new()
+                                    .add_filter("Images", &["png", "jpg", "jpeg", "webp"])
+                                    .pick_file() 
+                                {
+                                    let _ = proxy.send_event(Message::FileOpened(path));
+                                }
+                            });
+                        }
+                    }
+                }
                 Key::Character("s") => {
                     let ctrl = self.modifiers.control_key();
                     let increment = self.modifiers.shift_key();
                     if ctrl {
                         if self.app_state.ui_state.crop.enabled {
-                            self.app_state.ui_state.notifications.push("Cannot save while crop mode is active.", true);
+                            self.app_state
+                                .ui_state
+                                .notifications
+                                .push("Cannot save while crop mode is active.", true);
                         } else {
                             self.app_state.save_effect_texture(increment);
                         }
