@@ -15,6 +15,7 @@ impl AppState {
 
                 if fs::remove_file(&source.path).is_ok() {
                     info!("Deleted file");
+                    self.ui_state.notifications.push("File deleted", false);
                     if let Some(next) = next {
                         self.try_open_file(&next);
                         self.set_src_dirty();

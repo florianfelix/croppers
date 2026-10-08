@@ -10,13 +10,21 @@ impl AppState {
         {
             let abs_folder = abspath.parent().map(|p| p.to_owned());
             self.folder = abs_folder;
+        } else {
+            self.ui_state
+                .notifications
+                .push(&format!("{:?} not found", path), true);
         }
         match ImageSource::from_path(path) {
             Ok(source) => {
                 info!("Setting new Source Image {:?}", path);
                 self.source = Some(source);
             }
-            Err(e) => error!("Failed to load image {e}"),
+            Err(e) => {
+                let msg = format!("Failed to load image {e}");
+                error!(msg);
+                self.ui_state.notifications.push(&msg, true);
+            }
         }
     }
 
