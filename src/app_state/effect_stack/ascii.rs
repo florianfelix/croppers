@@ -70,20 +70,20 @@ impl EffectContainerObject for AsciiContainer {
                 .add(egui::Slider::new(&mut self.uniforms.scale, 0.0..=200.0).text("Scale"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.inset, 0.0..=0.45).text("inset"))
+                .add(egui::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).text("glyph set"))
                 .changed();
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.charset, 0..=2).text("atlas"))
                 .changed();
+            ui.separator();
+
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.mult, 0.0..=1.0).text("original bg"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).text("glyph set"))
+                .add(egui::Slider::new(&mut self.uniforms.inset, 0.0..=0.45).text("inset"))
                 .changed();
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.scale_x, 0.0..=2.0).text("scale x"))
                 .changed();
+            ui.separator();
             changed |= ui
                 .add(
                     egui::Slider::new(&mut self.uniforms.rain_factor, 0.0..=1.0)
@@ -95,6 +95,11 @@ impl EffectContainerObject for AsciiContainer {
                     egui::Slider::new(&mut self.uniforms.rain_length, 1.0..=200.0)
                         .text("rain length"),
                 )
+                .changed();
+            ui.separator();
+
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.mult, 0.0..=1.0).text("original bg"))
                 .changed();
         });
         changed

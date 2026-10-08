@@ -86,17 +86,23 @@ impl EffectContainerObject for PixelateLinearContainer {
                 )
                 .changed();
             changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.length, 0.0..=1.0).text("length"))
+                .changed();
+            changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.start_x, 0.0..=1.0).text("start x"))
                 .changed();
             changed |= ui
                 .add(egui::Slider::new(&mut self.uniforms.start_y, 0.0..=1.0).text("start y"))
                 .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.length, 0.0..=1.0).text("length"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.invert, 0..=1).text("invert"))
-                .changed();
+
+            let mut is_inverted = self.uniforms.invert == 1;
+            if ui
+                .add(egui::Checkbox::new(&mut is_inverted, "invert"))
+                .changed()
+            {
+                self.uniforms.invert = is_inverted as i32;
+                changed = true;
+            }
         });
         changed
     }

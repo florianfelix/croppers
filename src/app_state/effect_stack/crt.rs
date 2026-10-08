@@ -72,6 +72,11 @@ impl EffectContainerObject for CrtContainer {
                 .add(egui::Slider::new(&mut self.uniforms.curvature, 0.0..=1.0).text("curvature"))
                 .changed();
             changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.overscan, 0.0..=1.0).text("overscan"))
+                .changed();
+            ui.separator();
+
+            changed |= ui
                 .add(
                     egui::Slider::new(&mut self.uniforms.scanline_count, 0.0..=1000.0)
                         .text("scanlines"),
@@ -88,9 +93,6 @@ impl EffectContainerObject for CrtContainer {
                     egui::Slider::new(&mut self.uniforms.rgb_mask_strength, 0.0..=1.0)
                         .text("mask strength"),
                 )
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.overscan, 0.0..=1.0).text("overscan"))
                 .changed();
         });
         changed
