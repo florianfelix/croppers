@@ -149,6 +149,11 @@ impl AppState {
                     request_redraw = true;
                 }
 
+                if self.effect_stack.draw_presets_ui(ui) {
+                    self.needs_compute = true;
+                    request_redraw = true;
+                }
+
                 let _ = egui::ComboBox::from_label("Add Effect")
                     .selected_text("Add Effect")
                     .show_ui(ui, |ui| {

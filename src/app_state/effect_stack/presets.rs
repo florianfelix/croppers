@@ -1,6 +1,7 @@
 use directories::ProjectDirs;
 use effects::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 use super::effects;
 use crate::app_state::effect_stack::EffectStack;
@@ -21,14 +22,26 @@ impl EffectStack {
             effects: saved.effects.into_iter().map(Into::into).collect(),
             needs_rebuild: true,
             presets: vec![],
+            selected_preset: None,
+            preset_name_input: String::new(),
         };
         stack.validate_ids();
         stack.refresh_presets();
         stack
     }
+
+    pub fn presets_directory() -> Option<PathBuf> {
+        let proj_dirs = ProjectDirs::from("de", "ff", "croppers")?;
+        let presets_dir = proj_dirs.config_dir().join("presets");
+        if !presets_dir.exists() {
+            std::fs::create_dir_all(&presets_dir).ok()?;
+        }
+        Some(presets_dir)
+    }
+
     pub fn save_to_file(&mut self, path: &std::path::Path) -> anyhow::Result<()> {
         let saved = self.to_saved_stack();
-        let ron_or_json = toml::to_string_pretty(&saved)?; // or serde_json / ron
+        let ron_or_json = toml::to_string_pretty(&saved)?;
         std::fs::write(path, ron_or_json)?;
         self.refresh_presets();
         Ok(())
@@ -39,25 +52,21 @@ impl EffectStack {
         let saved: SavedEffectStack = toml::from_str(&content)?;
         Ok(Self::from_saved_stack(saved))
     }
+
+    pub fn load_preset_by_path(&mut self, path: &std::path::Path) -> anyhow::Result<()> {
+        let content = std::fs::read_to_string(path)?;
+        let saved: SavedEffectStack = toml::from_str(&content)?;
+        self.enabled = saved.enabled;
+        self.effects = saved.effects.into_iter().map(Into::into).collect();
+        self.needs_rebuild = true;
+        self.validate_ids();
+        Ok(())
+    }
+
     pub fn refresh_presets(&mut self) {
-        let presets_dir = if let Some(proj_dirs) = ProjectDirs::from("de", "ff", "croppers") {
-            let confdir = proj_dirs.config_dir();
-            let presets_dir = confdir.join("presets");
-            if !presets_dir.exists() {
-                if std::fs::create_dir_all(&presets_dir).is_ok() {
-                    Some(presets_dir)
-                } else {
-                    None
-                }
-            } else {
-                Some(presets_dir)
-            }
-        } else {
-            None
-        };
-        if let Some(presets_dir) = presets_dir {
+        if let Some(presets_dir) = Self::presets_directory() {
             if let Ok(entries) = std::fs::read_dir(presets_dir) {
-                let presets = entries
+                let mut presets: Vec<PathBuf> = entries
                     .flatten()
                     .filter_map(|entry| {
                         let path = entry.path();
@@ -68,10 +77,146 @@ impl EffectStack {
                         }
                     })
                     .collect();
+                presets.sort();
                 self.presets = presets;
+                return;
             }
         }
         self.presets = vec![];
+    }
+
+    /// Renders UI controls for selecting, loading, saving, and deleting effect stack presets.
+    /// Returns `true` if a preset was loaded and needs a GPU rebuild/recompute.
+    pub fn draw_presets_ui(&mut self, ui: &mut egui::Ui) -> bool {
+        let mut changed = false;
+
+        ui.collapsing("Presets", |ui| {
+            let selected_label = self
+                .selected_preset
+                .as_ref()
+                .and_then(|p| p.file_stem().and_then(|s| s.to_str()))
+                .unwrap_or("Select preset...")
+                .to_string();
+
+            let mut preset_to_select = None;
+            let mut do_refresh = false;
+
+            ui.horizontal(|ui| {
+                egui::ComboBox::from_id_salt("effect_presets_combo")
+                    .selected_text(&selected_label)
+                    .width(140.0)
+                    .show_ui(ui, |ui| {
+                        for path in &self.presets {
+                            let stem = path
+                                .file_stem()
+                                .and_then(|s| s.to_str())
+                                .unwrap_or("unknown");
+                            let is_selected = self.selected_preset.as_ref() == Some(path);
+                            if ui.selectable_label(is_selected, stem).clicked() {
+                                preset_to_select = Some(path.clone());
+                            }
+                        }
+                    });
+
+                if ui
+                    .small_button("⟳")
+                    .on_hover_text("Refresh presets")
+                    .clicked()
+                {
+                    do_refresh = true;
+                }
+            });
+
+            if let Some(path) = preset_to_select {
+                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    self.preset_name_input = stem.to_string();
+                }
+                self.selected_preset = Some(path);
+            }
+
+            if do_refresh {
+                self.refresh_presets();
+            }
+
+            let mut do_load = false;
+            let mut do_delete = false;
+
+            ui.horizontal(|ui| {
+                let has_selection = self.selected_preset.is_some();
+                if ui
+                    .add_enabled(has_selection, egui::Button::new("Load"))
+                    .on_hover_text("Load selected preset")
+                    .clicked()
+                {
+                    do_load = true;
+                }
+
+                if ui
+                    .add_enabled(has_selection, egui::Button::new("Delete"))
+                    .on_hover_text("Delete selected preset file")
+                    .clicked()
+                {
+                    do_delete = true;
+                }
+            });
+
+            if do_load {
+                if let Some(ref path) = self.selected_preset.clone() {
+                    if let Err(err) = self.load_preset_by_path(path) {
+                        tracing::error!("Failed to load preset: {err}");
+                    } else {
+                        changed = true;
+                    }
+                }
+            }
+
+            if do_delete {
+                if let Some(ref path) = self.selected_preset.take() {
+                    let _ = std::fs::remove_file(path);
+                    self.refresh_presets();
+                }
+            }
+
+            ui.separator();
+
+            let mut do_save = false;
+
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.preset_name_input)
+                        .hint_text("Preset name")
+                        .desired_width(120.0),
+                );
+
+                let trimmed = self.preset_name_input.trim();
+                let can_save = !trimmed.is_empty();
+
+                if ui
+                    .add_enabled(can_save, egui::Button::new("Save"))
+                    .on_hover_text("Save current effect stack as preset")
+                    .clicked()
+                {
+                    do_save = true;
+                }
+            });
+
+            if do_save {
+                let trimmed = self.preset_name_input.trim().to_string();
+                if !trimmed.is_empty() {
+                    if let Some(presets_dir) = Self::presets_directory() {
+                        let filename = format!("{trimmed}.toml");
+                        let path = presets_dir.join(filename);
+                        if let Err(err) = self.save_to_file(&path) {
+                            tracing::error!("Failed to save preset: {err}");
+                        } else {
+                            self.selected_preset = Some(path);
+                        }
+                    }
+                }
+            }
+        });
+
+        changed
     }
 }
 

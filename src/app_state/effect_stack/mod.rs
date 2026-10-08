@@ -10,6 +10,8 @@ pub struct EffectStack {
     pub needs_rebuild: bool,
     pub enabled: bool,
     pub presets: Vec<PathBuf>,
+    pub selected_preset: Option<PathBuf>,
+    pub preset_name_input: String,
 }
 
 impl Default for EffectStack {
@@ -20,6 +22,8 @@ impl Default for EffectStack {
             needs_rebuild: true,
             enabled: true,
             presets: vec![],
+            selected_preset: None,
+            preset_name_input: String::new(),
         };
         result.validate_ids();
         result.refresh_presets();
