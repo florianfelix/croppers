@@ -106,6 +106,7 @@ impl ApplicationHandler<Message> for Croppers {
             .with_title("Croppers")
             .with_fullscreen(fullscreen)
             .with_name(&self.app_state.config.app_id, "de.ff.croppers")
+            .with_window_icon(load_window_icon())
             .with_visible(false);
         let window = Arc::new(
             event_loop
@@ -299,4 +300,21 @@ impl Croppers {
             }
         }
     }
+}
+
+/// Loads the embedded application icon for the winit window.
+/// Note: Wayland compositors ignore this and use the icon from the .desktop file (matched via app_id).
+fn load_window_icon() -> Option<winit::window::Icon> {
+    const ICON_BYTES: &[u8] = include_bytes!("../assets/croppers.png");
+    let img = match image::load_from_memory(ICON_BYTES) {
+        Ok(img) => img.into_rgba8(),
+        Err(e) => {
+            warn!("Failed to decode window icon: {e}");
+            return None;
+        }
+    };
+    let (w, h) = img.dimensions();
+    winit::window::Icon::from_rgba(img.into_raw(), w, h)
+        .map_err(|e| warn!("Failed to create window icon: {e}"))
+        .ok()
 }
