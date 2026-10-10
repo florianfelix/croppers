@@ -1,4 +1,3 @@
-use elegance::glyphs;
 use itertools::Itertools;
 
 use crate::app_state::{
@@ -29,7 +28,14 @@ impl UiState {
                 ui.horizontal(|ui| {
                     ui.heading("Image Controls");
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.add(elegance::Button::icon(elegance::glyphs::SETTINGS, "Settings").outline().size(elegance::ButtonSize::Small)).clicked() {
+                        if ui
+                            .add(
+                                elegance::Button::icon(elegance::glyphs::SETTINGS, "Settings")
+                                    .outline()
+                                    .size(elegance::ButtonSize::Small),
+                            )
+                            .clicked()
+                        {
                             actions.toggle_settings = true;
                         }
                     });
@@ -239,8 +245,18 @@ impl UiState {
                         .fill(theme.palette.card)
                         .stroke(egui::Stroke::new(1.0, theme.palette.border))
                         .corner_radius(egui::CornerRadius::same(theme.card_radius as u8))
-                        .inner_margin(egui::Margin { left: 0, right: 8, top: 0, bottom: 0 })
-                        .outer_margin(egui::Margin { left: 0, right: 14, top: 0, bottom: 0 });
+                        .inner_margin(egui::Margin {
+                            left: 0,
+                            right: 8,
+                            top: 0,
+                            bottom: 0,
+                        })
+                        .outer_margin(egui::Margin {
+                            left: 0,
+                            right: 14,
+                            top: 0,
+                            bottom: 0,
+                        });
 
                     let (_, dropped_payload) = ui.dnd_drop_zone::<usize, _>(frame, |ui| {
                         let inner_avail = ui.available_width();
@@ -292,7 +308,7 @@ impl UiState {
                                         ui.with_layout(
                                             egui::Layout::right_to_left(egui::Align::Center),
                                             |ui| {
-                                                    if ui
+                                                if ui
                                                     .add(elegance::Button::icon(
                                                         elegance::glyphs::TRASH,
                                                         "Remove",

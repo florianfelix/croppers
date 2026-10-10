@@ -87,7 +87,7 @@ impl UiState {
                     });
 
                     ui.add_space(16.0);
-                    if ui.button("Save Settings").clicked() {
+                    if ui.add(elegance::Button::new("Save Settings")).clicked() {
                         actions.save_config = true;
                     }
 
