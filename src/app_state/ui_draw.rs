@@ -2,6 +2,9 @@ use crate::app_state::AppState;
 
 impl AppState {
     pub fn draw(&mut self, _raw_input: &egui::RawInput, ctx: &mut egui::Ui) {
+        let theme = elegance::Theme::charcoal();
+        // theme.palette.text = Color32::WHITE;
+        theme.install(ctx);
         let src_dims = self.texture_vault.srcimg.dims;
 
         let mut actions =

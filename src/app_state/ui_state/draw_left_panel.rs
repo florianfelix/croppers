@@ -1,3 +1,6 @@
+use elegance::glyphs;
+use itertools::Itertools;
+
 use crate::app_state::{
     effect_stack::{EffectStack, effects::EffectSelector},
     files::ImageSource,
@@ -54,31 +57,72 @@ impl UiState {
 
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
-                    if ui.button("Open File").on_hover_text("Ctrl + O").clicked() {
+                    if ui
+                        .add(
+                            elegance::Button::new("Open File")
+                                .outline()
+                                .size(elegance::ButtonSize::Small),
+                        )
+                        .clicked()
+                    {
                         actions.open_file_dialog = true;
                     }
-                    if ui.button("Settings").on_hover_text("?").clicked() {
+                    if ui
+                        .add(
+                            elegance::Button::icon(glyphs::SETTINGS, "settings")
+                                .outline()
+                                .size(elegance::ButtonSize::Small),
+                        )
+                        .clicked()
+                    {
                         actions.toggle_settings = true;
                     }
+                    // if ui.button("Open File").on_hover_text("Ctrl + O").clicked() {
+                    //     actions.open_file_dialog = true;
+                    // }
+                    // if ui.button("Settings").on_hover_text("?").clicked() {
+                    //     actions.toggle_settings = true;
+                    // }
                 });
 
                 ui.add_space(4.0);
                 ui.add_enabled_ui(!self.crop.enabled, |ui| {
                     ui.horizontal(|ui| {
                         if ui
-                            .button("Save")
-                            .on_hover_text("Save / Overwrite Original")
+                            .add(
+                                elegance::Button::new("Save")
+                                    .outline()
+                                    .size(elegance::ButtonSize::Small),
+                            )
                             .clicked()
                         {
                             actions.save_overwrite = true;
                         }
                         if ui
-                            .button("Save Increment")
-                            .on_hover_text("Save as new file (e.g. filename_001)")
+                            .add(
+                                elegance::Button::new("Save Increment")
+                                    .outline()
+                                    .size(elegance::ButtonSize::Small),
+                            )
                             .clicked()
                         {
                             actions.save_increment = true;
                         }
+
+                        // if ui
+                        //     .button("Save")
+                        //     .on_hover_text("Save / Overwrite Original")
+                        //     .clicked()
+                        // {
+                        //     actions.save_overwrite = true;
+                        // }
+                        // if ui
+                        //     .button("Save Increment")
+                        //     .on_hover_text("Save as new file (e.g. filename_001)")
+                        //     .clicked()
+                        // {
+                        //     actions.save_increment = true;
+                        // }
                     });
                 });
             });
@@ -92,19 +136,26 @@ impl UiState {
         actions: &mut UiActions,
     ) {
         ui.indent("Crop", |ui| {
-            ui.checkbox(&mut self.crop.enabled, "Crop");
+            ui.add(elegance::Switch::new(&mut self.crop.enabled, "Crop"));
+            // ui.checkbox(&mut self.crop.enabled, "Crop");
 
             if !self.crop.enabled {
                 return;
             }
 
-            egui::ComboBox::from_label("Mode")
-                .selected_text(self.crop.mode.label())
-                .show_ui(ui, |ui| {
-                    for mode in CropMode::ALL {
-                        ui.selectable_value(&mut self.crop.mode, mode, mode.label());
-                    }
-                });
+            let options = CropMode::ALL
+                .into_iter()
+                .map(|m| (m, m.label()))
+                .collect_vec();
+            ui.add(elegance::Select::new("Mode", &mut self.crop.mode).options(options));
+
+            // egui::ComboBox::from_label("Mode")
+            //     .selected_text(self.crop.mode.label())
+            //     .show_ui(ui, |ui| {
+            //         for mode in CropMode::ALL {
+            //             ui.selectable_value(&mut self.crop.mode, mode, mode.label());
+            //         }
+            //     });
 
             match self.crop.mode {
                 CropMode::FixedDimensions => {
