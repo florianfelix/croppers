@@ -26,7 +26,14 @@ impl UiState {
             .resizable(false)
             .default_size(280.0)
             .show(ctx, |ui| {
-                ui.heading("Image Controls");
+                ui.horizontal(|ui| {
+                    ui.heading("Image Controls");
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.add(elegance::Button::icon(elegance::glyphs::SETTINGS, "Settings").outline().size(elegance::ButtonSize::Small)).clicked() {
+                            actions.toggle_settings = true;
+                        }
+                    });
+                });
 
                 self.draw_file_info_and_save(ui, source, &mut actions);
                 ui.separator();
@@ -67,27 +74,8 @@ impl UiState {
                     {
                         actions.open_file_dialog = true;
                     }
-                    if ui
-                        .add(
-                            elegance::Button::icon(glyphs::SETTINGS, "settings")
-                                .outline()
-                                .size(elegance::ButtonSize::Small),
-                        )
-                        .clicked()
-                    {
-                        actions.toggle_settings = true;
-                    }
-                    // if ui.button("Open File").on_hover_text("Ctrl + O").clicked() {
-                    //     actions.open_file_dialog = true;
-                    // }
-                    // if ui.button("Settings").on_hover_text("?").clicked() {
-                    //     actions.toggle_settings = true;
-                    // }
-                });
 
-                ui.add_space(4.0);
-                ui.add_enabled_ui(!self.crop.enabled, |ui| {
-                    ui.horizontal(|ui| {
+                    ui.add_enabled_ui(!self.crop.enabled, |ui| {
                         if ui
                             .add(
                                 elegance::Button::new("Save")
@@ -108,21 +96,6 @@ impl UiState {
                         {
                             actions.save_increment = true;
                         }
-
-                        // if ui
-                        //     .button("Save")
-                        //     .on_hover_text("Save / Overwrite Original")
-                        //     .clicked()
-                        // {
-                        //     actions.save_overwrite = true;
-                        // }
-                        // if ui
-                        //     .button("Save Increment")
-                        //     .on_hover_text("Save as new file (e.g. filename_001)")
-                        //     .clicked()
-                        // {
-                        //     actions.save_increment = true;
-                        // }
                     });
                 });
             });
