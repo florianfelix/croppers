@@ -6,8 +6,8 @@ struct CanvasUniforms {
     bg_color: vec4<f32>,
     shadow_color: vec4<f32>,
     radius: f32,
-    shadow_offset: f32,
-    _padding2: f32,
+    shadow_offset_x: f32,
+    shadow_offset_y: f32,
     _padding3: f32,
 };
 
@@ -52,7 +52,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Outside image: background + shadow
     // Let's compute a simple soft drop shadow.
     // Shift the bounds downwards for the shadow offset
-    let shadow_offset = vec2<f32>(0.0, uniforms.shadow_offset);
+    let shadow_offset = vec2<f32>(uniforms.shadow_offset_x, uniforms.shadow_offset_y);
     let shadow_bounds = vec4<f32>(bounds.xy + shadow_offset, bounds.zw + shadow_offset);
 
     let dist = sdRect(px, shadow_bounds);

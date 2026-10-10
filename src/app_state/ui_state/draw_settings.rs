@@ -29,12 +29,96 @@ impl UiState {
                             .selected_text(config.theme_mode.label())
                             .show_ui(ui, |ui| {
                                 for mode in crate::utils::ThemeMode::ALL {
-                                    if ui.selectable_value(&mut config.theme_mode, mode, mode.label()).changed() {
-                                        actions.save_config = true;
+                                    if ui
+                                        .selectable_value(
+                                            &mut config.theme_mode,
+                                            mode,
+                                            mode.label(),
+                                        )
+                                        .changed()
+                                    {
                                         actions.request_redraw = true;
                                     }
                                 }
                             });
+
+                        ui.add_space(8.0);
+                        ui.label("Canvas Background");
+                        let bg_rgba = egui::Rgba::from_rgba_unmultiplied(
+                            config.appearance.canvas_bg_color[0],
+                            config.appearance.canvas_bg_color[1],
+                            config.appearance.canvas_bg_color[2],
+                            config.appearance.canvas_bg_color[3],
+                        );
+                        let mut bg_c32 = bg_rgba.into();
+                        if ui
+                            .add(elegance::ColorPicker::new("bg_picker", &mut bg_c32).alpha(true))
+                            .changed()
+                        {
+                            let new_rgba = egui::Rgba::from(bg_c32);
+                            config.appearance.canvas_bg_color = new_rgba.to_array();
+                            actions.request_redraw = true;
+                        }
+
+                        ui.add_space(4.0);
+                        ui.label("Shadow Color");
+                        let shadow_rgba = egui::Rgba::from_rgba_unmultiplied(
+                            config.appearance.canvas_shadow_color[0],
+                            config.appearance.canvas_shadow_color[1],
+                            config.appearance.canvas_shadow_color[2],
+                            config.appearance.canvas_shadow_color[3],
+                        );
+                        let mut shadow_c32 = shadow_rgba.into();
+                        if ui
+                            .add(
+                                elegance::ColorPicker::new("shadow_picker", &mut shadow_c32)
+                                    .alpha(true),
+                            )
+                            .changed()
+                        {
+                            let new_rgba = egui::Rgba::from(shadow_c32);
+                            config.appearance.canvas_shadow_color = new_rgba.to_array();
+                            actions.request_redraw = true;
+                        }
+
+                        ui.add_space(4.0);
+                        if ui
+                            .add(
+                                elegance::Slider::new(
+                                    &mut config.appearance.canvas_radius,
+                                    0.0..=500.0,
+                                )
+                                .label("Shadow Radius"),
+                            )
+                            .changed()
+                        {
+                            actions.request_redraw = true;
+                        }
+                        if ui
+                            .add(
+                                elegance::Slider::new(
+                                    &mut config.appearance.canvas_shadow_offset_x,
+                                    -100.0..=100.0,
+                                )
+                                .label("Shadow Offset X"),
+                            )
+                            .changed()
+                        {
+                            actions.request_redraw = true;
+                        }
+
+                        if ui
+                            .add(
+                                elegance::Slider::new(
+                                    &mut config.appearance.canvas_shadow_offset_y,
+                                    -100.0..=100.0,
+                                )
+                                .label("Shadow Offset Y"),
+                            )
+                            .changed()
+                        {
+                            actions.request_redraw = true;
+                        }
                     });
 
                     ui.add_space(8.0);

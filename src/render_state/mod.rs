@@ -174,11 +174,8 @@ impl RenderState {
 
             self.canvas_renderer.render(
                 &mut render_pass,
-                app_state.ui_state.canvas_rect(),
+                app_state,
                 Some((display_dims[0] as f32, display_dims[1] as f32)),
-                app_state.ui_state.zoom,
-                app_state.ui_state.pan,
-                // self.image_size,
             );
 
             self.ui_renderer.render(

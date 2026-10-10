@@ -47,6 +47,7 @@ pub struct CroppersConfig {
     pub is_new_config: bool,
 
     pub theme_mode: ThemeMode,
+    pub appearance: AppearanceConfig,
     pub startup_crop: StartupCrop,
     pub startup_ui: StartupUi,
     pub startup_effects: StartupEffects,
@@ -59,10 +60,32 @@ impl Default for CroppersConfig {
             fullscreen: false,
             is_new_config: false,
             theme_mode: ThemeMode::default(),
+            appearance: AppearanceConfig::default(),
             startup_crop: StartupCrop::default(),
             startup_ui: StartupUi::default(),
             startup_effects: StartupEffects::default(),
             on_image_load: OnImageLoad::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AppearanceConfig {
+    pub canvas_bg_color: [f32; 4],
+    pub canvas_shadow_color: [f32; 4],
+    pub canvas_radius: f32,
+    pub canvas_shadow_offset_x: f32,
+    pub canvas_shadow_offset_y: f32,
+}
+impl Default for AppearanceConfig {
+    fn default() -> Self {
+        Self {
+            canvas_bg_color: [0.08, 0.08, 0.09, 1.0],
+            canvas_shadow_color: [0.04, 0.04, 0.04, 0.6],
+            canvas_radius: 100.0,
+            canvas_shadow_offset_x: 0.0,
+            canvas_shadow_offset_y: 0.0,
         }
     }
 }

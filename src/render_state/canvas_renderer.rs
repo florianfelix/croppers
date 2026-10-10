@@ -1,5 +1,4 @@
 use crate::utils::Vertex;
-use egui::Rect;
 use std::sync::Arc;
 use wgpu::{RenderPass, util::DeviceExt};
 use winit::window::Window;
@@ -11,8 +10,8 @@ pub struct CanvasUniforms {
     pub bg_color: [f32; 4],
     pub shadow_color: [f32; 4],
     pub radius: f32,
-    pub shadow_offset: f32,
-    pub _padding2: f32,
+    pub shadow_offset_x: f32,
+    pub shadow_offset_y: f32,
     pub _padding3: f32,
 }
 
@@ -172,8 +171,8 @@ impl CanvasRenderer {
             bg_color: [0.08, 0.08, 0.09, 1.0],
             shadow_color: [0.04, 0.04, 0.04, 0.6],
             radius: 100.0,
-            shadow_offset: 10.0,
-            _padding2: 0.0,
+            shadow_offset_x: 10.0,
+            shadow_offset_y: 10.0,
             _padding3: 0.0,
         };
         Self {
@@ -215,11 +214,19 @@ impl CanvasRenderer {
     pub fn render<'a>(
         &mut self,
         render_pass: &mut RenderPass<'a>,
-        target_rect: &Option<Rect>,
+        app_state: &crate::app_state::AppState,
         image_size: Option<(f32, f32)>,
-        zoom: f32,
-        pan: egui::Vec2,
     ) {
+        let target_rect = &app_state.ui_state.canvas_rect();
+        let zoom = app_state.ui_state.zoom;
+        let pan = app_state.ui_state.pan;
+
+        self.canvas_uniforms.bg_color = app_state.config.appearance.canvas_bg_color;
+        self.canvas_uniforms.shadow_color = app_state.config.appearance.canvas_shadow_color;
+        self.canvas_uniforms.radius = app_state.config.appearance.canvas_radius;
+        self.canvas_uniforms.shadow_offset_x = app_state.config.appearance.canvas_shadow_offset_x;
+        self.canvas_uniforms.shadow_offset_y = app_state.config.appearance.canvas_shadow_offset_y;
+
         if let Some(rect) = target_rect {
             let scale = self.window.scale_factor() as f32;
             let viewport_w = rect.width() * scale;
