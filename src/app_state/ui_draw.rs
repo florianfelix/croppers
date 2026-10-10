@@ -38,10 +38,7 @@ impl AppState {
             self.config.appearance.accent_color[3],
         );
         let accent_c32: egui::Color32 = accent_rgba.into();
-        let accent_c32_muted = accent_c32.clone().gamma_multiply(0.5);
-
-        let gold = egui::Color32::from_rgb(0xd9, 0xa3, 0x06);
-        let gold_dark = egui::Color32::from_rgb(0xb4, 0x81, 0x09);
+        let accent_c32_muted = accent_c32.gamma_multiply(0.5);
 
         theme.palette.focus = accent_c32; // focus rings, selection, active states
         theme.palette.blue = accent_c32; // the default (Blue) primary button

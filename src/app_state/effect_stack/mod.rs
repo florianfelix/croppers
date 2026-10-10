@@ -25,7 +25,7 @@ impl Default for EffectStack {
             presets: vec![],
             selected_preset: None,
             preset_name_input: String::new(),
-            presets_collapsed: false,
+            presets_collapsed: true,
         };
         result.validate_ids();
         result.refresh_presets();
