@@ -19,6 +19,8 @@ impl AppState {
         let (width, height) = img.image_size;
         let (texture, view, dims) = if width == 0 || height == 0 || width > 8192 || height > 8192 {
             let msg = format!("Invalid image size {width}x{height}");
+            self.ui_state.has_source_image = false;
+
             error!("{msg}");
             self.ui_state.notifications.push(&msg, true);
             RenderState::create_dummy_texture(device.clone(), queue.clone())

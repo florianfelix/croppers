@@ -84,7 +84,6 @@ impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn update_before_reddraw(&mut self) -> bool {
         let mut request_redraw = false;
-        self.ui_state.has_source_image = self.source.is_some();
 
         if !self.source.is_some() {
             if let Some((ref device, ref queue)) = self.gpu {
@@ -141,6 +140,7 @@ impl AppState {
                 let _ = proxy.send_event(Message::Empty);
             }
         }
+        self.ui_state.has_source_image = self.source.is_some();
         request_redraw
     }
 
