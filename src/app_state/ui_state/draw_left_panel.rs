@@ -171,6 +171,37 @@ impl UiState {
                         ui.label("ratio (W:H)");
                     });
                 }
+                CropMode::Scaling => {
+                    ui.horizontal(|ui| {
+                        let mut w = self.crop.scale_width;
+                        if ui.add(egui::DragValue::new(&mut w).range(1..=10000).speed(10)).changed() {
+                            self.crop.scale_width = w;
+                            if self.crop.scale_link_aspect && src_dims[0] > 0 {
+                                self.crop.scale_height = ((w as f64 * src_dims[1] as f64) / src_dims[0] as f64).round() as u32;
+                            }
+                            actions.request_redraw = true;
+                        }
+                        ui.label("target width");
+                    });
+                    ui.horizontal(|ui| {
+                        let mut h = self.crop.scale_height;
+                        if ui.add(egui::DragValue::new(&mut h).range(1..=10000).speed(10)).changed() {
+                            self.crop.scale_height = h;
+                            if self.crop.scale_link_aspect && src_dims[1] > 0 {
+                                self.crop.scale_width = ((h as f64 * src_dims[0] as f64) / src_dims[1] as f64).round() as u32;
+                            }
+                            actions.request_redraw = true;
+                        }
+                        ui.label("target height");
+                    });
+                    ui.add_space(4.0);
+                    if ui.add(elegance::Switch::new(&mut self.crop.scale_link_aspect, "Link Aspect Ratio")).changed() {
+                        if self.crop.scale_link_aspect && src_dims[0] > 0 {
+                            self.crop.scale_height = ((self.crop.scale_width as f64 * src_dims[1] as f64) / src_dims[0] as f64).round() as u32;
+                            actions.request_redraw = true;
+                        }
+                    }
+                }
                 _ => {}
             }
 
@@ -185,6 +216,8 @@ impl UiState {
                         "Output: {} × {} px (scaled)",
                         self.crop.crop_width, self.crop.crop_height
                     ));
+                } else if self.crop.mode == CropMode::Scaling {
+                    ui.label(format!("Output: {} × {} px (scaled)", self.crop.scale_width, self.crop.scale_height));
                 } else {
                     ui.label(format!("Output: {} × {} px", crop_px_w, crop_px_h));
                 }

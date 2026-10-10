@@ -8,6 +8,7 @@ pub mod rect_helper;
 pub enum CropMode {
     Freeform,
     FixedDimensions,
+    Scaling,
     OriginalRatio,
     Ratio1x1,
     Ratio16x9,
@@ -21,6 +22,7 @@ impl CropMode {
         match self {
             CropMode::Freeform => "Freeform",
             CropMode::FixedDimensions => "Fixed Target Dimensions",
+            CropMode::Scaling => "Scaling (Full Image)",
             CropMode::OriginalRatio => "Original Ratio",
             CropMode::Ratio1x1 => "1:1 (Square)",
             CropMode::Ratio16x9 => "16:9",
@@ -30,9 +32,10 @@ impl CropMode {
         }
     }
 
-    pub const ALL: [CropMode; 8] = [
+    pub const ALL: [CropMode; 9] = [
         CropMode::Freeform,
         CropMode::FixedDimensions,
+        CropMode::Scaling,
         CropMode::OriginalRatio,
         CropMode::Ratio1x1,
         CropMode::Ratio16x9,
@@ -48,6 +51,9 @@ pub struct CropSettings {
     pub mode: CropMode,
     pub crop_width: u32,
     pub crop_height: u32,
+    pub scale_width: u32,
+    pub scale_height: u32,
+    pub scale_link_aspect: bool,
     pub custom_ratio: [u32; 2],
     pub uv_rect: egui::Rect,
 }
@@ -59,6 +65,9 @@ impl Default for CropSettings {
             mode: CropMode::Freeform,
             crop_width: 3440,
             crop_height: 1440,
+            scale_width: 1920,
+            scale_height: 1080,
+            scale_link_aspect: true,
             custom_ratio: [16, 9],
             uv_rect: egui::Rect {
                 min: egui::Pos2::ZERO,
@@ -72,6 +81,7 @@ impl CropSettings {
     pub fn aspect_ratio(&self, image_size: [u32; 2]) -> Option<f32> {
         match self.mode {
             CropMode::Freeform => None,
+            CropMode::Scaling => None,
             CropMode::FixedDimensions => {
                 if self.crop_height > 0 {
                     Some(self.crop_width as f32 / self.crop_height as f32)
@@ -100,9 +110,18 @@ impl CropSettings {
         }
     }
 
+    pub fn target_uv_rect(&self) -> egui::Rect {
+        if self.mode == CropMode::Scaling {
+            egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0))
+        } else {
+            self.uv_rect
+        }
+    }
+
     pub fn target_dimensions(&self, src_dimensions: [u32; 2]) -> [u32; 2] {
         match self.mode {
             CropMode::FixedDimensions => [self.crop_width.max(1), self.crop_height.max(1)],
+            CropMode::Scaling => [self.scale_width.max(1), self.scale_height.max(1)],
             _ => {
                 let w = ((src_dimensions[0] as f32) * self.uv_rect.width())
                     .round()

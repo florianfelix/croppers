@@ -206,7 +206,7 @@ impl AppState {
             src_view: view,
             src_dimensions: imgdim,
             target_dimensions,
-            uv_rect: self.ui_state.crop.uv_rect,
+            uv_rect: self.ui_state.crop.target_uv_rect(),
         };
         let _ = self.tx_job.send(ComputeRequest::CropJob(job));
         self.ui_state.crop.enabled = false;
