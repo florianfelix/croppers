@@ -300,4 +300,3 @@ impl Croppers {
         }
     }
 }
-pub mod dnd_test;

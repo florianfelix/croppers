@@ -57,8 +57,9 @@ impl UiRenderer {
         bool,
     ) {
         let raw_input = self.egui_winit.take_egui_input(window);
+        let window_theme = window.theme();
         let full_output = self.egui_ctx.run_ui(raw_input.clone(), |ctx| {
-            app_state.draw(&raw_input, ctx);
+            app_state.draw(&raw_input, ctx, window_theme);
         });
 
         self.egui_winit

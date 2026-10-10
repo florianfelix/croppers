@@ -6,6 +6,36 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ThemeMode {
+    #[default]
+    Auto,
+    Slate,
+    Charcoal,
+    Frost,
+    Paper,
+}
+
+impl ThemeMode {
+    pub const ALL: [Self; 5] = [
+        Self::Auto,
+        Self::Slate,
+        Self::Charcoal,
+        Self::Frost,
+        Self::Paper,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Auto => "Auto",
+            Self::Slate => "Slate (Dark Blue)",
+            Self::Charcoal => "Charcoal (Dark Grey)",
+            Self::Frost => "Frost (Light Blue)",
+            Self::Paper => "Paper (Light Warm)",
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CroppersConfig {
@@ -16,6 +46,7 @@ pub struct CroppersConfig {
     #[serde(skip)]
     pub is_new_config: bool,
 
+    pub theme_mode: ThemeMode,
     pub startup_crop: StartupCrop,
     pub startup_ui: StartupUi,
     pub startup_effects: StartupEffects,
@@ -27,6 +58,7 @@ impl Default for CroppersConfig {
             app_id: "croppers".to_string(),
             fullscreen: false,
             is_new_config: false,
+            theme_mode: ThemeMode::default(),
             startup_crop: StartupCrop::default(),
             startup_ui: StartupUi::default(),
             startup_effects: StartupEffects::default(),

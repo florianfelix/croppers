@@ -1,9 +1,28 @@
 use crate::app_state::AppState;
 
 impl AppState {
-    pub fn draw(&mut self, _raw_input: &egui::RawInput, ctx: &mut egui::Ui) {
-        let theme = elegance::Theme::charcoal();
-        // theme.palette.text = Color32::WHITE;
+    pub fn draw(&mut self, _raw_input: &egui::RawInput, ctx: &mut egui::Ui, window_theme: Option<winit::window::Theme>) {
+        let is_dark = match self.config.theme_mode {
+            crate::utils::ThemeMode::Auto => window_theme.unwrap_or(winit::window::Theme::Dark) == winit::window::Theme::Dark,
+            crate::utils::ThemeMode::Slate => true,
+            crate::utils::ThemeMode::Charcoal => true,
+            crate::utils::ThemeMode::Frost => false,
+            crate::utils::ThemeMode::Paper => false,
+        };
+
+        let theme = match self.config.theme_mode {
+            crate::utils::ThemeMode::Slate => elegance::Theme::slate(),
+            crate::utils::ThemeMode::Charcoal => elegance::Theme::charcoal(),
+            crate::utils::ThemeMode::Frost => elegance::Theme::frost(),
+            crate::utils::ThemeMode::Paper => elegance::Theme::paper(),
+            crate::utils::ThemeMode::Auto => {
+                if is_dark {
+                    elegance::Theme::slate()
+                } else {
+                    elegance::Theme::frost()
+                }
+            }
+        };
         theme.install(ctx);
         let src_dims = self.texture_vault.srcimg.dims;
 

@@ -24,6 +24,21 @@ impl UiState {
 
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     ui.group(|ui| {
+                        ui.strong("Appearance");
+                        egui::ComboBox::from_label("Theme")
+                            .selected_text(config.theme_mode.label())
+                            .show_ui(ui, |ui| {
+                                for mode in crate::utils::ThemeMode::ALL {
+                                    if ui.selectable_value(&mut config.theme_mode, mode, mode.label()).changed() {
+                                        actions.save_config = true;
+                                        actions.request_redraw = true;
+                                    }
+                                }
+                            });
+                    });
+
+                    ui.add_space(8.0);
+                    ui.group(|ui| {
                         ui.strong("On Image Load");
                         ui.checkbox(&mut config.on_image_load.crop_enabled, "Enable Crop");
                         ui.checkbox(&mut config.on_image_load.effects_enabled, "Enable Effects");
