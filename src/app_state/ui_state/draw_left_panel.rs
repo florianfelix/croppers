@@ -13,6 +13,7 @@ impl UiState {
         ctx: &mut egui::Ui,
         source: Option<&ImageSource>,
         src_dims: [u32; 2],
+        crop_dims: Option<[u32; 2]>,
         effect_stack: &mut EffectStack,
     ) -> UiActions {
         let mut actions = UiActions::default();
@@ -41,7 +42,7 @@ impl UiState {
                     });
                 });
 
-                self.draw_file_info_and_save(ui, source, &mut actions);
+                self.draw_file_info_and_save(ui, source, crop_dims, &mut actions);
                 ui.separator();
 
                 self.draw_crop_section(ui, src_dims, &mut actions);
@@ -57,16 +58,24 @@ impl UiState {
         &mut self,
         ui: &mut egui::Ui,
         source: Option<&ImageSource>,
+        crop_dims: Option<[u32; 2]>,
         actions: &mut UiActions,
     ) {
         if let Some(src) = source {
             ui.group(|ui| {
                 ui.set_min_width(ui.available_width());
                 ui.strong(&src.name);
+                
                 ui.label(format!(
                     "Resolution: {} × {}",
                     src.image_size.0, src.image_size.1
                 ));
+                if let Some(cdims) = crop_dims {
+                    ui.label(format!(
+                        "Cropped: {} × {}",
+                        cdims[0], cdims[1]
+                    ));
+                }
 
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {

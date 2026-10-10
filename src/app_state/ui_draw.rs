@@ -25,10 +25,15 @@ impl AppState {
         };
         theme.install(ctx);
         let src_dims = self.texture_vault.srcimg.dims;
+        let crop_dims = if self.texture_vault.cropped.dims[0] > 0 {
+            Some(self.texture_vault.cropped.dims)
+        } else {
+            None
+        };
 
         let mut actions =
             self.ui_state
-                .draw_panel(ctx, self.source.as_ref(), src_dims, &mut self.effect_stack);
+                .draw_panel(ctx, self.source.as_ref(), src_dims, crop_dims, &mut self.effect_stack);
 
         let settings_actions = self.ui_state.draw_settings_panel(ctx, &mut self.config);
         actions.save_config = actions.save_config || settings_actions.save_config;
