@@ -105,7 +105,7 @@ impl ApplicationHandler<Message> for Croppers {
         let window_attributes = Window::default_attributes()
             .with_title("Croppers")
             .with_fullscreen(fullscreen)
-            .with_name(&self.app_state.config.app_id, "de.ff.croppers")
+            .with_name(&self.app_state.config.app_id, &self.app_state.config.app_id)
             .with_window_icon(load_window_icon())
             .with_visible(false);
         let window = Arc::new(
