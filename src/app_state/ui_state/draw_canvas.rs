@@ -21,6 +21,14 @@ impl UiState {
                 let rect = ui.available_rect_before_wrap();
                 self.set_canvas_rect(rect);
 
+                if !self.has_source_image {
+                    ui.centered_and_justified(|ui| {
+                        elegance::Card::new()
+                            .heading("No Image Loded")
+                            .show(ui, |_ui| {});
+                    });
+                    return;
+                }
                 // Handle Pan and Zoom
                 // Create an invisible, sense-less interaction just for hovering.
                 // We don't use Sense::click_and_drag() because that steals the click focus
