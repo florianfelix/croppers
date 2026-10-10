@@ -61,9 +61,9 @@ impl UiState {
         crop_dims: Option<[u32; 2]>,
         actions: &mut UiActions,
     ) {
-        if let Some(src) = source {
-            ui.group(|ui| {
-                ui.set_min_width(ui.available_width());
+        ui.group(|ui| {
+            ui.set_min_width(ui.available_width());
+            if let Some(src) = source {
                 ui.strong(&src.name);
 
                 ui.label(format!(
@@ -73,45 +73,44 @@ impl UiState {
                 if let Some(cdims) = crop_dims {
                     ui.label(format!("Cropped: {} × {}", cdims[0], cdims[1]));
                 }
+            }
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                if ui
+                    .add(
+                        elegance::Button::new("Open File")
+                            .outline()
+                            .size(elegance::ButtonSize::Small),
+                    )
+                    .clicked()
+                {
+                    actions.open_file_dialog = true;
+                }
 
-                ui.add_space(4.0);
-                ui.horizontal(|ui| {
+                ui.add_enabled_ui(!self.crop.enabled, |ui| {
                     if ui
                         .add(
-                            elegance::Button::new("Open File")
+                            elegance::Button::new("Save")
                                 .outline()
                                 .size(elegance::ButtonSize::Small),
                         )
                         .clicked()
                     {
-                        actions.open_file_dialog = true;
+                        actions.save_overwrite = true;
                     }
-
-                    ui.add_enabled_ui(!self.crop.enabled, |ui| {
-                        if ui
-                            .add(
-                                elegance::Button::new("Save")
-                                    .outline()
-                                    .size(elegance::ButtonSize::Small),
-                            )
-                            .clicked()
-                        {
-                            actions.save_overwrite = true;
-                        }
-                        if ui
-                            .add(
-                                elegance::Button::new("Save Increment")
-                                    .outline()
-                                    .size(elegance::ButtonSize::Small),
-                            )
-                            .clicked()
-                        {
-                            actions.save_increment = true;
-                        }
-                    });
+                    if ui
+                        .add(
+                            elegance::Button::new("Save Increment")
+                                .outline()
+                                .size(elegance::ButtonSize::Small),
+                        )
+                        .clicked()
+                    {
+                        actions.save_increment = true;
+                    }
                 });
             });
-        }
+        });
     }
 
     fn draw_crop_section(

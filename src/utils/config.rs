@@ -102,7 +102,7 @@ pub struct OnImageLoad {
 impl Default for OnImageLoad {
     fn default() -> Self {
         Self {
-            crop_enabled: true,
+            crop_enabled: false,
             effects_enabled: true,
             empty_effects: false,
         }
