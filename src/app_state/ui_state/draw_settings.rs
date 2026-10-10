@@ -182,7 +182,7 @@ impl UiState {
                                     &mut config.startup_crop.enabled,
                                     "Enable Crop on Startup",
                                 );
-                                egui::ComboBox::from_label("Default Crop Mode")
+                                egui::ComboBox::from_label("Mode")
                                     .selected_text(config.startup_crop.default_crop_mode.label())
                                     .show_ui(ui, |ui| {
                                         for mode in CropMode::ALL {
