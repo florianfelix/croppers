@@ -12,6 +12,7 @@ pub struct EffectStack {
     pub presets: Vec<PathBuf>,
     pub selected_preset: Option<PathBuf>,
     pub preset_name_input: String,
+    pub presets_collapsed: bool,
 }
 
 impl Default for EffectStack {
@@ -24,6 +25,7 @@ impl Default for EffectStack {
             presets: vec![],
             selected_preset: None,
             preset_name_input: String::new(),
+            presets_collapsed: false,
         };
         result.validate_ids();
         result.refresh_presets();

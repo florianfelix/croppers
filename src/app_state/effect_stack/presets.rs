@@ -24,6 +24,7 @@ impl EffectStack {
             presets: vec![],
             selected_preset: None,
             preset_name_input: String::new(),
+            presets_collapsed: false,
         };
         stack.validate_ids();
         stack.refresh_presets();
@@ -91,130 +92,156 @@ impl EffectStack {
     pub fn draw_presets_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
 
-        ui.collapsing("Presets", |ui| {
-            let selected_label = self
-                .selected_preset
-                .as_ref()
-                .and_then(|p| p.file_stem().and_then(|s| s.to_str()))
-                .unwrap_or("Select preset...")
-                .to_string();
+        let theme = elegance::Theme::current(ui.ctx());
+        let fill = ui.visuals().widgets.inactive.bg_fill;
+        let stroke = ui.visuals().widgets.inactive.bg_stroke;
+        let frame = egui::Frame::new()
+            .fill(fill)
+            .stroke(stroke)
+            .corner_radius(egui::CornerRadius::same(theme.card_radius as u8))
+            .inner_margin(egui::Margin { left: 8, right: 8, top: 0, bottom: 0 })
+            .outer_margin(egui::Margin { left: 0, right: 14 + 14, top: 0, bottom: 0 });
 
-            let mut preset_to_select = None;
-            let mut do_refresh = false;
+        frame.show(ui, |ui| {
+            ui.allocate_ui_with_layout(
+                egui::vec2(ui.available_width(), 0.0),
+                egui::Layout::top_down(egui::Align::Min),
+                |ui| {
+                    ui.add_space(10.0); // top padding
+                    ui.set_min_width(ui.available_width());
 
-            ui.horizontal(|ui| {
-                egui::ComboBox::from_id_salt("effect_presets_combo")
-                    .selected_text(&selected_label)
-                    .width(140.0)
-                    .show_ui(ui, |ui| {
-                        for path in &self.presets {
-                            let stem = path
-                                .file_stem()
-                                .and_then(|s| s.to_str())
-                                .unwrap_or("unknown");
-                            let is_selected = self.selected_preset.as_ref() == Some(path);
-                            if ui.selectable_label(is_selected, stem).clicked() {
-                                preset_to_select = Some(path.clone());
-                            }
+                    let is_collapsed = self.presets_collapsed;
+                    let chevron = if is_collapsed { elegance::glyphs::CHEVRON_RIGHT } else { elegance::glyphs::CHEVRON_DOWN };
+                    
+                    ui.horizontal(|ui| {
+                        let title = format!("{} Presets", chevron);
+                        if ui.add(egui::Button::new(title).frame(false)).clicked() {
+                            self.presets_collapsed = !is_collapsed;
                         }
                     });
 
-                if ui
-                    .small_button("⟳")
-                    .on_hover_text("Refresh presets")
-                    .clicked()
-                {
-                    do_refresh = true;
-                }
-            });
+                    if !is_collapsed {
+                        ui.add_space(4.0);
+                        
+                        let selected_label = self
+                            .selected_preset
+                            .as_ref()
+                            .and_then(|p| p.file_stem().and_then(|s| s.to_str()))
+                            .unwrap_or("Select preset...")
+                            .to_string();
 
-            if let Some(path) = preset_to_select {
-                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                    self.preset_name_input = stem.to_string();
-                }
-                self.selected_preset = Some(path);
-            }
+                        let mut preset_to_select = None;
+                        let mut do_refresh = false;
+                        let mut do_delete = false;
 
-            if do_refresh {
-                self.refresh_presets();
-            }
+                        ui.horizontal(|ui| {
+                            egui::ComboBox::from_id_salt("effect_presets_combo")
+                                .selected_text(&selected_label)
+                                .width(120.0)
+                                .show_ui(ui, |ui| {
+                                    for path in &self.presets {
+                                        let stem = path
+                                            .file_stem()
+                                            .and_then(|s| s.to_str())
+                                            .unwrap_or("unknown");
+                                        let is_selected = self.selected_preset.as_ref() == Some(path);
+                                        if ui.selectable_label(is_selected, stem).clicked() {
+                                            preset_to_select = Some(path.clone());
+                                        }
+                                    }
+                                });
 
-            let mut do_load = false;
-            let mut do_delete = false;
+                            if ui
+                                .add(
+                                    elegance::Button::icon(elegance::glyphs::REFRESH, "Refresh presets")
+                                        .outline()
+                                        .size(elegance::ButtonSize::Small),
+                                )
+                                .clicked()
+                            {
+                                do_refresh = true;
+                            }
 
-            ui.horizontal(|ui| {
-                let has_selection = self.selected_preset.is_some();
-                if ui
-                    .add_enabled(has_selection, egui::Button::new("Load"))
-                    .on_hover_text("Load selected preset")
-                    .clicked()
-                {
-                    do_load = true;
-                }
+                            let has_selection = self.selected_preset.is_some();
+                            if ui
+                                .add(
+                                    elegance::Button::icon(elegance::glyphs::TRASH, "Delete preset")
+                                        .outline()
+                                        .size(elegance::ButtonSize::Small)
+                                        .enabled(has_selection),
+                                )
+                                .on_hover_text("Delete selected preset file")
+                                .clicked()
+                            {
+                                do_delete = true;
+                            }
+                        });
 
-                if ui
-                    .add_enabled(has_selection, egui::Button::new("Delete"))
-                    .on_hover_text("Delete selected preset file")
-                    .clicked()
-                {
-                    do_delete = true;
-                }
-            });
+                        if let Some(path) = preset_to_select {
+                            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                                self.preset_name_input = stem.to_string();
+                            }
+                            self.selected_preset = Some(path.clone());
+                            
+                            // Auto-load on selection
+                            if let Err(err) = self.load_preset_by_path(&path) {
+                                tracing::error!("Failed to load preset: {err}");
+                            } else {
+                                changed = true;
+                            }
+                        }
 
-            if do_load {
-                if let Some(ref path) = self.selected_preset.clone() {
-                    if let Err(err) = self.load_preset_by_path(path) {
-                        tracing::error!("Failed to load preset: {err}");
-                    } else {
-                        changed = true;
-                    }
-                }
-            }
+                        if do_refresh {
+                            self.refresh_presets();
+                        }
 
-            if do_delete {
-                if let Some(ref path) = self.selected_preset.take() {
-                    let _ = std::fs::remove_file(path);
-                    self.refresh_presets();
-                }
-            }
+                        if do_delete {
+                            if let Some(ref path) = self.selected_preset.take() {
+                                let _ = std::fs::remove_file(path);
+                                self.refresh_presets();
+                            }
+                        }
 
-            ui.separator();
+                        let mut do_save = false;
 
-            let mut do_save = false;
+                        ui.horizontal(|ui| {
+                            ui.add(
+                                elegance::TextInput::new(&mut self.preset_name_input)
+                                    .hint("Preset name")
+                                    .desired_width(120.0),
+                            );
 
-            ui.horizontal(|ui| {
-                ui.add(
-                    egui::TextEdit::singleline(&mut self.preset_name_input)
-                        .hint_text("Preset name")
-                        .desired_width(120.0),
-                );
+                            let trimmed = self.preset_name_input.trim();
+                            let can_save = !trimmed.is_empty();
 
-                let trimmed = self.preset_name_input.trim();
-                let can_save = !trimmed.is_empty();
+                            if ui
+                                .add(elegance::Button::new("Save").outline().enabled(can_save))
+                                .on_hover_text("Save current effect stack as preset")
+                                .clicked()
+                            {
+                                do_save = true;
+                            }
+                        });
 
-                if ui
-                    .add_enabled(can_save, egui::Button::new("Save"))
-                    .on_hover_text("Save current effect stack as preset")
-                    .clicked()
-                {
-                    do_save = true;
-                }
-            });
-
-            if do_save {
-                let trimmed = self.preset_name_input.trim().to_string();
-                if !trimmed.is_empty() {
-                    if let Some(presets_dir) = Self::presets_directory() {
-                        let filename = format!("{trimmed}.ron");
-                        let path = presets_dir.join(filename);
-                        if let Err(err) = self.save_to_file(&path) {
-                            tracing::error!("Failed to save preset: {err}");
-                        } else {
-                            self.selected_preset = Some(path);
+                        if do_save {
+                            let trimmed = self.preset_name_input.trim().to_string();
+                            if !trimmed.is_empty() {
+                                if let Some(presets_dir) = Self::presets_directory() {
+                                    let filename = format!("{trimmed}.ron");
+                                    let path = presets_dir.join(filename);
+                                    if let Err(err) = self.save_to_file(&path) {
+                                        tracing::error!("Failed to save preset: {err}");
+                                    } else {
+                                        self.selected_preset = Some(path);
+                                    }
+                                }
+                            }
                         }
                     }
+
+                    ui.add_space(10.0); // bottom padding
                 }
-            }
+            );
         });
 
         changed
