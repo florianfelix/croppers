@@ -524,6 +524,7 @@ dependencies = [
  "directories",
  "dyn-clone",
  "egui",
+ "egui-elegance",
  "egui-wgpu",
  "egui-winit",
  "enum-iterator",
@@ -714,6 +715,16 @@ dependencies = [
  "smallvec",
  "unicode-segmentation",
  "web-sys",
+]
+
+[[package]]
+name = "egui-elegance"
+version = "0.16.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40bd300138352eac7ea9ecbaea82de715c5c4a8411f6c6c6478ad947bddd6c1b"
+dependencies = [
+ "egui",
+ "js-sys",
 ]
 
 [[package]]
