@@ -1,16 +1,23 @@
 use crate::app_state::AppState;
 
 impl AppState {
-    pub fn draw(&mut self, _raw_input: &egui::RawInput, ctx: &mut egui::Ui, window_theme: Option<winit::window::Theme>) {
+    pub fn draw(
+        &mut self,
+        _raw_input: &egui::RawInput,
+        ctx: &mut egui::Ui,
+        window_theme: Option<winit::window::Theme>,
+    ) {
         let is_dark = match self.config.theme_mode {
-            crate::utils::ThemeMode::Auto => window_theme.unwrap_or(winit::window::Theme::Dark) == winit::window::Theme::Dark,
+            crate::utils::ThemeMode::Auto => {
+                window_theme.unwrap_or(winit::window::Theme::Dark) == winit::window::Theme::Dark
+            }
             crate::utils::ThemeMode::Slate => true,
             crate::utils::ThemeMode::Charcoal => true,
             crate::utils::ThemeMode::Frost => false,
             crate::utils::ThemeMode::Paper => false,
         };
 
-        let theme = match self.config.theme_mode {
+        let mut theme = match self.config.theme_mode {
             crate::utils::ThemeMode::Slate => elegance::Theme::slate(),
             crate::utils::ThemeMode::Charcoal => elegance::Theme::charcoal(),
             crate::utils::ThemeMode::Frost => elegance::Theme::frost(),
@@ -23,6 +30,23 @@ impl AppState {
                 }
             }
         };
+
+        let accent_rgba = egui::Rgba::from_rgba_unmultiplied(
+            self.config.appearance.accent_color[0],
+            self.config.appearance.accent_color[1],
+            self.config.appearance.accent_color[2],
+            self.config.appearance.accent_color[3],
+        );
+        let accent_c32: egui::Color32 = accent_rgba.into();
+        let accent_c32_muted = accent_c32.clone().gamma_multiply(0.5);
+
+        let gold = egui::Color32::from_rgb(0xd9, 0xa3, 0x06);
+        let gold_dark = egui::Color32::from_rgb(0xb4, 0x81, 0x09);
+
+        theme.palette.focus = accent_c32; // focus rings, selection, active states
+        theme.palette.blue = accent_c32; // the default (Blue) primary button
+        theme.palette.blue_hover = accent_c32_muted;
+
         theme.install(ctx);
         let src_dims = self.texture_vault.srcimg.dims;
         let crop_dims = if self.texture_vault.cropped.dims[0] > 0 {
@@ -31,9 +55,13 @@ impl AppState {
             None
         };
 
-        let mut actions =
-            self.ui_state
-                .draw_panel(ctx, self.source.as_ref(), src_dims, crop_dims, &mut self.effect_stack);
+        let mut actions = self.ui_state.draw_panel(
+            ctx,
+            self.source.as_ref(),
+            src_dims,
+            crop_dims,
+            &mut self.effect_stack,
+        );
 
         let settings_actions = self.ui_state.draw_settings_panel(ctx, &mut self.config);
         actions.save_config = actions.save_config || settings_actions.save_config;

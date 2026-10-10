@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Croppers
+GenericName=Image Cropper
+Comment=GPU-accelerated image cropping, scaling and effects
+Exec=croppers %f
+Icon=croppers
+Terminal=false
+Categories=Graphics;2DGraphics;RasterGraphics;Viewer;
+Keywords=crop;resize;scale;image;photo;effects;
+MimeType=image/png;image/jpeg;image/webp;
+StartupNotify=true
+StartupWMClass=croppers

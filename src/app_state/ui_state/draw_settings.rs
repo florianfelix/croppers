@@ -33,7 +33,7 @@ impl UiState {
                         .show(ui, |ui| {
                             ui.group(|ui| {
                                 ui.strong("Appearance");
-                                egui::ComboBox::from_label("Theme")
+                                egui::ComboBox::from_label("")
                                     .selected_text(config.theme_mode.label())
                                     .show_ui(ui, |ui| {
                                         for mode in crate::utils::ThemeMode::ALL {
@@ -49,6 +49,28 @@ impl UiState {
                                             }
                                         }
                                     });
+
+                                let accent_rgba = egui::Rgba::from_rgba_unmultiplied(
+                                    config.appearance.accent_color[0],
+                                    config.appearance.accent_color[1],
+                                    config.appearance.accent_color[2],
+                                    config.appearance.accent_color[3],
+                                );
+                                let mut accent_c32 = accent_rgba.into();
+                                if ui
+                                    .add(
+                                        elegance::ColorPicker::new(
+                                            "accent_picker",
+                                            &mut accent_c32,
+                                        )
+                                        .alpha(false),
+                                    )
+                                    .changed()
+                                {
+                                    let new_rgba = egui::Rgba::from(accent_c32);
+                                    config.appearance.accent_color = new_rgba.to_array();
+                                    actions.request_redraw = true;
+                                }
 
                                 ui.add_space(8.0);
                                 egui::CollapsingHeader::new("Canvas Settings")

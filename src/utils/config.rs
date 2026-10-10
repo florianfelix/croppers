@@ -72,6 +72,7 @@ impl Default for CroppersConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppearanceConfig {
+    pub accent_color: [f32; 4],
     pub canvas_bg_color: [f32; 4],
     pub canvas_shadow_color: [f32; 4],
     pub canvas_radius: f32,
@@ -81,6 +82,7 @@ pub struct AppearanceConfig {
 impl Default for AppearanceConfig {
     fn default() -> Self {
         Self {
+            accent_color: [0.125, 0.0, 0.2, 1.0],
             canvas_bg_color: [0.08, 0.08, 0.09, 1.0],
             canvas_shadow_color: [0.04, 0.04, 0.04, 0.6],
             canvas_radius: 100.0,
