@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct TiltShiftContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: TiltShiftUniforms,
 }
 
@@ -16,6 +17,7 @@ impl TiltShiftContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: TiltShiftUniforms::default(),
         })
     }
@@ -70,22 +72,29 @@ impl EffectContainerObject for TiltShiftContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("tiltshift_settings", |ui| {
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.max_radius, 0.0..=200.0).text("Radius"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.center, 0.0..=1.0).text("Center"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).text("focus size"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.feather, 0.0..=1.0).text("feather"))
-                .changed();
-        });
+        
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.max_radius, 0.0..=200.0).text("Radius"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.center, 0.0..=1.0).text("Center"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).text("focus size"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.feather, 0.0..=1.0).text("feather"))
+            .changed();
+    
         changed
     }
 

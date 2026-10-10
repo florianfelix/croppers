@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct PixelateLinearContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: PixelateLinearUniforms,
 }
 
@@ -16,6 +17,7 @@ impl PixelateLinearContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: PixelateLinearUniforms::default(),
         })
     }
@@ -68,46 +70,53 @@ impl EffectContainerObject for PixelateLinearContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("pixelate_linear_settings", |ui| {
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.max_pixel_size, 1.0..=128.0)
-                        .text("pixel size"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::from_get_set(0.0..=360.0, |new_deg| {
-                        if let Some(deg) = new_deg {
-                            self.uniforms.angle = (deg as f32).to_radians();
-                        }
-                        self.uniforms.angle.to_degrees() as f64
-                    })
-                    .suffix("°")
-                    .text("angle"),
-                )
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.length, 0.0..=1.0).text("length"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.start_x, 0.0..=1.0).text("start x"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.start_y, 0.0..=1.0).text("start y"))
-                .changed();
+        
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.max_pixel_size, 1.0..=128.0)
+                    .text("pixel size"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::from_get_set(0.0..=360.0, |new_deg| {
+                    if let Some(deg) = new_deg {
+                        self.uniforms.angle = (deg as f32).to_radians();
+                    }
+                    self.uniforms.angle.to_degrees() as f64
+                })
+                .suffix("°")
+                .text("angle"),
+            )
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.length, 0.0..=1.0).text("length"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.start_x, 0.0..=1.0).text("start x"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.start_y, 0.0..=1.0).text("start y"))
+            .changed();
 
-            let mut is_inverted = self.uniforms.invert == 1;
-            if ui
-                .add(egui::Checkbox::new(&mut is_inverted, "invert"))
-                .changed()
-            {
-                self.uniforms.invert = is_inverted as i32;
-                changed = true;
-            }
-        });
+        let mut is_inverted = self.uniforms.invert == 1;
+        if ui
+            .add(egui::Checkbox::new(&mut is_inverted, "invert"))
+            .changed()
+        {
+            self.uniforms.invert = is_inverted as i32;
+            changed = true;
+        }
+    
         changed
     }
 

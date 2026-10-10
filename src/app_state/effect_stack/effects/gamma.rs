@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct GammaContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub linked_channels: bool,
     pub uniforms: GammaUniforms,
 }
@@ -17,6 +18,7 @@ impl GammaContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             linked_channels: true,
             uniforms: GammaUniforms::default(),
         })
@@ -61,47 +63,54 @@ impl EffectContainerObject for GammaContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("gamma_settings", |ui| {
-            // Toggle between unified single-channel mode and individual RGB channels
+        
+        // Toggle between unified single-channel mode and individual RGB channels
+        if ui
+            .checkbox(&mut self.linked_channels, "Link RGB channels")
+            .changed()
+        {
+            if self.linked_channels {
+                // Synchronize green and blue to red upon linking
+                self.uniforms.gg = self.uniforms.gr;
+                self.uniforms.gb = self.uniforms.gr;
+                changed = true;
+            }
+        }
+
+        if self.linked_channels {
+            // Unified single slider controlling all channels
+            let mut unified_gamma = self.uniforms.gr;
             if ui
-                .checkbox(&mut self.linked_channels, "Link RGB channels")
+                .add(egui::Slider::new(&mut unified_gamma, 0.01..=10.0).text("gamma"))
                 .changed()
             {
-                if self.linked_channels {
-                    // Synchronize green and blue to red upon linking
-                    self.uniforms.gg = self.uniforms.gr;
-                    self.uniforms.gb = self.uniforms.gr;
-                    changed = true;
-                }
+                self.uniforms.gr = unified_gamma;
+                self.uniforms.gg = unified_gamma;
+                self.uniforms.gb = unified_gamma;
+                changed = true;
             }
-
-            if self.linked_channels {
-                // Unified single slider controlling all channels
-                let mut unified_gamma = self.uniforms.gr;
-                if ui
-                    .add(egui::Slider::new(&mut unified_gamma, 0.01..=10.0).text("gamma"))
-                    .changed()
-                {
-                    self.uniforms.gr = unified_gamma;
-                    self.uniforms.gg = unified_gamma;
-                    self.uniforms.gb = unified_gamma;
-                    changed = true;
-                }
-            } else {
-                // Individual sliders per channel
-                changed |= ui
-                    .add(egui::Slider::new(&mut self.uniforms.gr, 0.01..=10.0).text("gamma red"))
-                    .changed();
-                changed |= ui
-                    .add(egui::Slider::new(&mut self.uniforms.gg, 0.01..=10.0).text("gamma green"))
-                    .changed();
-                changed |= ui
-                    .add(egui::Slider::new(&mut self.uniforms.gb, 0.01..=10.0).text("gamma blue"))
-                    .changed();
-            }
-        });
+        } else {
+            // Individual sliders per channel
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.gr, 0.01..=10.0).text("gamma red"))
+                .changed();
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.gg, 0.01..=10.0).text("gamma green"))
+                .changed();
+            changed |= ui
+                .add(egui::Slider::new(&mut self.uniforms.gb, 0.01..=10.0).text("gamma blue"))
+                .changed();
+        }
+    
         changed
     }
 

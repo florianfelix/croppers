@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct BwContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: BwUniforms,
 }
 
@@ -16,6 +17,7 @@ impl BwContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: BwUniforms::default(),
         })
     }
@@ -59,13 +61,20 @@ impl EffectContainerObject for BwContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("bw_settings", |ui| {
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.select, 0..=3).text("mode (rgbl)"))
-                .changed();
-        });
+        
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.select, 0..=3).text("mode (rgbl)"))
+            .changed();
+    
         changed
     }
 

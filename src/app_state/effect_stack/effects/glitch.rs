@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct GlitchContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: GlitchUniforms,
 }
 
@@ -16,6 +17,7 @@ impl GlitchContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: GlitchUniforms::default(),
         })
     }
@@ -67,60 +69,67 @@ impl EffectContainerObject for GlitchContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("Glitch_settings", |ui| {
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.time, 0.0..=200.0).text("time"))
-                .changed();
-            ui.separator();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.line_dropouts, 0.0..=1.0)
-                        .text("Signal dropouts"),
-                )
-                .changed();
-            ui.separator();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.block_displace, 0.0..=1.0)
-                        .text("Sync Tearing"),
-                )
-                .changed();
+        
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.time, 0.0..=200.0).text("time"))
+            .changed();
+        ui.separator();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.line_dropouts, 0.0..=1.0)
+                    .text("Signal dropouts"),
+            )
+            .changed();
+        ui.separator();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.block_displace, 0.0..=1.0)
+                    .text("Sync Tearing"),
+            )
+            .changed();
 
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.tearing_micro, 0.0..=20.0)
-                        .text("micro tearing"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.tearing_macro, 0.0..=20.0)
-                        .text("macro tearing"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.tearing_blocks, 0.0..=100.0)
-                        .step_by(1.0)
-                        .text("tearing blocks"),
-                )
-                .changed();
-            ui.separator();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.color_burst, 0.0..=1.0)
-                        .text("Chroma Frying"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.burst_grid_size, 0.0..=100.0)
-                        .text("Grid size"),
-                )
-                .changed();
-        });
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.tearing_micro, 0.0..=20.0)
+                    .text("micro tearing"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.tearing_macro, 0.0..=20.0)
+                    .text("macro tearing"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.tearing_blocks, 0.0..=100.0)
+                    .step_by(1.0)
+                    .text("tearing blocks"),
+            )
+            .changed();
+        ui.separator();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.color_burst, 0.0..=1.0)
+                    .text("Chroma Frying"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.burst_grid_size, 0.0..=100.0)
+                    .text("Grid size"),
+            )
+            .changed();
+    
         changed
     }
 

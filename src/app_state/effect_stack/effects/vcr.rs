@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct VcrContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: VcrUniforms,
 }
 
@@ -16,6 +17,7 @@ impl VcrContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: VcrUniforms::default(),
         })
     }
@@ -67,46 +69,53 @@ impl EffectContainerObject for VcrContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("Vcr_settings", |ui| {
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.time, 0.0..=200.0).text("time"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.jitter, 0.0..=5.0).text("jitter"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.glitch, 0.0..=10.0).text("glitch"))
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.glitch_noise, 0.0..=3.0)
-                        .text("glitch noise"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.head_switch, 0.0..=10.0)
-                        .text("head-switch"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.head_switch_noise, 0.0..=3.0)
-                        .text("head-switch noise"),
-                )
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.tape_roll, 0.0..=10.0).text("tape roll"))
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.chroma_decay, 0.0..=1.0)
-                        .text("chroma decay"),
-                )
-                .changed();
-        });
+        
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.time, 0.0..=200.0).text("time"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.jitter, 0.0..=5.0).text("jitter"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.glitch, 0.0..=10.0).text("glitch"))
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.glitch_noise, 0.0..=3.0)
+                    .text("glitch noise"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.head_switch, 0.0..=10.0)
+                    .text("head-switch"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.head_switch_noise, 0.0..=3.0)
+                    .text("head-switch noise"),
+            )
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.tape_roll, 0.0..=10.0).text("tape roll"))
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.chroma_decay, 0.0..=1.0)
+                    .text("chroma decay"),
+            )
+            .changed();
+    
         changed
     }
 

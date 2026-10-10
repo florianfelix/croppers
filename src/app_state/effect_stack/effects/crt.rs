@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct CrtContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: CrtUniforms, // Ihre bestehende Struct
 }
 impl CrtContainer {
@@ -15,6 +16,7 @@ impl CrtContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: CrtUniforms::default(),
         })
     }
@@ -68,36 +70,43 @@ impl EffectContainerObject for CrtContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("crt_settings", |ui| {
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.curvature, 0.0..=1.0).text("curvature"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.overscan, 0.0..=1.0).text("overscan"))
-                .changed();
-            ui.separator();
+        
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.curvature, 0.0..=1.0).text("curvature"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.overscan, 0.0..=1.0).text("overscan"))
+            .changed();
+        ui.separator();
 
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.scanline_count, 0.0..=1000.0)
-                        .text("scanlines"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.scanline_strength, 0.0..=1.0)
-                        .text("scanline strength"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.rgb_mask_strength, 0.0..=1.0)
-                        .text("mask strength"),
-                )
-                .changed();
-        });
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.scanline_count, 0.0..=1000.0)
+                    .text("scanlines"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.scanline_strength, 0.0..=1.0)
+                    .text("scanline strength"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.rgb_mask_strength, 0.0..=1.0)
+                    .text("mask strength"),
+            )
+            .changed();
+    
         changed
     }
 

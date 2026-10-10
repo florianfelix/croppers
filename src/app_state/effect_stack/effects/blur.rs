@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct BlurContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: BlurUniforms,
 }
 impl BlurContainer {
@@ -15,6 +16,7 @@ impl BlurContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: BlurUniforms::default(),
         })
     }
@@ -57,13 +59,20 @@ impl EffectContainerObject for BlurContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("blur_settings", |ui| {
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.radius, 0.0..=200.0).text("Radius"))
-                .changed();
-        });
+        
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.radius, 0.0..=200.0).text("Radius"))
+            .changed();
+    
         changed
     }
 

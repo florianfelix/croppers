@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct AsciiContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: AsciiUniforms,
 }
 
@@ -16,6 +17,7 @@ impl AsciiContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: AsciiUniforms::default(),
         })
     }
@@ -67,45 +69,52 @@ impl EffectContainerObject for AsciiContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("Ascii_settings", |ui| {
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.scale, 0.0..=200.0).text("Scale"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).text("glyph set"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.charset, 0..=2).text("atlas"))
-                .changed();
-            ui.separator();
+        
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.scale, 0.0..=200.0).text("Scale"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).text("glyph set"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.charset, 0..=2).text("atlas"))
+            .changed();
+        ui.separator();
 
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.inset, 0.0..=0.45).text("inset"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.scale_x, 0.0..=2.0).text("scale x"))
-                .changed();
-            ui.separator();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.rain_factor, 0.0..=1.0)
-                        .text("rain factor"),
-                )
-                .changed();
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.rain_length, 1.0..=200.0)
-                        .text("rain length"),
-                )
-                .changed();
-            ui.separator();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.inset, 0.0..=0.45).text("inset"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.scale_x, 0.0..=2.0).text("scale x"))
+            .changed();
+        ui.separator();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.rain_factor, 0.0..=1.0)
+                    .text("rain factor"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.rain_length, 1.0..=200.0)
+                    .text("rain length"),
+            )
+            .changed();
+        ui.separator();
 
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.mult, 0.0..=1.0).text("original bg"))
-                .changed();
-        });
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.mult, 0.0..=1.0).text("original bg"))
+            .changed();
+    
         changed
     }
 

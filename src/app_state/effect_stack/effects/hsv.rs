@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct HsvContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: HsvUniforms,
 }
 
@@ -16,6 +17,7 @@ impl HsvContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: HsvUniforms::default(),
         })
     }
@@ -59,22 +61,29 @@ impl EffectContainerObject for HsvContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("hsv_settings", |ui| {
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.hue, 0.0..=1.0).text("hue"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.saturation, 0.0..=2.0).text("saturation"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.value, 0.0..=2.0).text("value"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.factor, 0.0..=1.0).text("factor"))
-                .changed();
-        });
+        
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.hue, 0.0..=1.0).text("hue"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.saturation, 0.0..=2.0).text("saturation"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.value, 0.0..=2.0).text("value"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.factor, 0.0..=1.0).text("factor"))
+            .changed();
+    
         changed
     }
 

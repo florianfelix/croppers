@@ -8,6 +8,7 @@ use crate::app_state::effect_stack::presets::EffectConfig;
 pub struct DitherContainer {
     pub id: usize,
     pub enabled: bool,
+    pub ui_collapsed: bool,
     pub uniforms: ColorDitherUniforms,
 }
 
@@ -16,6 +17,7 @@ impl DitherContainer {
         Box::new(Self {
             id: 0,
             enabled: true,
+            ui_collapsed: false,
             uniforms: ColorDitherUniforms::default(),
         })
     }
@@ -68,56 +70,63 @@ impl EffectContainerObject for DitherContainer {
         self.enabled = enabled;
     }
 
+    fn ui_collapsed(&self) -> bool {
+        self.ui_collapsed
+    }
+    fn set_ui_collapsed(&mut self, collapsed: bool) {
+        self.ui_collapsed = collapsed;
+    }
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        ui.indent("dither_settings", |ui| {
-            changed |= ui
-                .add(
-                    egui::Slider::new(&mut self.uniforms.color_steps, 2.0..=20.0)
-                        .step_by(1.0)
-                        .text("color steps"),
-                )
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.spread, 0.0..=5.0).text("spread"))
-                .changed();
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.pattern_scale, 1.0..=128.0).text("scale"))
-                .changed();
-            let pallette = [
-                "rgb",
-                "Game Boy",
-                "CGA",
-                "PICO-8",
-                "Commodore 64",
-                "NES",
-                "Catppuccin Mocha",
-                "Tokyo Night",
-                "Gruvbox Dark",
-                "warm muted",
-                "Earth Vintage",
-                "Everforest Dark",
-                "Deep Ocean",
-                "Ayu Mirage",
-            ];
-            let txt = pallette
-                .get(self.uniforms.palette_index as usize)
-                .copied()
-                .unwrap_or("rgb");
-            changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=13).text(txt))
-                .changed();
+        
+        changed |= ui
+            .add(
+                egui::Slider::new(&mut self.uniforms.color_steps, 2.0..=20.0)
+                    .step_by(1.0)
+                    .text("color steps"),
+            )
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.spread, 0.0..=5.0).text("spread"))
+            .changed();
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.pattern_scale, 1.0..=128.0).text("scale"))
+            .changed();
+        let pallette = [
+            "rgb",
+            "Game Boy",
+            "CGA",
+            "PICO-8",
+            "Commodore 64",
+            "NES",
+            "Catppuccin Mocha",
+            "Tokyo Night",
+            "Gruvbox Dark",
+            "warm muted",
+            "Earth Vintage",
+            "Everforest Dark",
+            "Deep Ocean",
+            "Ayu Mirage",
+        ];
+        let txt = pallette
+            .get(self.uniforms.palette_index as usize)
+            .copied()
+            .unwrap_or("rgb");
+        changed |= ui
+            .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=13).text(txt))
+            .changed();
 
-            let mut is_8x8 = self.uniforms.matrix_type == 1;
-            let mattype = match is_8x8 {
-                true => "8x8 matrix",
-                false => "4x4 matrix",
-            };
-            if ui.add(egui::Checkbox::new(&mut is_8x8, mattype)).changed() {
-                self.uniforms.matrix_type = is_8x8 as i32;
-                changed = true;
-            }
-        });
+        let mut is_8x8 = self.uniforms.matrix_type == 1;
+        let mattype = match is_8x8 {
+            true => "8x8 matrix",
+            false => "4x4 matrix",
+        };
+        if ui.add(egui::Checkbox::new(&mut is_8x8, mattype)).changed() {
+            self.uniforms.matrix_type = is_8x8 as i32;
+            changed = true;
+        }
+    
         changed
     }
 

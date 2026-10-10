@@ -211,7 +211,10 @@ impl UiState {
                 }
             }
 
-            if ui.button("Apply Crop (Enter)").clicked() {
+            if ui
+                .add(elegance::Button::new("Apply Crop (Enter)"))
+                .clicked()
+            {
                 actions.apply_crop = true;
             }
             // }
@@ -228,7 +231,10 @@ impl UiState {
             return;
         }
 
-        if ui.checkbox(&mut effect_stack.enabled, "Enabled").changed() {
+        if ui
+            .add(elegance::Switch::new(&mut effect_stack.enabled, "Enabled"))
+            .changed()
+        {
             actions.needs_rebuild = true;
             actions.needs_compute = true;
             actions.request_redraw = true;
@@ -245,43 +251,123 @@ impl UiState {
                 EffectSelector::draw_all(ui, effect_stack);
             });
 
-        let mut swap_index = None;
         let mut remove_idx = None;
-        let len = effect_stack.effects.len();
+        let mut swap_index = None;
 
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
+                let theme = elegance::Theme::current(ui.ctx());
+
                 for (idx, container) in effect_stack.effects.iter_mut().enumerate() {
-                    ui.horizontal(|ui| {
-                        let mut is_enabled = container.enabled();
-                        if ui.checkbox(&mut is_enabled, container.name()).changed() {
-                            container.set_enabled(is_enabled);
-                            actions.needs_rebuild = true;
-                            actions.needs_compute = true;
-                            actions.request_redraw = true;
-                        }
-                        if ui.button("X").clicked() {
-                            remove_idx = Some(idx);
-                            actions.needs_rebuild = true;
-                            actions.needs_compute = true;
-                            actions.request_redraw = true;
-                        }
+                    let id = egui::Id::new("effect_dnd").with(container.id());
+
+                    let frame = egui::Frame::new()
+                        .fill(theme.palette.card)
+                        .stroke(egui::Stroke::new(1.0, theme.palette.border))
+                        .corner_radius(egui::CornerRadius::same(theme.card_radius as u8))
+                        .inner_margin(egui::Margin::symmetric(0, 0));
+
+                    let (_, dropped_payload) = ui.dnd_drop_zone::<usize, _>(frame, |ui| {
+                        let inner_avail = ui.available_width();
+                        ui.horizontal_top(|ui| {
+                            ui.spacing_mut().item_spacing.x = 0.0;
+
+                            let _drag_resp = ui.dnd_drag_source(id, idx, |ui| {
+                                let (rect, resp) = ui.allocate_exact_size(
+                                    egui::vec2(28.0, 44.0),
+                                    egui::Sense::click_and_drag(),
+                                );
+                                let painter = ui.painter();
+                                let color = if resp.hovered() || resp.dragged() {
+                                    ui.visuals().text_color()
+                                } else {
+                                    theme.palette.focus
+                                };
+                                let center = rect.center();
+                                for col in 0..2 {
+                                    for row in 0..3 {
+                                        let cx = center.x - 2.0 + col as f32 * 4.0;
+                                        let cy = center.y - 5.0 + row as f32 * 5.0;
+                                        painter.circle_filled(egui::pos2(cx, cy), 1.3, color);
+                                    }
+                                }
+                                resp
+                            });
+
+                            let right_w = (inner_avail - 28.1).max(0.0);
+                            ui.allocate_ui_with_layout(
+                                egui::vec2(right_w, 0.0),
+                                egui::Layout::top_down(egui::Align::Min),
+                                |ui| {
+                                    ui.add_space(10.0); // top padding
+
+                                    let is_collapsed = container.ui_collapsed();
+                                    let chevron = if is_collapsed {
+                                        elegance::glyphs::CHEVRON_RIGHT
+                                    } else {
+                                        elegance::glyphs::CHEVRON_DOWN
+                                    };
+
+                                    ui.horizontal(|ui| {
+                                        let title = format!("{} {}", chevron, container.name());
+                                        if ui.add(egui::Button::new(title).frame(false)).clicked() {
+                                            container.set_ui_collapsed(!is_collapsed);
+                                        }
+
+                                        ui.with_layout(
+                                            egui::Layout::right_to_left(egui::Align::Center),
+                                            |ui| {
+                                                ui.add_space(8.0); // right padding
+                                                if ui
+                                                    .add(elegance::Button::icon(
+                                                        elegance::glyphs::TRASH,
+                                                        "Remove",
+                                                    ))
+                                                    .clicked()
+                                                {
+                                                    remove_idx = Some(idx);
+                                                    actions.needs_rebuild = true;
+                                                    actions.needs_compute = true;
+                                                    actions.request_redraw = true;
+                                                }
+                                                ui.add_space(12.0);
+                                                let mut is_enabled = container.enabled();
+                                                if ui
+                                                    .add(elegance::Switch::new(&mut is_enabled, ""))
+                                                    .changed()
+                                                {
+                                                    container.set_enabled(is_enabled);
+                                                    actions.needs_rebuild = true;
+                                                    actions.needs_compute = true;
+                                                    actions.request_redraw = true;
+                                                }
+                                            },
+                                        );
+                                    });
+
+                                    if !is_collapsed {
+                                        ui.add_space(4.0);
+                                        ui.add_enabled_ui(container.enabled(), |ui| {
+                                            if container.draw_ui(ui) {
+                                                actions.needs_compute = true;
+                                            }
+                                        });
+                                    }
+
+                                    ui.add_space(10.0); // bottom padding
+                                },
+                            );
+                        });
                     });
 
-                    if idx > 0 && ui.small_button("▲").clicked() {
-                        swap_index = Some((idx, idx - 1));
-                    }
-                    if idx + 1 < len && ui.small_button("▼").clicked() {
-                        swap_index = Some((idx, idx + 1));
-                    }
+                    ui.add_space(6.0);
 
-                    if container.enabled() {
-                        if container.draw_ui(ui) {
-                            actions.needs_compute = true;
+                    if let Some(source_idx) = dropped_payload {
+                        if *source_idx != idx {
+                            swap_index = Some((*source_idx, idx));
                         }
                     }
-                    ui.separator();
                 }
             });
 
@@ -293,7 +379,8 @@ impl UiState {
         }
 
         if let Some((i, j)) = swap_index {
-            effect_stack.effects.swap(i, j);
+            let moved = effect_stack.effects.remove(i);
+            effect_stack.effects.insert(j, moved);
             actions.needs_rebuild = true;
             actions.needs_compute = true;
             actions.request_redraw = true;

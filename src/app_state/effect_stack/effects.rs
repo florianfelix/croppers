@@ -43,6 +43,9 @@ pub trait EffectContainerObject: DynClone + Send + Sync {
     fn enabled(&self) -> bool;
     fn set_enabled(&mut self, enabled: bool);
 
+    fn ui_collapsed(&self) -> bool;
+    fn set_ui_collapsed(&mut self, collapsed: bool);
+
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool;
 
     fn shader_key(&self) -> &str;
