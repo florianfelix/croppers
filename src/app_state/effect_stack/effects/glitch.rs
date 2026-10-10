@@ -80,53 +80,53 @@ impl EffectContainerObject for GlitchContainer {
         let mut changed = false;
         
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.time, 0.0..=200.0).text("time"))
+            .add(elegance::Slider::new(&mut self.uniforms.time, 0.0..=200.0).label("time"))
             .changed();
         ui.separator();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.line_dropouts, 0.0..=1.0)
-                    .text("Signal dropouts"),
+                elegance::Slider::new(&mut self.uniforms.line_dropouts, 0.0..=1.0)
+                    .label("Signal dropouts"),
             )
             .changed();
         ui.separator();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.block_displace, 0.0..=1.0)
-                    .text("Sync Tearing"),
+                elegance::Slider::new(&mut self.uniforms.block_displace, 0.0..=1.0)
+                    .label("Sync Tearing"),
             )
             .changed();
 
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.tearing_micro, 0.0..=20.0)
-                    .text("micro tearing"),
+                elegance::Slider::new(&mut self.uniforms.tearing_micro, 0.0..=20.0)
+                    .label("micro tearing"),
             )
             .changed();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.tearing_macro, 0.0..=20.0)
-                    .text("macro tearing"),
+                elegance::Slider::new(&mut self.uniforms.tearing_macro, 0.0..=20.0)
+                    .label("macro tearing"),
             )
             .changed();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.tearing_blocks, 0.0..=100.0)
-                    .step_by(1.0)
-                    .text("tearing blocks"),
+                elegance::Slider::new(&mut self.uniforms.tearing_blocks, 0.0..=100.0)
+                    .step(1.0)
+                    .label("tearing blocks"),
             )
             .changed();
         ui.separator();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.color_burst, 0.0..=1.0)
-                    .text("Chroma Frying"),
+                elegance::Slider::new(&mut self.uniforms.color_burst, 0.0..=1.0)
+                    .label("Chroma Frying"),
             )
             .changed();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.burst_grid_size, 0.0..=100.0)
-                    .text("Grid size"),
+                elegance::Slider::new(&mut self.uniforms.burst_grid_size, 0.0..=100.0)
+                    .label("Grid size"),
             )
             .changed();
     

@@ -80,39 +80,39 @@ impl EffectContainerObject for AsciiContainer {
         let mut changed = false;
         
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.scale, 0.0..=200.0).text("Scale"))
+            .add(elegance::Slider::new(&mut self.uniforms.scale, 0.0..=200.0).label("Scale"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).text("glyph set"))
+            .add(elegance::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).label("glyph set"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.charset, 0..=2).text("atlas"))
-            .changed();
-        ui.separator();
-
-        changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.inset, 0.0..=0.45).text("inset"))
-            .changed();
-        changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.scale_x, 0.0..=2.0).text("scale x"))
-            .changed();
-        ui.separator();
-        changed |= ui
-            .add(
-                egui::Slider::new(&mut self.uniforms.rain_factor, 0.0..=1.0)
-                    .text("rain factor"),
-            )
-            .changed();
-        changed |= ui
-            .add(
-                egui::Slider::new(&mut self.uniforms.rain_length, 1.0..=200.0)
-                    .text("rain length"),
-            )
+            .add(elegance::Slider::new(&mut self.uniforms.charset, 0..=2).label("atlas"))
             .changed();
         ui.separator();
 
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.mult, 0.0..=1.0).text("original bg"))
+            .add(elegance::Slider::new(&mut self.uniforms.inset, 0.0..=0.45).label("inset"))
+            .changed();
+        changed |= ui
+            .add(elegance::Slider::new(&mut self.uniforms.scale_x, 0.0..=2.0).label("scale x"))
+            .changed();
+        ui.separator();
+        changed |= ui
+            .add(
+                elegance::Slider::new(&mut self.uniforms.rain_factor, 0.0..=1.0)
+                    .label("rain factor"),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                elegance::Slider::new(&mut self.uniforms.rain_length, 1.0..=200.0)
+                    .label("rain length"),
+            )
+            .changed();
+        ui.separator();
+
+        changed |= ui
+            .add(elegance::Slider::new(&mut self.uniforms.mult, 0.0..=1.0).label("original bg"))
             .changed();
     
         changed

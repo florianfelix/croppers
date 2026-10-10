@@ -70,7 +70,7 @@ impl EffectContainerObject for BlurContainer {
         let mut changed = false;
         
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.radius, 0.0..=200.0).text("Radius"))
+            .add(elegance::Slider::new(&mut self.uniforms.radius, 0.0..=200.0).label("Radius"))
             .changed();
     
         changed

@@ -266,7 +266,8 @@ impl UiState {
                         .fill(theme.palette.card)
                         .stroke(egui::Stroke::new(1.0, theme.palette.border))
                         .corner_radius(egui::CornerRadius::same(theme.card_radius as u8))
-                        .inner_margin(egui::Margin::symmetric(0, 0));
+                        .inner_margin(egui::Margin { left: 0, right: 8, top: 0, bottom: 0 })
+                        .outer_margin(egui::Margin { left: 0, right: 14, top: 0, bottom: 0 });
 
                     let (_, dropped_payload) = ui.dnd_drop_zone::<usize, _>(frame, |ui| {
                         let inner_avail = ui.available_width();
@@ -318,8 +319,7 @@ impl UiState {
                                         ui.with_layout(
                                             egui::Layout::right_to_left(egui::Align::Center),
                                             |ui| {
-                                                ui.add_space(8.0); // right padding
-                                                if ui
+                                                    if ui
                                                     .add(elegance::Button::icon(
                                                         elegance::glyphs::TRASH,
                                                         "Remove",

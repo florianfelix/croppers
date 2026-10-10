@@ -83,16 +83,16 @@ impl EffectContainerObject for TiltShiftContainer {
         let mut changed = false;
         
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.max_radius, 0.0..=200.0).text("Radius"))
+            .add(elegance::Slider::new(&mut self.uniforms.max_radius, 0.0..=200.0).label("Radius"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.center, 0.0..=1.0).text("Center"))
+            .add(elegance::Slider::new(&mut self.uniforms.center, 0.0..=1.0).label("Center"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).text("focus size"))
+            .add(elegance::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).label("focus size"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.feather, 0.0..=1.0).text("feather"))
+            .add(elegance::Slider::new(&mut self.uniforms.feather, 0.0..=1.0).label("feather"))
             .changed();
     
         changed

@@ -79,19 +79,21 @@ impl EffectContainerObject for DitherContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        
+
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.color_steps, 2.0..=20.0)
-                    .step_by(1.0)
-                    .text("color steps"),
+                elegance::Slider::new(&mut self.uniforms.color_steps, 2.0..=8.0)
+                    .step(1.0)
+                    .label("color steps"),
             )
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.spread, 0.0..=5.0).text("spread"))
+            .add(elegance::Slider::new(&mut self.uniforms.spread, 0.0..=5.0).label("spread"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.pattern_scale, 1.0..=128.0).text("scale"))
+            .add(
+                elegance::Slider::new(&mut self.uniforms.pattern_scale, 1.0..=128.0).label("scale"),
+            )
             .changed();
         let pallette = [
             "rgb",
@@ -114,7 +116,7 @@ impl EffectContainerObject for DitherContainer {
             .copied()
             .unwrap_or("rgb");
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.palette_index, 0..=13).text(txt))
+            .add(elegance::Slider::new(&mut self.uniforms.palette_index, 0..=13).label(txt))
             .changed();
 
         let mut is_8x8 = self.uniforms.matrix_type == 1;
@@ -126,7 +128,7 @@ impl EffectContainerObject for DitherContainer {
             self.uniforms.matrix_type = is_8x8 as i32;
             changed = true;
         }
-    
+
         changed
     }
 

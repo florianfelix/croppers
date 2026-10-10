@@ -87,16 +87,16 @@ impl EffectContainerObject for VignetteContainer {
             .changed();
 
         // changed |= ui
-        //     .add(egui::Slider::new(&mut self.uniforms.intensity, 0.0..=1.0).text("Intensity"))
+        //     .add(elegance::Slider::new(&mut self.uniforms.intensity, 0.0..=1.0).label("Intensity"))
         //     .changed();
         // changed |= ui
-        //     .add(egui::Slider::new(&mut self.uniforms.radius, 0.0..=2.0).text("Radius"))
+        //     .add(elegance::Slider::new(&mut self.uniforms.radius, 0.0..=2.0).label("Radius"))
         //     .changed();
         // changed |= ui
-        //     .add(egui::Slider::new(&mut self.uniforms.smoothness, 0.0..=1.0).text("Smoothness"))
+        //     .add(elegance::Slider::new(&mut self.uniforms.smoothness, 0.0..=1.0).label("Smoothness"))
         //     .changed();
         // changed |= ui
-        //     .add(egui::Slider::new(&mut self.uniforms.scale_y, 0.0..=3.0).text("Scale y"))
+        //     .add(elegance::Slider::new(&mut self.uniforms.scale_y, 0.0..=3.0).label("Scale y"))
         //     .changed();
 
         changed

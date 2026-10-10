@@ -82,30 +82,23 @@ impl EffectContainerObject for PixelateLinearContainer {
         
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.max_pixel_size, 1.0..=128.0)
-                    .text("pixel size"),
+                elegance::Slider::new(&mut self.uniforms.max_pixel_size, 1.0..=128.0)
+                    .label("pixel size"),
             )
             .changed();
+        let mut angle_deg = self.uniforms.angle.to_degrees();
+        if ui.add(elegance::Slider::new(&mut angle_deg, 0.0..=360.0).suffix("°").label("angle")).changed() {
+            self.uniforms.angle = angle_deg.to_radians();
+            changed = true;
+        }
         changed |= ui
-            .add(
-                egui::Slider::from_get_set(0.0..=360.0, |new_deg| {
-                    if let Some(deg) = new_deg {
-                        self.uniforms.angle = (deg as f32).to_radians();
-                    }
-                    self.uniforms.angle.to_degrees() as f64
-                })
-                .suffix("°")
-                .text("angle"),
-            )
+            .add(elegance::Slider::new(&mut self.uniforms.length, 0.0..=1.0).label("length"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.length, 0.0..=1.0).text("length"))
+            .add(elegance::Slider::new(&mut self.uniforms.start_x, 0.0..=1.0).label("start x"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.start_x, 0.0..=1.0).text("start x"))
-            .changed();
-        changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.start_y, 0.0..=1.0).text("start y"))
+            .add(elegance::Slider::new(&mut self.uniforms.start_y, 0.0..=1.0).label("start y"))
             .changed();
 
         let mut is_inverted = self.uniforms.invert == 1;

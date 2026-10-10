@@ -81,29 +81,29 @@ impl EffectContainerObject for CrtContainer {
         let mut changed = false;
         
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.curvature, 0.0..=1.0).text("curvature"))
+            .add(elegance::Slider::new(&mut self.uniforms.curvature, 0.0..=1.0).label("curvature"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.overscan, 0.0..=1.0).text("overscan"))
+            .add(elegance::Slider::new(&mut self.uniforms.overscan, 0.0..=1.0).label("overscan"))
             .changed();
         ui.separator();
 
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.scanline_count, 0.0..=1000.0)
-                    .text("scanlines"),
+                elegance::Slider::new(&mut self.uniforms.scanline_count, 0.0..=1000.0)
+                    .label("scanlines"),
             )
             .changed();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.scanline_strength, 0.0..=1.0)
-                    .text("scanline strength"),
+                elegance::Slider::new(&mut self.uniforms.scanline_strength, 0.0..=1.0)
+                    .label("scanline strength"),
             )
             .changed();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.rgb_mask_strength, 0.0..=1.0)
-                    .text("mask strength"),
+                elegance::Slider::new(&mut self.uniforms.rgb_mask_strength, 0.0..=1.0)
+                    .label("mask strength"),
             )
             .changed();
     

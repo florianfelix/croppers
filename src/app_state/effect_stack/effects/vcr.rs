@@ -80,39 +80,39 @@ impl EffectContainerObject for VcrContainer {
         let mut changed = false;
         
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.time, 0.0..=200.0).text("time"))
+            .add(elegance::Slider::new(&mut self.uniforms.time, 0.0..=200.0).label("time"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.jitter, 0.0..=5.0).text("jitter"))
+            .add(elegance::Slider::new(&mut self.uniforms.jitter, 0.0..=5.0).label("jitter"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.glitch, 0.0..=10.0).text("glitch"))
+            .add(elegance::Slider::new(&mut self.uniforms.glitch, 0.0..=10.0).label("glitch"))
             .changed();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.glitch_noise, 0.0..=3.0)
-                    .text("glitch noise"),
+                elegance::Slider::new(&mut self.uniforms.glitch_noise, 0.0..=3.0)
+                    .label("glitch noise"),
             )
             .changed();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.head_switch, 0.0..=10.0)
-                    .text("head-switch"),
+                elegance::Slider::new(&mut self.uniforms.head_switch, 0.0..=10.0)
+                    .label("head-switch"),
             )
             .changed();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.head_switch_noise, 0.0..=3.0)
-                    .text("head-switch noise"),
+                elegance::Slider::new(&mut self.uniforms.head_switch_noise, 0.0..=3.0)
+                    .label("head-switch noise"),
             )
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.tape_roll, 0.0..=10.0).text("tape roll"))
+            .add(elegance::Slider::new(&mut self.uniforms.tape_roll, 0.0..=10.0).label("tape roll"))
             .changed();
         changed |= ui
             .add(
-                egui::Slider::new(&mut self.uniforms.chroma_decay, 0.0..=1.0)
-                    .text("chroma decay"),
+                elegance::Slider::new(&mut self.uniforms.chroma_decay, 0.0..=1.0)
+                    .label("chroma decay"),
             )
             .changed();
     

@@ -72,16 +72,16 @@ impl EffectContainerObject for HsvContainer {
         let mut changed = false;
         
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.hue, 0.0..=1.0).text("hue"))
+            .add(elegance::Slider::new(&mut self.uniforms.hue, 0.0..=1.0).label("hue"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.saturation, 0.0..=2.0).text("saturation"))
+            .add(elegance::Slider::new(&mut self.uniforms.saturation, 0.0..=2.0).label("saturation"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.value, 0.0..=2.0).text("value"))
+            .add(elegance::Slider::new(&mut self.uniforms.value, 0.0..=2.0).label("value"))
             .changed();
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.factor, 0.0..=1.0).text("factor"))
+            .add(elegance::Slider::new(&mut self.uniforms.factor, 0.0..=1.0).label("factor"))
             .changed();
     
         changed

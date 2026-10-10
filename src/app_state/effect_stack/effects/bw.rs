@@ -72,7 +72,7 @@ impl EffectContainerObject for BwContainer {
         let mut changed = false;
         
         changed |= ui
-            .add(egui::Slider::new(&mut self.uniforms.select, 0..=3).text("mode (rgbl)"))
+            .add(elegance::Slider::new(&mut self.uniforms.select, 0..=3).label("mode (rgbl)"))
             .changed();
     
         changed

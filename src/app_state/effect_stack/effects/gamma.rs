@@ -90,7 +90,7 @@ impl EffectContainerObject for GammaContainer {
             // Unified single slider controlling all channels
             let mut unified_gamma = self.uniforms.gr;
             if ui
-                .add(egui::Slider::new(&mut unified_gamma, 0.01..=10.0).text("gamma"))
+                .add(elegance::Slider::new(&mut unified_gamma, 0.01..=10.0).label("gamma"))
                 .changed()
             {
                 self.uniforms.gr = unified_gamma;
@@ -101,13 +101,13 @@ impl EffectContainerObject for GammaContainer {
         } else {
             // Individual sliders per channel
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.gr, 0.01..=10.0).text("gamma red"))
+                .add(elegance::Slider::new(&mut self.uniforms.gr, 0.01..=10.0).label("gamma red"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.gg, 0.01..=10.0).text("gamma green"))
+                .add(elegance::Slider::new(&mut self.uniforms.gg, 0.01..=10.0).label("gamma green"))
                 .changed();
             changed |= ui
-                .add(egui::Slider::new(&mut self.uniforms.gb, 0.01..=10.0).text("gamma blue"))
+                .add(elegance::Slider::new(&mut self.uniforms.gb, 0.01..=10.0).label("gamma blue"))
                 .changed();
         }
     
