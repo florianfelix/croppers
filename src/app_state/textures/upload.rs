@@ -17,15 +17,20 @@ impl AppState {
         info!("Creating srcimg textures. {:?}", img.path);
 
         let (width, height) = img.image_size;
+        let max_dim = device.limits().max_texture_dimension_2d;
 
-        if !(width == 0 || height == 0 || width > 8192 || height > 8192) {
+        if width > 0 && height > 0 && width <= max_dim && height <= max_dim {
             let (texture, view, dims) =
                 texture_and_view_from_source_img(img, device.clone(), queue.clone());
             self.texture_vault.set_srcimg(texture, view, dims);
             self.texture_vault.effect = self.texture_vault.srcimg.clone();
             self.texture_vault.clear_cropped();
         } else {
-            let msg = format!("Invalid image size {width}x{height}");
+            let msg = if width == 0 || height == 0 {
+                format!("Invalid image size {width}x{height}")
+            } else {
+                format!("Image size {width}x{height} exceeds GPU limit ({max_dim}x{max_dim})")
+            };
             self.ui_state.has_source_image = false;
             error!("{msg}");
             self.ui_state.notifications.push(&msg, true);

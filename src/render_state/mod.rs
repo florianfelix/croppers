@@ -41,7 +41,10 @@ impl RenderState {
             .expect("Failed to find suitable GPU adapter");
 
         let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
+            .request_device(&wgpu::DeviceDescriptor {
+                required_limits: adapter.limits(),
+                ..Default::default()
+            })
             .await
             .expect("Failed to create logical device");
 
