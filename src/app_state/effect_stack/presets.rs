@@ -99,8 +99,18 @@ impl EffectStack {
             .fill(fill)
             .stroke(stroke)
             .corner_radius(egui::CornerRadius::same(theme.card_radius as u8))
-            .inner_margin(egui::Margin { left: 8, right: 8, top: 0, bottom: 0 })
-            .outer_margin(egui::Margin { left: 0, right: 14 + 14, top: 0, bottom: 0 });
+            .inner_margin(egui::Margin {
+                left: 8,
+                right: 8,
+                top: 0,
+                bottom: 0,
+            })
+            .outer_margin(egui::Margin {
+                left: 0,
+                right: 14 + 14,
+                top: 0,
+                bottom: 0,
+            });
 
         frame.show(ui, |ui| {
             ui.allocate_ui_with_layout(
@@ -111,8 +121,12 @@ impl EffectStack {
                     ui.set_min_width(ui.available_width());
 
                     let is_collapsed = self.presets_collapsed;
-                    let chevron = if is_collapsed { elegance::glyphs::CHEVRON_RIGHT } else { elegance::glyphs::CHEVRON_DOWN };
-                    
+                    let chevron = if is_collapsed {
+                        elegance::glyphs::CHEVRON_RIGHT
+                    } else {
+                        elegance::glyphs::CHEVRON_DOWN
+                    };
+
                     ui.horizontal(|ui| {
                         let title = format!("{} Presets", chevron);
                         if ui.add(egui::Button::new(title).frame(false)).clicked() {
@@ -122,7 +136,7 @@ impl EffectStack {
 
                     if !is_collapsed {
                         ui.add_space(4.0);
-                        
+
                         let selected_label = self
                             .selected_preset
                             .as_ref()
@@ -144,7 +158,8 @@ impl EffectStack {
                                             .file_stem()
                                             .and_then(|s| s.to_str())
                                             .unwrap_or("unknown");
-                                        let is_selected = self.selected_preset.as_ref() == Some(path);
+                                        let is_selected =
+                                            self.selected_preset.as_ref() == Some(path);
                                         if ui.selectable_label(is_selected, stem).clicked() {
                                             preset_to_select = Some(path.clone());
                                         }
@@ -153,9 +168,12 @@ impl EffectStack {
 
                             if ui
                                 .add(
-                                    elegance::Button::icon(elegance::glyphs::REFRESH, "Refresh presets")
-                                        .outline()
-                                        .size(elegance::ButtonSize::Small),
+                                    elegance::Button::icon(
+                                        elegance::glyphs::REFRESH,
+                                        "Refresh presets",
+                                    )
+                                    .outline()
+                                    .size(elegance::ButtonSize::Small),
                                 )
                                 .clicked()
                             {
@@ -165,10 +183,13 @@ impl EffectStack {
                             let has_selection = self.selected_preset.is_some();
                             if ui
                                 .add(
-                                    elegance::Button::icon(elegance::glyphs::TRASH, "Delete preset")
-                                        .outline()
-                                        .size(elegance::ButtonSize::Small)
-                                        .enabled(has_selection),
+                                    elegance::Button::icon(
+                                        elegance::glyphs::TRASH,
+                                        "Delete preset",
+                                    )
+                                    .outline()
+                                    .size(elegance::ButtonSize::Small)
+                                    .enabled(has_selection),
                                 )
                                 .on_hover_text("Delete selected preset file")
                                 .clicked()
@@ -182,7 +203,7 @@ impl EffectStack {
                                 self.preset_name_input = stem.to_string();
                             }
                             self.selected_preset = Some(path.clone());
-                            
+
                             // Auto-load on selection
                             if let Err(err) = self.load_preset_by_path(&path) {
                                 tracing::error!("Failed to load preset: {err}");
@@ -240,7 +261,7 @@ impl EffectStack {
                     }
 
                     ui.add_space(10.0); // bottom padding
-                }
+                },
             );
         });
 

@@ -70,12 +70,14 @@ impl EffectContainerObject for HsvContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        
+
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.hue, 0.0..=1.0).label("hue"))
             .changed();
         changed |= ui
-            .add(elegance::Slider::new(&mut self.uniforms.saturation, 0.0..=2.0).label("saturation"))
+            .add(
+                elegance::Slider::new(&mut self.uniforms.saturation, 0.0..=2.0).label("saturation"),
+            )
             .changed();
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.value, 0.0..=2.0).label("value"))
@@ -83,7 +85,7 @@ impl EffectContainerObject for HsvContainer {
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.factor, 0.0..=1.0).label("factor"))
             .changed();
-    
+
         changed
     }
 

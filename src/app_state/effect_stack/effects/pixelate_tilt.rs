@@ -79,7 +79,7 @@ impl EffectContainerObject for PixelateTiltContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        
+
         changed |= ui
             .add(
                 elegance::Slider::new(&mut self.uniforms.max_pixel_size, 1.0..=128.0)
@@ -87,7 +87,14 @@ impl EffectContainerObject for PixelateTiltContainer {
             )
             .changed();
         let mut angle_deg = self.uniforms.angle.to_degrees();
-        if ui.add(elegance::Slider::new(&mut angle_deg, 0.0..=360.0).suffix("°").label("angle")).changed() {
+        if ui
+            .add(
+                elegance::Slider::new(&mut angle_deg, 0.0..=360.0)
+                    .suffix("°")
+                    .label("angle"),
+            )
+            .changed()
+        {
             self.uniforms.angle = angle_deg.to_radians();
             changed = true;
         }
@@ -98,12 +105,14 @@ impl EffectContainerObject for PixelateTiltContainer {
             .add(elegance::Slider::new(&mut self.uniforms.center_y, 0.0..=1.0).label("center y"))
             .changed();
         changed |= ui
-            .add(elegance::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).label("focus size"))
+            .add(
+                elegance::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).label("focus size"),
+            )
             .changed();
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.feather, 0.0..=1.0).label("feather"))
             .changed();
-    
+
         changed
     }
 

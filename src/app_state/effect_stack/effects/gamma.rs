@@ -72,7 +72,7 @@ impl EffectContainerObject for GammaContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        
+
         // Toggle between unified single-channel mode and individual RGB channels
         if ui
             .checkbox(&mut self.linked_channels, "Link RGB channels")
@@ -110,7 +110,7 @@ impl EffectContainerObject for GammaContainer {
                 .add(elegance::Slider::new(&mut self.uniforms.gb, 0.01..=10.0).label("gamma blue"))
                 .changed();
         }
-    
+
         changed
     }
 

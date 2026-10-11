@@ -78,7 +78,7 @@ impl EffectContainerObject for GlitchContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        
+
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.time, 0.0..=200.0).label("time"))
             .changed();
@@ -129,7 +129,7 @@ impl EffectContainerObject for GlitchContainer {
                     .label("Grid size"),
             )
             .changed();
-    
+
         changed
     }
 

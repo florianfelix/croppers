@@ -81,7 +81,7 @@ impl EffectContainerObject for TiltShiftContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        
+
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.max_radius, 0.0..=200.0).label("Radius"))
             .changed();
@@ -89,12 +89,14 @@ impl EffectContainerObject for TiltShiftContainer {
             .add(elegance::Slider::new(&mut self.uniforms.center, 0.0..=1.0).label("Center"))
             .changed();
         changed |= ui
-            .add(elegance::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).label("focus size"))
+            .add(
+                elegance::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).label("focus size"),
+            )
             .changed();
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.feather, 0.0..=1.0).label("feather"))
             .changed();
-    
+
         changed
     }
 

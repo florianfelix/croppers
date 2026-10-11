@@ -78,12 +78,14 @@ impl EffectContainerObject for AsciiContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        
+
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.scale, 0.0..=200.0).label("Scale"))
             .changed();
         changed |= ui
-            .add(elegance::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).label("glyph set"))
+            .add(
+                elegance::Slider::new(&mut self.uniforms.glyph_selection, 0..=3).label("glyph set"),
+            )
             .changed();
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.charset, 0..=2).label("atlas"))
@@ -114,7 +116,7 @@ impl EffectContainerObject for AsciiContainer {
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.mult, 0.0..=1.0).label("original bg"))
             .changed();
-    
+
         changed
     }
 

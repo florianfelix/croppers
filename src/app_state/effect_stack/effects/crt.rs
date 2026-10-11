@@ -79,7 +79,7 @@ impl EffectContainerObject for CrtContainer {
 
     fn draw_ui(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
-        
+
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.curvature, 0.0..=1.0).label("curvature"))
             .changed();
@@ -106,7 +106,7 @@ impl EffectContainerObject for CrtContainer {
                     .label("mask strength"),
             )
             .changed();
-    
+
         changed
     }
 

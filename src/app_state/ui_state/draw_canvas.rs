@@ -26,29 +26,9 @@ impl UiState {
                 let rect = ui.available_rect_before_wrap();
                 self.set_canvas_rect(rect);
 
-                match source {
-                    Err(ImgError::NoImage) => {
-                        ui.centered_and_justified(|ui| {
-                            elegance::Card::new()
-                                .heading("No Image Loaded")
-                                .show(ui, |_ui| {});
-                        });
-                        return;
-                    }
-                    Err(err) => {
-                        ui.centered_and_justified(|ui| {
-                            elegance::Card::new()
-                                .heading("Failed to Load Image")
-                                .show(ui, |ui| {
-                                    ui.colored_label(
-                                        egui::Color32::from_rgb(255, 100, 100),
-                                        err.to_string(),
-                                    );
-                                });
-                        });
-                        return;
-                    }
-                    Ok(_) => {}
+                if !source.is_ok() {
+                    Self::draw_canvas_status(ui, rect, source);
+                    return;
                 }
 
                 // Handle Pan and Zoom
@@ -92,6 +72,56 @@ impl UiState {
                         }
                     }
                 }
+            });
+    }
+
+    fn draw_canvas_status(ui: &mut egui::Ui, rect: egui::Rect, source: &ImgResult<ImageSource>) {
+        let theme = elegance::Theme::current(ui.ctx());
+
+        egui::Area::new(egui::Id::new("canvas_status_area"))
+            .fixed_pos(rect.min)
+            .show(ui.ctx(), |ui| {
+                ui.painter().rect_filled(rect, 0.0, theme.palette.bg);
+
+                egui::Frame::new().fill(theme.palette.bg).show(ui, |ui| {
+                    ui.allocate_ui_with_layout(
+                        rect.size(),
+                        egui::Layout::top_down(egui::Align::Center),
+                        |ui| {
+                            let pad_top = (rect.height() * 0.4).max(20.0);
+                            ui.add_space(pad_top);
+                            ui.set_max_width((rect.width() - 40.0).max(100.0));
+
+                            match source {
+                                Err(ImgError::NoImage) => {
+                                    ui.add(egui::Label::new(
+                                        egui::RichText::new("No Image Loaded")
+                                            .color(theme.palette.text_muted)
+                                            .size(theme.typography.heading)
+                                            .strong(),
+                                    ));
+                                }
+                                Err(err) => {
+                                    ui.add(egui::Label::new(
+                                        egui::RichText::new("Failed to Load Image")
+                                            .color(theme.palette.text_muted)
+                                            .size(theme.typography.heading)
+                                            .strong(),
+                                    ));
+                                    ui.add_space(8.0);
+                                    ui.add(
+                                        egui::Label::new(
+                                            egui::RichText::new(err.to_string())
+                                                .color(egui::Color32::from_rgb(255, 100, 100)),
+                                        )
+                                        .wrap_mode(egui::TextWrapMode::Wrap),
+                                    );
+                                }
+                                Ok(_) => {}
+                            }
+                        },
+                    );
+                });
             });
     }
 }
