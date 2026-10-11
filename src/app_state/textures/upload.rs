@@ -17,21 +17,41 @@ impl AppState {
         info!("Creating srcimg textures. {:?}", img.path);
 
         let (width, height) = img.image_size;
-        let (texture, view, dims) = if width == 0 || height == 0 || width > 8192 || height > 8192 {
+
+        if !(width == 0 || height == 0 || width > 8192 || height > 8192) {
+            let (texture, view, dims) =
+                texture_and_view_from_source_img(img, device.clone(), queue.clone());
+            self.texture_vault.set_srcimg(texture, view, dims);
+            self.texture_vault.effect = self.texture_vault.srcimg.clone();
+            self.texture_vault.clear_cropped();
+        } else {
             let msg = format!("Invalid image size {width}x{height}");
             self.ui_state.has_source_image = false;
-
             error!("{msg}");
             self.ui_state.notifications.push(&msg, true);
-            RenderState::create_dummy_texture(device.clone(), queue.clone())
-        } else {
-            texture_and_view_from_source_img(img, device.clone(), queue.clone())
-        };
+            self.texture_vault.clear_effects();
+            self.texture_vault.clear_cropped();
+            let (texture, view, dims) =
+                RenderState::create_dummy_texture(device.clone(), queue.clone());
+            self.texture_vault.set_srcimg(texture, view, dims);
+        }
 
-        self.texture_vault.set_srcimg(texture, view, dims);
-        self.texture_vault.effect = self.texture_vault.srcimg.clone();
+        //         let (texture, view, dims) = if width == 0 || height == 0 || width > 8192 || height > 8192 {
+        //             let msg = format!("Invalid image size {width}x{height}");
+        //             self.ui_state.has_source_image = false;
+        //
+        //             error!("{msg}");
+        //             self.ui_state.notifications.push(&msg, true);
+        //             RenderState::create_dummy_texture(device.clone(), queue.clone())
+        //         } else {
+        //             texture_and_view_from_source_img(img, device.clone(), queue.clone())
+        //         };
+
+        // self.texture_vault.set_srcimg(texture, view, dims);
+        // self.texture_vault.effect = self.texture_vault.srcimg.clone();
         self.texture_vault.clear_cropped();
         self.needs_compute = true;
+        self.effect_stack.needs_rebuild = true;
     }
 }
 

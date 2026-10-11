@@ -102,6 +102,10 @@ impl TextureVault {
         self.effect.set_view(view, dims);
     }
 
+    pub fn clear_srcimg(&mut self) {
+        self.srcimg.clear();
+    }
+
     pub fn clear_cropped(&mut self) {
         self.cropped.clear();
     }
