@@ -13,7 +13,6 @@ pub enum GizmoSelection {
 }
 
 pub struct UiState {
-    pub has_source_image: bool,
     pub canvas_rect: Option<egui::Rect>,
     pub show_panel: bool,
     pub show_settings: bool,
@@ -60,7 +59,6 @@ impl UiState {
 impl Default for UiState {
     fn default() -> Self {
         Self {
-            has_source_image: false,
             canvas_rect: None,
             show_panel: true,
             show_settings: false,

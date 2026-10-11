@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::info;
 
 use crate::{
     app_state::{AppState, files::ImageSource},
@@ -9,54 +9,30 @@ use crate::{
 impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn set_srcimg_texture_from_source(&mut self) {
-        let Ok(ref img) = self.source else { return };
         let Some(ref gpu) = self.gpu else {
             return;
         };
 
-        info!("Creating srcimg textures. {:?}", img.path);
-
-        let (width, height) = img.image_size;
-        let max_dim = gpu.device.limits().max_texture_dimension_2d;
-
-        if width > 0 && height > 0 && width <= max_dim && height <= max_dim {
-            let (texture, view, dims) =
-                texture_and_view_from_source_img(img, gpu.device.clone(), gpu.queue.clone());
-            self.texture_vault.set_srcimg(texture, view, dims);
-            self.texture_vault.effect = self.texture_vault.srcimg.clone();
-            self.texture_vault.clear_cropped();
-        } else {
-            let msg = if width == 0 || height == 0 {
-                format!("Invalid image size {width}x{height}")
-            } else {
-                format!("Image size {width}x{height} exceeds GPU limit ({max_dim}x{max_dim})")
-            };
-            self.ui_state.has_source_image = false;
-            error!("{msg}");
-            self.ui_state.notifications.push(&msg, true);
-            self.texture_vault.clear_effects();
-            self.texture_vault.clear_cropped();
-            let (texture, view, dims) =
-                RenderState::create_dummy_texture(gpu.device.clone(), gpu.queue.clone());
-            self.texture_vault.set_srcimg(texture, view, dims);
+        match self.source {
+            Ok(ref img) => {
+                info!("Creating srcimg textures. {:?}", img.path);
+                let (texture, view, dims) =
+                    texture_and_view_from_source_img(img, gpu.device.clone(), gpu.queue.clone());
+                self.texture_vault.set_srcimg(texture, view, dims);
+                self.texture_vault.effect = self.texture_vault.srcimg.clone();
+                self.texture_vault.clear_cropped();
+                self.needs_compute = true;
+                self.effect_stack.needs_rebuild = true;
+            }
+            Err(_) => {
+                self.texture_vault.clear_effects();
+                self.texture_vault.clear_cropped();
+                let (texture, view, dims) =
+                    RenderState::create_dummy_texture(gpu.device.clone(), gpu.queue.clone());
+                self.texture_vault.set_srcimg(texture, view, dims);
+                self.needs_compute = false;
+            }
         }
-
-        //         let (texture, view, dims) = if width == 0 || height == 0 || width > 8192 || height > 8192 {
-        //             let msg = format!("Invalid image size {width}x{height}");
-        //             self.ui_state.has_source_image = false;
-        //
-        //             error!("{msg}");
-        //             self.ui_state.notifications.push(&msg, true);
-        //             RenderState::create_dummy_texture(device.clone(), queue.clone())
-        //         } else {
-        //             texture_and_view_from_source_img(img, device.clone(), queue.clone())
-        //         };
-
-        // self.texture_vault.set_srcimg(texture, view, dims);
-        // self.texture_vault.effect = self.texture_vault.srcimg.clone();
-        self.texture_vault.clear_cropped();
-        self.needs_compute = true;
-        self.effect_stack.needs_rebuild = true;
     }
 }
 

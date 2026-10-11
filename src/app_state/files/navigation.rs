@@ -5,7 +5,7 @@ use std::{
 };
 use tracing::info;
 
-use crate::app_state::{AppState, files::image_source::ImgError};
+use crate::app_state::AppState;
 
 impl AppState {
     #[tracing::instrument(skip(self))]
@@ -27,10 +27,10 @@ impl AppState {
         if let Some(ref folder) = self.folder {
             match self.source.as_ref() {
                 Ok(source) => source.path.clone(),
-                Err(imgerror) => match imgerror {
-                    ImgError::FailedToLoad { path } => path.to_owned(),
-                    ImgError::WrongDimensions { path, .. } => path.to_owned(),
-                    _ => {
+                Err(imgerror) => {
+                    if let Some(path) = imgerror.path() {
+                        path.to_owned()
+                    } else {
                         let imgs = get_images_in_folder(folder);
                         if let Some(p) = imgs.last() {
                             p.to_owned()
@@ -38,7 +38,7 @@ impl AppState {
                             PathBuf::new()
                         }
                     }
-                },
+                }
             }
         } else {
             PathBuf::new()
@@ -48,16 +48,14 @@ impl AppState {
     pub fn try_open_next(&mut self) -> Result<()> {
         #[allow(clippy::collapsible_if)]
         if let Some(ref folder) = self.folder {
-            let current_path = self.current_path().canonicalize()?;
-
-            // if let Ok(ref source) = self.source {
+            let current = self.current_path();
+            let current_path = current.canonicalize().unwrap_or(current);
             let images = get_images_in_folder(folder);
 
             let next = get_next_image(&current_path, &images);
             if let Some(next) = next {
                 self.try_open_file(&next);
             }
-            // }
         }
         Ok(())
     }
@@ -65,15 +63,14 @@ impl AppState {
     pub fn try_open_prev(&mut self) -> Result<()> {
         #[allow(clippy::collapsible_if)]
         if let Some(ref folder) = self.folder {
-            // if let Ok(ref source) = self.source {
-            let current_path = self.current_path().canonicalize()?;
+            let current = self.current_path();
+            let current_path = current.canonicalize().unwrap_or(current);
             let images = get_images_in_folder(folder);
             let next = get_previous_image(&current_path, &images);
             if let Some(next) = next {
                 info!("NEXT {:?}", next);
                 self.try_open_file(&next);
             }
-            // }
         }
         Ok(())
     }
@@ -91,7 +88,7 @@ pub(crate) fn get_images_in_folder<P: AsRef<Path>>(folder_path: P) -> Vec<PathBu
             if path.is_file() {
                 if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                     if valid_extensions.contains(&ext.to_lowercase().as_str()) {
-                        images.push(path);
+                        images.push(path.canonicalize().unwrap_or(path));
                     }
                 }
             }

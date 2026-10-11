@@ -20,7 +20,6 @@ use crate::{
         crop_renderer::{CropJob, CropResult},
         effect_pipeline_process::EffectsResult,
     },
-    render_state::RenderState,
     utils::{CroppersConfig, DimHelper},
 };
 
@@ -98,16 +97,8 @@ impl AppState {
     pub fn update_before_reddraw(&mut self) -> bool {
         let mut request_redraw = false;
 
-        if !self.source.is_ok() {
-            if let Some(ref gpu) = self.gpu {
-                let (texture, view, dims) =
-                    RenderState::create_dummy_texture(gpu.device.clone(), gpu.queue.clone());
-                self.texture_vault.set_srcimg(texture, view, dims);
-            }
-        }
-
         if self.source_dirty {
-            if let Ok(ref _source) = self.source {
+            if self.source.is_ok() {
                 self.is_computing = false;
                 self.needs_compute = true;
                 self.effect_stack.needs_rebuild = true;
@@ -115,13 +106,15 @@ impl AppState {
                 self.ui_state.crop.enabled = self.config.on_image_load.crop_enabled;
 
                 if self.config.on_image_load.empty_effects {
-                    self.effect_stack.effects.clear()
+                    self.effect_stack.effects.clear();
                 }
                 self.ui_state.reset_view();
+            } else {
+                self.is_computing = false;
+                self.needs_compute = false;
             }
             self.texture_vault.clear_cropped();
             self.source_dirty = false;
-            self.needs_compute = true;
         }
 
         if self.is_computing {
@@ -153,7 +146,6 @@ impl AppState {
                 let _ = proxy.send_event(Message::Empty);
             }
         }
-        self.ui_state.has_source_image = self.source.is_ok();
         request_redraw
     }
 

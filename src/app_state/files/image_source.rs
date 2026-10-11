@@ -1,5 +1,5 @@
 use image::{ImageBuffer, ImageReader, Rgba};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing::{error, info, warn};
 
 use crate::app_state::GpuHandles;
@@ -9,26 +9,42 @@ pub type ImgResult<T> = std::result::Result<T, ImgError>;
 #[derive(Debug)]
 pub enum ImgError {
     NoImage,
-    ImageError(image::ImageError),
-    FailedToLoad {
+    Io {
         path: PathBuf,
+        err: std::io::Error,
     },
-    Io(std::io::Error),
+    Decode {
+        path: PathBuf,
+        err: image::ImageError,
+    },
     WrongDimensions {
         path: PathBuf,
         dims: [u32; 2],
         max_dims: u32,
     },
 }
+
+impl ImgError {
+    pub fn path(&self) -> Option<&Path> {
+        match self {
+            ImgError::NoImage => None,
+            ImgError::Io { path, .. } => Some(path),
+            ImgError::Decode { path, .. } => Some(path),
+            ImgError::WrongDimensions { path, .. } => Some(path),
+        }
+    }
+}
+
 impl std::fmt::Display for ImgError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ImgError::NoImage => write!(f, "No image provided"),
-            ImgError::ImageError(err) => write!(f, "Image error: {}", err),
-            ImgError::FailedToLoad { path } => {
-                write!(f, "Failed to load image from path: {}", path.display())
+            ImgError::NoImage => write!(f, "No image loaded"),
+            ImgError::Io { path, err } => {
+                write!(f, "Failed to read {}: {}", path.display(), err)
             }
-            ImgError::Io(err) => write!(f, "IO error: {}", err),
+            ImgError::Decode { path, err } => {
+                write!(f, "Failed to decode {}: {}", path.display(), err)
+            }
             ImgError::WrongDimensions {
                 path,
                 dims,
@@ -36,26 +52,20 @@ impl std::fmt::Display for ImgError {
             } => {
                 write!(
                     f,
-                    "Image at path {} has wrong dimensions: {:?}. Max: {:?}",
+                    "Image {} has dimensions {}x{}, exceeding GPU maximum ({}x{})",
                     path.display(),
-                    dims,
+                    dims[0],
+                    dims[1],
+                    max_dims,
                     max_dims
                 )
             }
         }
     }
 }
+
 impl std::error::Error for ImgError {}
-impl From<std::io::Error> for ImgError {
-    fn from(err: std::io::Error) -> Self {
-        ImgError::Io(err)
-    }
-}
-impl From<image::ImageError> for ImgError {
-    fn from(err: image::ImageError) -> Self {
-        ImgError::ImageError(err)
-    }
-}
+
 impl std::fmt::Debug for ImageSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}\n{}", self.path, self.name)
@@ -73,7 +83,14 @@ pub struct ImageSource {
 impl ImageSource {
     #[tracing::instrument(skip(gpu))]
     pub fn from_path(path: &PathBuf, gpu: Option<GpuHandles>) -> ImgResult<Self> {
-        let img = ImageReader::open(path)?.decode()?;
+        let reader = ImageReader::open(path).map_err(|err| ImgError::Io {
+            path: path.clone(),
+            err,
+        })?;
+        let img = reader.decode().map_err(|err| ImgError::Decode {
+            path: path.clone(),
+            err,
+        })?;
         let name = match path.file_name() {
             Some(osstr) => osstr.to_string_lossy().to_string(),
             None => String::new(),
@@ -85,16 +102,10 @@ impl ImageSource {
             path, width, height
         );
         if let Some(gpu) = gpu {
-            if !(width > 0
-                && height > 0
-                && width <= gpu.dims_max / 100
-                && height <= gpu.dims_max / 100)
-            {
+            if !(width > 0 && height > 0 && width <= gpu.dims_max && height <= gpu.dims_max) {
                 error!(
                     "Image dimensions {}x{} exceed GPU max dimensions {}",
-                    width,
-                    height,
-                    gpu.dims_max / 100
+                    width, height, gpu.dims_max
                 );
                 return Err(ImgError::WrongDimensions {
                     path: path.clone(),
@@ -103,7 +114,7 @@ impl ImageSource {
                 });
             }
         } else {
-            warn!("No GPU set yet")
+            warn!("No GPU set yet");
         }
         let image_size = (width, height);
         Ok(Self {
@@ -112,17 +123,5 @@ impl ImageSource {
             rgba,
             image_size,
         })
-    }
-
-    pub fn from_bytes(name: &str, bytes: Vec<u8>) -> Self {
-        let img = image::load_from_memory(&bytes).unwrap();
-        let rgba = img.to_rgba8();
-        let (width, height) = rgba.dimensions();
-        Self {
-            path: PathBuf::new(),
-            name: String::from(name),
-            rgba,
-            image_size: (width, height),
-        }
     }
 }

@@ -2,7 +2,10 @@ use itertools::Itertools;
 
 use crate::app_state::{
     effect_stack::{EffectStack, effects::EffectSelector},
-    files::{ImageSource, image_source::ImgResult},
+    files::{
+        ImageSource,
+        image_source::{ImgError, ImgResult},
+    },
     ui_state::{UiActions, UiState},
     widgets::CropMode,
 };
@@ -64,16 +67,35 @@ impl UiState {
     ) {
         ui.group(|ui| {
             ui.set_min_width(ui.available_width());
-            if let Ok(src) = source {
-                ui.strong(&src.name);
+            match source {
+                Ok(src) => {
+                    ui.strong(&src.name);
 
-                ui.label(format!(
-                    "Resolution: {} × {}",
-                    src.image_size.0, src.image_size.1
-                ));
-                if let Some(cdims) = crop_dims {
-                    ui.label(format!("Cropped: {} × {}", cdims[0], cdims[1]));
+                    ui.label(format!(
+                        "Resolution: {} × {}",
+                        src.image_size.0, src.image_size.1
+                    ));
+                    if let Some(cdims) = crop_dims {
+                        ui.label(format!("Cropped: {} × {}", cdims[0], cdims[1]));
+                    }
                 }
+                Err(err) => match err {
+                    ImgError::NoImage => {
+                        ui.label("No image loaded");
+                    }
+                    _ => {
+                        if let Some(path) = err.path() {
+                            if let Some(name) = path.file_name() {
+                                ui.strong(name.to_string_lossy());
+                            }
+                        }
+                        ui.colored_label(
+                            egui::Color32::from_rgb(255, 100, 100),
+                            "Failed to load image",
+                        );
+                        ui.label(format!("{err}"));
+                    }
+                },
             }
             ui.add_space(4.0);
             ui.horizontal(|ui| {
@@ -88,7 +110,7 @@ impl UiState {
                     actions.open_file_dialog = true;
                 }
 
-                ui.add_enabled_ui(!self.crop.enabled, |ui| {
+                ui.add_enabled_ui(source.is_ok() && !self.crop.enabled, |ui| {
                     if ui
                         .add(
                             elegance::Button::new("Save")
@@ -285,7 +307,7 @@ impl UiState {
             actions.request_redraw = true;
         }
 
-        let _ = egui::ComboBox::from_label("")
+        let _ = egui::ComboBox::from_label("Add Effect")
             .selected_text("Add Effect")
             .show_ui(ui, |ui| {
                 EffectSelector::draw_all(ui, effect_stack);

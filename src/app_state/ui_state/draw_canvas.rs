@@ -1,5 +1,8 @@
 use crate::app_state::{
-    files::{ImageSource, image_source::ImgResult},
+    files::{
+        ImageSource,
+        image_source::{ImgError, ImgResult},
+    },
     ui_state::UiState,
     widgets::crop_widget::WidgetCroppers,
 };
@@ -23,14 +26,31 @@ impl UiState {
                 let rect = ui.available_rect_before_wrap();
                 self.set_canvas_rect(rect);
 
-                if !self.has_source_image {
-                    ui.centered_and_justified(|ui| {
-                        elegance::Card::new()
-                            .heading("No Image Loaded")
-                            .show(ui, |_ui| {});
-                    });
-                    return;
+                match source {
+                    Err(ImgError::NoImage) => {
+                        ui.centered_and_justified(|ui| {
+                            elegance::Card::new()
+                                .heading("No Image Loaded")
+                                .show(ui, |_ui| {});
+                        });
+                        return;
+                    }
+                    Err(err) => {
+                        ui.centered_and_justified(|ui| {
+                            elegance::Card::new()
+                                .heading("Failed to Load Image")
+                                .show(ui, |ui| {
+                                    ui.colored_label(
+                                        egui::Color32::from_rgb(255, 100, 100),
+                                        err.to_string(),
+                                    );
+                                });
+                        });
+                        return;
+                    }
+                    Ok(_) => {}
                 }
+
                 // Handle Pan and Zoom
                 // Create an invisible, sense-less interaction just for hovering.
                 // We don't use Sense::click_and_drag() because that steals the click focus

@@ -50,7 +50,7 @@ impl AppState {
             .push(&format!("Saved: {}", filename), false);
 
         if let Ok(ref source) = self.source {
-            let is_overwrite = source.path.canonicalize().unwrap() == path;
+            let is_overwrite = source.path.canonicalize().ok().as_ref() == Some(&path);
             info!("is_overwrite {is_overwrite}");
             if is_overwrite {
                 self.try_open_file(&path);
