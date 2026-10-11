@@ -17,7 +17,7 @@ impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn save_effect_texture(&mut self, increment: bool) {
         if self.texture_vault.effect.texture_view.is_some() {
-            if let Some(ref source) = self.source {
+            if let Ok(ref source) = self.source {
                 if let Ok(ref current) = source.path.canonicalize() {
                     let path_for_saving = if increment {
                         increment_filename(current)
@@ -49,7 +49,7 @@ impl AppState {
             .notifications
             .push(&format!("Saved: {}", filename), false);
 
-        if let Some(ref source) = self.source {
+        if let Ok(ref source) = self.source {
             let is_overwrite = source.path.canonicalize().unwrap() == path;
             info!("is_overwrite {is_overwrite}");
             if is_overwrite {

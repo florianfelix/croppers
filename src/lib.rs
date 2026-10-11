@@ -26,6 +26,7 @@ use winit::{
     window::Window,
 };
 
+use crate::app_state::GpuHandles;
 use crate::{
     app_state::AppState, compute::ComputeResult, render_state::RenderState, utils::CroppersConfig,
 };
@@ -61,7 +62,7 @@ impl Croppers {
         info!("{:#?}", cli);
         Self {
             renderer: None,
-            app_state: AppState::new(cli, config),
+            app_state: AppState::new(config),
             proxy: None,
             modifiers: ModifiersState::default(),
         }
@@ -125,9 +126,17 @@ impl ApplicationHandler<Message> for Croppers {
 
         let device = renderer.device.clone();
         let queue = renderer.queue.clone();
-        self.app_state.gpu = Some((device, queue));
+        let dims_max = device.limits().max_texture_dimension_2d;
+        self.app_state.gpu = Some(GpuHandles {
+            device,
+            queue,
+            dims_max,
+        });
 
-        self.app_state.set_srcimg_texture_from_source();
+        if let Some(ref path) = self.app_state.config.startup_file.clone() {
+            info!("Opening startup file: {:?}", path);
+            self.app_state.try_open_file(path);
+        };
 
         renderer.window.set_visible(true);
         self.renderer = Some(renderer);

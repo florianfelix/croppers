@@ -7,7 +7,13 @@ use winit::event_loop::EventLoopProxy;
 use crate::{
     Message,
     app_state::{
-        effect_stack::EffectStack, files::ImageSource, textures::TextureVault, ui_state::UiState,
+        effect_stack::EffectStack,
+        files::{
+            ImageSource,
+            image_source::{ImgError, ImgResult},
+        },
+        textures::TextureVault,
+        ui_state::UiState,
     },
     compute::{
         ComputeRequest, ComputeResult, EffectsJob,
@@ -25,10 +31,19 @@ pub mod ui_draw;
 pub mod ui_state;
 pub mod widgets;
 
+#[derive(Clone)]
+pub struct GpuHandles {
+    pub device: Arc<wgpu::Device>,
+    pub queue: Arc<wgpu::Queue>,
+    pub dims_max: u32,
+}
+
 pub struct AppState {
     pub config: CroppersConfig,
-    pub gpu: Option<(Arc<wgpu::Device>, Arc<wgpu::Queue>)>,
-    pub source: Option<ImageSource>,
+    pub gpu: Option<GpuHandles>,
+    // pub gpu: Option<(Arc<wgpu::Device>, Arc<wgpu::Queue>, u32)>,
+    pub source: ImgResult<ImageSource>,
+    // pub source: Option<ImageSource>,
     pub source_dirty: bool,
     pub folder: Option<PathBuf>,
     pub texture_vault: TextureVault,
@@ -42,12 +57,13 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(cli: crate::utils::Cli, config: CroppersConfig) -> Self {
+    #[tracing::instrument(skip(config))]
+    pub fn new(config: CroppersConfig) -> Self {
         let (tx_job, rx_job) = crossbeam_channel::bounded::<ComputeRequest>(1);
         let mut app_state = Self {
             config,
             gpu: None,
-            source: None,
+            source: ImgResult::Err(ImgError::NoImage),
             source_dirty: false,
             folder: None,
             texture_vault: TextureVault::default(),
@@ -62,9 +78,6 @@ impl AppState {
         if app_state.config.is_new_config {
             app_state.ui_state.show_settings = true;
         }
-        if let Some(path) = cli.path {
-            app_state.try_open_file(&path);
-        };
 
         app_state.apply_startup_config();
         app_state
@@ -85,16 +98,16 @@ impl AppState {
     pub fn update_before_reddraw(&mut self) -> bool {
         let mut request_redraw = false;
 
-        if !self.source.is_some() {
-            if let Some((ref device, ref queue)) = self.gpu {
+        if !self.source.is_ok() {
+            if let Some(ref gpu) = self.gpu {
                 let (texture, view, dims) =
-                    RenderState::create_dummy_texture(device.clone(), queue.clone());
+                    RenderState::create_dummy_texture(gpu.device.clone(), gpu.queue.clone());
                 self.texture_vault.set_srcimg(texture, view, dims);
             }
         }
 
         if self.source_dirty {
-            if let Some(ref _source) = self.source {
+            if let Ok(ref _source) = self.source {
                 self.is_computing = false;
                 self.needs_compute = true;
                 self.effect_stack.needs_rebuild = true;
@@ -140,7 +153,7 @@ impl AppState {
                 let _ = proxy.send_event(Message::Empty);
             }
         }
-        self.ui_state.has_source_image = self.source.is_some();
+        self.ui_state.has_source_image = self.source.is_ok();
         request_redraw
     }
 

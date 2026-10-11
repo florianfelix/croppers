@@ -9,7 +9,7 @@ use crate::app_state::{
 impl AppState {
     pub fn delete_current_file(&mut self) {
         if let Some(ref folder) = self.folder {
-            if let Some(ref source) = self.source {
+            if let Ok(ref source) = self.source {
                 let images = get_images_in_folder(folder);
                 let next = get_next_image(&source.path.canonicalize().unwrap(), &images);
 

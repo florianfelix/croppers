@@ -16,16 +16,18 @@ impl AppState {
                 .notifications
                 .push(&format!("{:?} not found", path), true);
         }
-        match ImageSource::from_path(path) {
+        match ImageSource::from_path(path, self.gpu.clone()) {
             Ok(source) => {
                 info!("Setting new Source Image {:?}", path);
-                self.source = Some(source);
+                self.source = Ok(source);
                 self.set_src_dirty();
             }
             Err(e) => {
                 let msg = format!("Failed to load image {e}");
                 error!(msg);
                 self.ui_state.notifications.push(&msg, true);
+                self.source = Err(e);
+                self.set_src_dirty();
             }
         }
     }

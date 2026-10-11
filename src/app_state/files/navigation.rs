@@ -5,7 +5,7 @@ use std::{
 };
 use tracing::info;
 
-use crate::app_state::AppState;
+use crate::app_state::{AppState, files::image_source::ImgError};
 
 impl AppState {
     #[tracing::instrument(skip(self))]
@@ -23,16 +23,41 @@ impl AppState {
         self.set_srcimg_texture_from_source();
     }
 
+    pub fn current_path(&self) -> PathBuf {
+        if let Some(ref folder) = self.folder {
+            match self.source.as_ref() {
+                Ok(source) => source.path.clone(),
+                Err(imgerror) => match imgerror {
+                    ImgError::FailedToLoad { path } => path.to_owned(),
+                    ImgError::WrongDimensions { path, .. } => path.to_owned(),
+                    _ => {
+                        let imgs = get_images_in_folder(folder);
+                        if let Some(p) = imgs.last() {
+                            p.to_owned()
+                        } else {
+                            PathBuf::new()
+                        }
+                    }
+                },
+            }
+        } else {
+            PathBuf::new()
+        }
+    }
+
     pub fn try_open_next(&mut self) -> Result<()> {
         #[allow(clippy::collapsible_if)]
         if let Some(ref folder) = self.folder {
-            if let Some(ref source) = self.source {
-                let images = get_images_in_folder(folder);
-                let next = get_next_image(&source.path.canonicalize().unwrap(), &images);
-                if let Some(next) = next {
-                    self.try_open_file(&next);
-                }
+            let current_path = self.current_path().canonicalize()?;
+
+            // if let Ok(ref source) = self.source {
+            let images = get_images_in_folder(folder);
+
+            let next = get_next_image(&current_path, &images);
+            if let Some(next) = next {
+                self.try_open_file(&next);
             }
+            // }
         }
         Ok(())
     }
@@ -40,14 +65,15 @@ impl AppState {
     pub fn try_open_prev(&mut self) -> Result<()> {
         #[allow(clippy::collapsible_if)]
         if let Some(ref folder) = self.folder {
-            if let Some(ref source) = self.source {
-                let images = get_images_in_folder(folder);
-                let next = get_previous_image(&source.path.canonicalize().unwrap(), &images);
-                if let Some(next) = next {
-                    info!("NEXT {:?}", next);
-                    self.try_open_file(&next);
-                }
+            // if let Ok(ref source) = self.source {
+            let current_path = self.current_path().canonicalize()?;
+            let images = get_images_in_folder(folder);
+            let next = get_previous_image(&current_path, &images);
+            if let Some(next) = next {
+                info!("NEXT {:?}", next);
+                self.try_open_file(&next);
             }
+            // }
         }
         Ok(())
     }

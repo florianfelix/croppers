@@ -2,7 +2,7 @@ use itertools::Itertools;
 
 use crate::app_state::{
     effect_stack::{EffectStack, effects::EffectSelector},
-    files::ImageSource,
+    files::{ImageSource, image_source::ImgResult},
     ui_state::{UiActions, UiState},
     widgets::CropMode,
 };
@@ -11,7 +11,8 @@ impl UiState {
     pub fn draw_panel(
         &mut self,
         ctx: &mut egui::Ui,
-        source: Option<&ImageSource>,
+        source: &ImgResult<ImageSource>,
+        // source: Option<&ImageSource>,
         src_dims: [u32; 2],
         crop_dims: Option<[u32; 2]>,
         effect_stack: &mut EffectStack,
@@ -57,13 +58,13 @@ impl UiState {
     fn draw_file_info_and_save(
         &mut self,
         ui: &mut egui::Ui,
-        source: Option<&ImageSource>,
+        source: &ImgResult<ImageSource>,
         crop_dims: Option<[u32; 2]>,
         actions: &mut UiActions,
     ) {
         ui.group(|ui| {
             ui.set_min_width(ui.available_width());
-            if let Some(src) = source {
+            if let Ok(src) = source {
                 ui.strong(&src.name);
 
                 ui.label(format!(

@@ -9,19 +9,19 @@ use crate::{
 impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn set_srcimg_texture_from_source(&mut self) {
-        let Some(ref img) = self.source else { return };
-        let Some((ref device, ref queue)) = self.gpu else {
+        let Ok(ref img) = self.source else { return };
+        let Some(ref gpu) = self.gpu else {
             return;
         };
 
         info!("Creating srcimg textures. {:?}", img.path);
 
         let (width, height) = img.image_size;
-        let max_dim = device.limits().max_texture_dimension_2d;
+        let max_dim = gpu.device.limits().max_texture_dimension_2d;
 
         if width > 0 && height > 0 && width <= max_dim && height <= max_dim {
             let (texture, view, dims) =
-                texture_and_view_from_source_img(img, device.clone(), queue.clone());
+                texture_and_view_from_source_img(img, gpu.device.clone(), gpu.queue.clone());
             self.texture_vault.set_srcimg(texture, view, dims);
             self.texture_vault.effect = self.texture_vault.srcimg.clone();
             self.texture_vault.clear_cropped();
@@ -37,7 +37,7 @@ impl AppState {
             self.texture_vault.clear_effects();
             self.texture_vault.clear_cropped();
             let (texture, view, dims) =
-                RenderState::create_dummy_texture(device.clone(), queue.clone());
+                RenderState::create_dummy_texture(gpu.device.clone(), gpu.queue.clone());
             self.texture_vault.set_srcimg(texture, view, dims);
         }
 

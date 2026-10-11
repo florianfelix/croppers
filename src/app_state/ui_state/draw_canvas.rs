@@ -1,15 +1,17 @@
 use crate::app_state::{
-    files::ImageSource, ui_state::UiState, widgets::crop_widget::WidgetCroppers,
+    files::{ImageSource, image_source::ImgResult},
+    ui_state::UiState,
+    widgets::crop_widget::WidgetCroppers,
 };
 
 impl UiState {
     pub fn draw_canvas(
         &mut self,
         ctx: &mut egui::Ui,
-        source: Option<&ImageSource>,
+        source: &ImgResult<ImageSource>,
         src_dims: [u32; 2],
     ) {
-        let idname = if let Some(src) = source {
+        let idname = if let Ok(src) = source {
             src.name.clone()
         } else {
             "noimage".to_string()
@@ -24,7 +26,7 @@ impl UiState {
                 if !self.has_source_image {
                     ui.centered_and_justified(|ui| {
                         elegance::Card::new()
-                            .heading("No Image Loded")
+                            .heading("No Image Loaded")
                             .show(ui, |_ui| {});
                     });
                     return;

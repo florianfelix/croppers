@@ -1,4 +1,4 @@
-use std::{fs, io::Write};
+use std::{fs, io::Write, path::PathBuf};
 
 use crate::app_state::widgets::CropMode;
 use anyhow::Result;
@@ -45,6 +45,8 @@ pub struct CroppersConfig {
     pub fullscreen: bool,
     #[serde(skip)]
     pub is_new_config: bool,
+    #[serde(skip)]
+    pub startup_file: Option<PathBuf>,
 
     pub theme_mode: ThemeMode,
     pub appearance: AppearanceConfig,
@@ -59,6 +61,7 @@ impl Default for CroppersConfig {
             app_id: "croppers".to_string(),
             fullscreen: false,
             is_new_config: false,
+            startup_file: None,
             theme_mode: ThemeMode::default(),
             appearance: AppearanceConfig::default(),
             startup_crop: StartupCrop::default(),
@@ -173,6 +176,7 @@ impl CroppersConfig {
         // Merge runtime CLI value
         conf.app_id = cli.app_id.clone();
         conf.fullscreen = cli.fullscreen;
+        conf.startup_file = cli.path.clone();
 
         Ok(conf)
     }

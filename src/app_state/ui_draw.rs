@@ -54,7 +54,7 @@ impl AppState {
 
         let mut actions = self.ui_state.draw_panel(
             ctx,
-            self.source.as_ref(),
+            &self.source,
             src_dims,
             crop_dims,
             &mut self.effect_stack,
@@ -63,8 +63,7 @@ impl AppState {
         let settings_actions = self.ui_state.draw_settings_panel(ctx, &mut self.config);
         actions.save_config = actions.save_config || settings_actions.save_config;
 
-        self.ui_state
-            .draw_canvas(ctx, self.source.as_ref(), src_dims);
+        self.ui_state.draw_canvas(ctx, &self.source, src_dims);
 
         if actions.save_overwrite {
             self.save_effect_texture(false);
