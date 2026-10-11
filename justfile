@@ -3,7 +3,7 @@ default: run_release
 prefix := env("PREFIX", env("HOME") + "/.local")
 
 run_release:
-    cargo run --release -- images/wall2.jpg
+    cargo run --release
 
 release:
 	cargo build --release
