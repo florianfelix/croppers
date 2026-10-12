@@ -3,7 +3,7 @@ Gpu accelerated image viewer with streamlined cropping workflow and some fun ima
 
 
 ### Install
-have just and rust installed and run
+have [just](https://github.com/casey/just) and [rust](https://rust-lang.org/learn/get-started/) installed and run
 ```bash
 just install
 ```
