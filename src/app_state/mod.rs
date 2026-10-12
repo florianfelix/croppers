@@ -98,6 +98,7 @@ impl AppState {
         let mut request_redraw = false;
 
         if self.source_dirty {
+            self.ui_state.crop.request_reset();
             if self.source.is_ok() {
                 self.is_computing = false;
                 self.needs_compute = true;

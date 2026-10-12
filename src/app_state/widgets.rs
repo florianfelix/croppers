@@ -56,6 +56,7 @@ pub struct CropSettings {
     pub scale_link_aspect: bool,
     pub custom_ratio: [u32; 2],
     pub uv_rect: egui::Rect,
+    pub reset_requested: bool,
 }
 
 impl Default for CropSettings {
@@ -73,11 +74,17 @@ impl Default for CropSettings {
                 min: egui::Pos2::ZERO,
                 max: egui::Pos2 { x: 1.0, y: 1.0 },
             },
+            reset_requested: false,
         }
     }
 }
 
 impl CropSettings {
+    pub fn request_reset(&mut self) {
+        self.reset_requested = true;
+        self.uv_rect = egui::Rect::from_min_max(egui::Pos2::ZERO, egui::Pos2 { x: 1.0, y: 1.0 });
+    }
+
     pub fn aspect_ratio(&self, image_size: [u32; 2]) -> Option<f32> {
         match self.mode {
             CropMode::Freeform => None,

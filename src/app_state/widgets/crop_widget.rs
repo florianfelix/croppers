@@ -106,6 +106,11 @@ impl WidgetCroppers {
         }
     }
 
+    pub fn reset_state(ui: &egui::Ui, id_str: &str) {
+        let id = Id::new(id_str);
+        ui.data_mut(|d| d.remove::<WidgetCroppersState>(id));
+    }
+
     pub fn get_uv_crop_rect(ui: &egui::Ui, id_str: &str) -> Option<Rect> {
         let id = Id::new(id_str);
 
@@ -157,6 +162,7 @@ impl WidgetCroppers {
                 );
             }
             state.image_rect = new_image_rect;
+            state.image_size = self.image_size;
         }
     }
 
@@ -327,6 +333,10 @@ impl Widget for WidgetCroppers {
             d.get_persisted::<WidgetCroppersState>(self.id)
                 .unwrap_or_else(|| self.fresh_state())
         });
+
+        if state.image_size != self.image_size {
+            state = self.fresh_state();
+        }
 
         self.update_image_rect_and_remap(&mut state);
         self.handle_aspect_ratio_change(&mut state);

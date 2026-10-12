@@ -26,6 +26,11 @@ impl UiState {
                 let rect = ui.available_rect_before_wrap();
                 self.set_canvas_rect(rect);
 
+                if self.crop.reset_requested {
+                    self.crop.reset_requested = false;
+                    WidgetCroppers::reset_state(ui, &idname);
+                }
+
                 if !source.is_ok() {
                     Self::draw_canvas_status(ui, rect, source);
                     return;
