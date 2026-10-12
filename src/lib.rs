@@ -107,6 +107,8 @@ impl ApplicationHandler<Message> for Croppers {
             .with_title("Croppers")
             .with_fullscreen(fullscreen)
             .with_name(&self.app_state.config.app_id, &self.app_state.config.app_id)
+            .with_inner_size(winit::dpi::LogicalSize::new(1280.0, 800.0))
+            .with_min_inner_size(winit::dpi::LogicalSize::new(640.0, 480.0))
             .with_window_icon(load_window_icon())
             .with_visible(false);
         let window = Arc::new(
