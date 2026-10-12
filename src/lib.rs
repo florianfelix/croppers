@@ -14,15 +14,16 @@ use clap::Parser;
 use tracing::warn;
 use tracing::{info, trace};
 #[cfg(target_os = "linux")]
-use winit::platform::{wayland::ActiveEventLoopExtWayland, x11::ActiveEventLoopExtX11};
+use winit::platform::{
+    wayland::{ActiveEventLoopExtWayland, WindowAttributesExtWayland},
+    x11::ActiveEventLoopExtX11,
+};
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, KeyEvent, WindowEvent},
     event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy},
     keyboard::{Key, ModifiersState, NamedKey},
-    platform::{
-        modifier_supplement::KeyEventExtModifierSupplement, wayland::WindowAttributesExtWayland,
-    },
+    platform::modifier_supplement::KeyEventExtModifierSupplement,
     window::Window,
 };
 
@@ -103,14 +104,22 @@ impl ApplicationHandler<Message> for Croppers {
             None
         };
 
-        let window_attributes = Window::default_attributes()
+        #[allow(unused_mut)]
+        let mut window_attributes = Window::default_attributes()
             .with_title("Croppers")
             .with_fullscreen(fullscreen)
-            .with_name(&self.app_state.config.app_id, &self.app_state.config.app_id)
             .with_inner_size(winit::dpi::LogicalSize::new(1280.0, 800.0))
             .with_min_inner_size(winit::dpi::LogicalSize::new(640.0, 480.0))
             .with_window_icon(load_window_icon())
             .with_visible(false);
+
+        #[cfg(target_os = "linux")]
+        {
+            window_attributes = window_attributes.with_name(
+                &self.app_state.config.app_id,
+                &self.app_state.config.app_id,
+            );
+        }
         let window = Arc::new(
             event_loop
                 .create_window(window_attributes)
