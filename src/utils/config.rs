@@ -106,7 +106,7 @@ impl Default for OnImageLoad {
     fn default() -> Self {
         Self {
             crop_enabled: false,
-            effects_enabled: true,
+            effects_enabled: false,
             empty_effects: false,
         }
     }
@@ -119,7 +119,7 @@ pub struct StartupEffects {
 }
 impl Default for StartupEffects {
     fn default() -> Self {
-        Self { enabled: true }
+        Self { enabled: false }
     }
 }
 
@@ -144,7 +144,7 @@ pub struct StartupCrop {
 impl Default for StartupCrop {
     fn default() -> Self {
         Self {
-            enabled: true,
+            enabled: false,
             default_crop_mode: CropMode::FixedDimensions,
             fixed_crop_width: 1920,
             fixed_crop_height: 1080,

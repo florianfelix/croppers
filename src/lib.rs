@@ -115,10 +115,8 @@ impl ApplicationHandler<Message> for Croppers {
 
         #[cfg(target_os = "linux")]
         {
-            window_attributes = window_attributes.with_name(
-                &self.app_state.config.app_id,
-                &self.app_state.config.app_id,
-            );
+            window_attributes = window_attributes
+                .with_name(&self.app_state.config.app_id, &self.app_state.config.app_id);
         }
         let window = Arc::new(
             event_loop
@@ -234,6 +232,18 @@ impl ApplicationHandler<Message> for Croppers {
             WindowEvent::ModifiersChanged(modifiers) => {
                 self.modifiers = modifiers.state();
             }
+            WindowEvent::MouseWheel { delta, .. } => match delta {
+                winit::event::MouseScrollDelta::LineDelta(_, y) => {
+                    if self.modifiers.shift_key() {
+                        if y > 0.0 {
+                            self.app_state.open_next();
+                        } else if y < 0.0 {
+                            self.app_state.open_previous();
+                        }
+                    }
+                }
+                _ => {}
+            },
             WindowEvent::Resized(physical_size) => renderer.handle_resize(physical_size),
             WindowEvent::RedrawRequested => {
                 if self.app_state.update_before_reddraw() {
