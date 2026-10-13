@@ -292,18 +292,28 @@ impl UiState {
             return;
         }
 
-        if ui
-            .add(elegance::Switch::new(&mut effect_stack.enabled, "Enabled"))
-            .changed()
-        {
-            actions.needs_rebuild = true;
-            actions.needs_compute = true;
-            actions.request_redraw = true;
-        }
+        ui.indent("Efectsindent", |ui| {
+            if ui
+                .add(elegance::Switch::new(
+                    &mut effect_stack.enabled,
+                    "Effect Stack",
+                ))
+                .changed()
+            {
+                actions.needs_rebuild = true;
+                actions.needs_compute = true;
+                actions.request_redraw = true;
+            }
+        });
 
         if effect_stack.draw_presets_ui(ui) {
             actions.needs_compute = true;
             actions.request_redraw = true;
+            effect_stack.enabled = true;
+        }
+
+        if !effect_stack.enabled {
+            return;
         }
 
         ui.horizontal(|ui| {
