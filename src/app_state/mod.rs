@@ -10,7 +10,7 @@ use crate::{
         effect_stack::EffectStack,
         files::{
             ImageSource,
-            image_source::{ImgError, ImgResult},
+            image_source::{ImgError, ImgResult, LoadedImage},
         },
         textures::TextureVault,
         ui_state::UiState,
@@ -40,9 +40,7 @@ pub struct GpuHandles {
 pub struct AppState {
     pub config: CroppersConfig,
     pub gpu: Option<GpuHandles>,
-    // pub gpu: Option<(Arc<wgpu::Device>, Arc<wgpu::Queue>, u32)>,
     pub source: ImgResult<ImageSource>,
-    // pub source: Option<ImageSource>,
     pub source_dirty: bool,
     pub folder: Option<PathBuf>,
     pub texture_vault: TextureVault,
@@ -55,12 +53,14 @@ pub struct AppState {
     pub tx_job: Sender<ComputeRequest>,
     pub rx_job: Receiver<ComputeRequest>,
     pub proxy: Option<EventLoopProxy<Message>>,
+    pub load_id: u64,
+    pub target_path: Option<PathBuf>,
 }
 
 impl AppState {
     #[tracing::instrument(skip(config))]
     pub fn new(config: CroppersConfig) -> Self {
-        let (tx_job, rx_job) = crossbeam_channel::bounded::<ComputeRequest>(1);
+        let (tx_job, rx_job) = crossbeam_channel::unbounded::<ComputeRequest>();
         let mut app_state = Self {
             config,
             gpu: None,
@@ -77,12 +77,13 @@ impl AppState {
             tx_job,
             rx_job,
             proxy: None,
+            load_id: 0,
+            target_path: None,
         };
         if app_state.config.is_new_config {
             app_state.ui_state.show_settings = true;
         }
 
-        // app_state.apply_startup_config();
         app_state
     }
 
@@ -134,7 +135,7 @@ impl AppState {
         }
 
         if self.is_computing {
-            request_redraw = true
+            request_redraw = true;
         }
         if (self.needs_compute || self.effect_stack.needs_rebuild) && !self.is_computing {
             let res = match self.texture_vault.cropped.texture_view.is_some() {
@@ -171,6 +172,9 @@ impl AppState {
     #[tracing::instrument(skip(self, compute_result))]
     pub fn handle_compute_result(&mut self, compute_result: ComputeResult) {
         match compute_result {
+            ComputeResult::FinishedLoadImage { id, result } => {
+                self.handle_image_loaded(id, result);
+            }
             ComputeResult::FinishedEffects(EffectsResult::Finished {
                 texture,
                 view,
@@ -195,6 +199,51 @@ impl AppState {
                 .ui_state
                 .notifications
                 .push(&format!("Crop failed: {e}"), true),
+        }
+    }
+
+    #[tracing::instrument(skip(self, result))]
+    pub fn handle_image_loaded(&mut self, id: u64, result: ImgResult<LoadedImage>) {
+        if id != self.load_id {
+            info!(
+                "Discarding outdated image load request {} (current: {})",
+                id, self.load_id
+            );
+            return;
+        }
+
+        self.target_path = None;
+
+        match result {
+            Ok(loaded) => {
+                info!("Setting new Source Image {:?}", loaded.source.path);
+                self.source = Ok(loaded.source);
+                self.texture_vault
+                    .set_srcimg(loaded.texture, loaded.texture_view, loaded.dims);
+                self.texture_vault.effect = self.texture_vault.srcimg.clone();
+                self.texture_vault.clear_cropped();
+                self.source_dirty = true;
+                self.needs_compute = true;
+                self.effect_stack.needs_rebuild = true;
+            }
+            Err(e) => {
+                let msg = format!("Failed to load image {e}");
+                error!("{msg}");
+                self.ui_state.notifications.push(&msg, true);
+                self.source = Err(e);
+                self.texture_vault.clear_effects();
+                self.texture_vault.clear_cropped();
+                if let Some(ref gpu) = self.gpu {
+                    let (texture, view, dims) =
+                        crate::render_state::RenderState::create_dummy_texture(
+                            gpu.device.clone(),
+                            gpu.queue.clone(),
+                        );
+                    self.texture_vault.set_srcimg(texture, view, dims);
+                }
+                self.source_dirty = true;
+                self.needs_compute = false;
+            }
         }
     }
 

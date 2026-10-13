@@ -1,6 +1,13 @@
 use crate::{
     Message,
-    app_state::{effect_stack::EffectStack, textures::TextureSet},
+    app_state::{
+        effect_stack::EffectStack,
+        files::{
+            ImageSource,
+            image_source::{ImgResult, LoadedImage},
+        },
+        textures::TextureSet,
+    },
     compute::{
         crop_renderer::{CropJob, CropRender, CropResult},
         effect_pipeline_process::{EffectProcessor, EffectsResult},
@@ -27,6 +34,11 @@ pub fn spawn_worker(
 
 #[derive(Clone)]
 pub enum ComputeRequest {
+    LoadImage {
+        id: u64,
+        path: PathBuf,
+        dims_max: u32,
+    },
     EffectsJob(EffectsJob),
     CropJob(CropJob),
     SaveTexture {
@@ -34,6 +46,7 @@ pub enum ComputeRequest {
         texture_set: TextureSet,
     },
 }
+
 #[derive(Clone)]
 pub struct EffectsJob {
     pub effect_stack: EffectStack,
@@ -44,6 +57,10 @@ pub struct EffectsJob {
 
 #[derive(Debug, Clone)]
 pub enum ComputeResult {
+    FinishedLoadImage {
+        id: u64,
+        result: ImgResult<LoadedImage>,
+    },
     FinishedEffects(EffectsResult),
     FinishedCrop(CropResult),
 }
@@ -61,6 +78,12 @@ pub fn compute_worker(
 
     while let Ok(request) = rx_job.recv() {
         match request {
+            ComputeRequest::LoadImage { id, path, dims_max } => {
+                let result =
+                    ImageSource::load_and_upload(&path, dims_max, device.clone(), queue.clone());
+                let msg = Message::ComputeResult(ComputeResult::FinishedLoadImage { id, result });
+                let _ = proxy.send_event(msg);
+            }
             ComputeRequest::EffectsJob(job) => {
                 let msg = Message::ComputeResult(ComputeResult::FinishedEffects(
                     effect_processor.process_effects(job),

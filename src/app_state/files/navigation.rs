@@ -10,20 +10,17 @@ use crate::app_state::AppState;
 impl AppState {
     #[tracing::instrument(skip(self))]
     pub fn open_next(&mut self) {
-        if self.try_open_next().is_ok() {
-            self.source_dirty = true;
-        }
-        self.set_srcimg_texture_from_source();
+        let _ = self.try_open_next();
     }
 
     pub fn open_previous(&mut self) {
-        if self.try_open_prev().is_ok() {
-            self.source_dirty = true;
-        }
-        self.set_srcimg_texture_from_source();
+        let _ = self.try_open_prev();
     }
 
     pub fn current_path(&self) -> PathBuf {
+        if let Some(ref target) = self.target_path {
+            return target.clone();
+        }
         if let Some(ref folder) = self.folder {
             match self.source.as_ref() {
                 Ok(source) => source.path.clone(),

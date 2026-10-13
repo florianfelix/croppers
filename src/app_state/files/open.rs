@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
-use tracing::{error, info};
+use tracing::info;
 
-use crate::app_state::{AppState, files::ImageSource};
+use crate::app_state::AppState;
 
 impl AppState {
     #[tracing::instrument(skip(self))]
@@ -15,21 +15,20 @@ impl AppState {
             self.ui_state
                 .notifications
                 .push(&format!("{:?} not found", path), true);
+            return;
         }
-        match ImageSource::from_path(path, self.gpu.clone()) {
-            Ok(source) => {
-                info!("Setting new Source Image {:?}", path);
-                self.source = Ok(source);
-                self.set_src_dirty();
-            }
-            Err(e) => {
-                let msg = format!("Failed to load image {e}");
-                error!(msg);
-                self.ui_state.notifications.push(&msg, true);
-                self.source = Err(e);
-                self.set_src_dirty();
-            }
-        }
+
+        self.load_id += 1;
+        let id = self.load_id;
+        self.target_path = Some(path.clone());
+
+        let dims_max = self.gpu.as_ref().map(|g| g.dims_max).unwrap_or(8192);
+
+        let _ = self.tx_job.send(crate::compute::ComputeRequest::LoadImage {
+            id,
+            path: path.clone(),
+            dims_max,
+        });
     }
 
     pub fn open_file_dialog(&self) {

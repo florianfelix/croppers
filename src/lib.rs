@@ -227,6 +227,7 @@ impl ApplicationHandler<Message> for Croppers {
             }
             WindowEvent::DroppedFile(path) => {
                 info!("Dropped file: {:?}", path);
+                self.app_state.try_open_file(&path);
                 renderer.window.request_redraw();
             }
             WindowEvent::ModifiersChanged(modifiers) => {
