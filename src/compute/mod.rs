@@ -65,16 +65,12 @@ pub fn compute_worker(
                 let msg = Message::ComputeResult(ComputeResult::FinishedEffects(
                     effect_processor.process_effects(job),
                 ));
-                if proxy.send_event(msg).is_ok() {
-                    // window.request_redraw();
-                }
+                let _ = proxy.send_event(msg);
             }
             ComputeRequest::CropJob(job) => {
                 let msg =
                     Message::ComputeResult(ComputeResult::FinishedCrop(crop_renderer.process(job)));
-                if proxy.send_event(msg).is_ok() {
-                    // window.request_redraw();
-                }
+                let _ = proxy.send_event(msg);
             }
 
             ComputeRequest::SaveTexture {
