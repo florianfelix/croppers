@@ -1,5 +1,5 @@
 use crate::app_state::{
-    ui_state::{UiActions, UiState},
+    ui_state::{UiAction, UiState},
     widgets::CropMode,
 };
 
@@ -8,11 +8,10 @@ impl UiState {
         &mut self,
         ctx: &mut egui::Ui,
         config: &mut crate::utils::CroppersConfig,
-    ) -> UiActions {
-        let mut actions = UiActions::default();
-
+        actions: &mut Vec<UiAction>,
+    ) {
         if !self.show_settings {
-            return actions;
+            return;
         }
 
         egui::Panel::right("config_panel")
@@ -45,7 +44,7 @@ impl UiState {
                                                 )
                                                 .changed()
                                             {
-                                                actions.request_redraw = true;
+                                                actions.push(UiAction::RequestRedraw);
                                             }
                                         }
                                     });
@@ -69,7 +68,7 @@ impl UiState {
                                 {
                                     let new_rgba = egui::Rgba::from(accent_c32);
                                     config.appearance.accent_color = new_rgba.to_array();
-                                    actions.request_redraw = true;
+                                    actions.push(UiAction::RequestRedraw);
                                 }
 
                                 ui.add_space(8.0);
@@ -96,7 +95,7 @@ impl UiState {
                                         {
                                             let new_rgba = egui::Rgba::from(bg_c32);
                                             config.appearance.canvas_bg_color = new_rgba.to_array();
-                                            actions.request_redraw = true;
+                                            actions.push(UiAction::RequestRedraw);
                                         }
 
                                         ui.add_space(4.0);
@@ -121,7 +120,7 @@ impl UiState {
                                             let new_rgba = egui::Rgba::from(shadow_c32);
                                             config.appearance.canvas_shadow_color =
                                                 new_rgba.to_array();
-                                            actions.request_redraw = true;
+                                            actions.push(UiAction::RequestRedraw);
                                         }
 
                                         ui.add_space(4.0);
@@ -135,7 +134,7 @@ impl UiState {
                                             )
                                             .changed()
                                         {
-                                            actions.request_redraw = true;
+                                            actions.push(UiAction::RequestRedraw);
                                         }
                                         if ui
                                             .add(
@@ -147,7 +146,7 @@ impl UiState {
                                             )
                                             .changed()
                                         {
-                                            actions.request_redraw = true;
+                                            actions.push(UiAction::RequestRedraw);
                                         }
 
                                         if ui
@@ -160,7 +159,7 @@ impl UiState {
                                             )
                                             .changed()
                                         {
-                                            actions.request_redraw = true;
+                                            actions.push(UiAction::RequestRedraw);
                                         }
                                     });
                             });
@@ -253,7 +252,7 @@ impl UiState {
 
                             ui.add_space(16.0);
                             if ui.add(elegance::Button::new("Save Settings")).clicked() {
-                                actions.save_config = true;
+                                actions.push(UiAction::SaveConfig);
                             }
 
                             ui.add_space(16.0);
@@ -317,7 +316,5 @@ impl UiState {
                         });
                 });
             });
-
-        actions
     }
 }

@@ -6,7 +6,7 @@ use crate::app_state::{
         ImageSource,
         image_source::{ImgError, ImgResult},
     },
-    ui_state::{UiActions, UiState},
+    ui_state::{UiAction, UiState},
     widgets::CropMode,
 };
 
@@ -18,11 +18,10 @@ impl UiState {
         src_dims: [u32; 2],
         crop_dims: Option<[u32; 2]>,
         effect_stack: &mut EffectStack,
-    ) -> UiActions {
-        let mut actions = UiActions::default();
-
+        actions: &mut Vec<UiAction>,
+    ) {
         if !self.show_panel {
-            return actions;
+            return;
         }
 
         egui::Panel::left("settings_panel")
@@ -40,21 +39,19 @@ impl UiState {
                             )
                             .clicked()
                         {
-                            actions.toggle_settings = true;
+                            actions.push(UiAction::ToggleSettings);
                         }
                     });
                 });
 
-                self.draw_file_info_and_save(ui, source, crop_dims, &mut actions);
+                self.draw_file_info_and_save(ui, source, crop_dims, actions);
                 ui.separator();
 
-                self.draw_crop_section(ui, src_dims, &mut actions);
+                self.draw_crop_section(ui, src_dims, actions);
                 ui.separator();
 
-                self.draw_effects_section(ui, effect_stack, &mut actions);
+                self.draw_effects_section(ui, effect_stack, actions);
             });
-
-        actions
     }
 
     fn draw_file_info_and_save(
@@ -62,7 +59,7 @@ impl UiState {
         ui: &mut egui::Ui,
         source: &ImgResult<ImageSource>,
         crop_dims: Option<[u32; 2]>,
-        actions: &mut UiActions,
+        actions: &mut Vec<UiAction>,
     ) {
         ui.group(|ui| {
             ui.set_min_width(ui.available_width());
@@ -106,7 +103,7 @@ impl UiState {
                     )
                     .clicked()
                 {
-                    actions.open_file_dialog = true;
+                    actions.push(UiAction::OpenFileDialog);
                 }
 
                 ui.add_enabled_ui(source.is_ok() && !self.crop.enabled, |ui| {
@@ -118,7 +115,7 @@ impl UiState {
                         )
                         .clicked()
                     {
-                        actions.save_overwrite = true;
+                        actions.push(UiAction::SaveOverwrite);
                     }
                     if ui
                         .add(
@@ -128,7 +125,7 @@ impl UiState {
                         )
                         .clicked()
                     {
-                        actions.save_increment = true;
+                        actions.push(UiAction::SaveIncrement);
                     }
                 });
             });
@@ -139,7 +136,7 @@ impl UiState {
         &mut self,
         ui: &mut egui::Ui,
         src_dims: [u32; 2],
-        actions: &mut UiActions,
+        actions: &mut Vec<UiAction>,
     ) {
         ui.indent("Crop", |ui| {
             ui.add(elegance::Switch::new(&mut self.crop.enabled, "Crop"));
@@ -211,7 +208,7 @@ impl UiState {
                                     ((w as f64 * src_dims[1] as f64) / src_dims[0] as f64).round()
                                         as u32;
                             }
-                            actions.request_redraw = true;
+                            actions.push(UiAction::RequestRedraw);
                         }
                         ui.label("target width");
                     });
@@ -227,7 +224,7 @@ impl UiState {
                                     ((h as f64 * src_dims[0] as f64) / src_dims[1] as f64).round()
                                         as u32;
                             }
-                            actions.request_redraw = true;
+                            actions.push(UiAction::RequestRedraw);
                         }
                         ui.label("target height");
                     });
@@ -244,7 +241,7 @@ impl UiState {
                                 ((self.crop.scale_width as f64 * src_dims[1] as f64)
                                     / src_dims[0] as f64)
                                     .round() as u32;
-                            actions.request_redraw = true;
+                            actions.push(UiAction::RequestRedraw);
                         }
                     }
                 }
@@ -276,7 +273,7 @@ impl UiState {
                 .add(elegance::Button::new("Apply Crop (Enter)"))
                 .clicked()
             {
-                actions.apply_crop = true;
+                actions.push(UiAction::ApplyCrop);
             }
             // }
         });
@@ -286,7 +283,7 @@ impl UiState {
         &mut self,
         ui: &mut egui::Ui,
         effect_stack: &mut EffectStack,
-        actions: &mut UiActions,
+        actions: &mut Vec<UiAction>,
     ) {
         if self.crop.enabled {
             return;
@@ -301,9 +298,9 @@ impl UiState {
                     ))
                     .changed()
                 {
-                    actions.needs_rebuild = true;
-                    actions.needs_compute = true;
-                    actions.request_redraw = true;
+                    actions.push(UiAction::NeedsRebuild);
+                    actions.push(UiAction::NeedsCompute);
+                    actions.push(UiAction::RequestRedraw);
                 }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -322,8 +319,8 @@ impl UiState {
         });
 
         if effect_stack.draw_presets_ui(ui) {
-            actions.needs_compute = true;
-            actions.request_redraw = true;
+            actions.push(UiAction::NeedsCompute);
+            actions.push(UiAction::RequestRedraw);
             effect_stack.enabled = true;
         }
 
@@ -347,7 +344,7 @@ impl UiState {
                     )
                     .clicked()
                 {
-                    actions.clear_effect_stack = true;
+                    actions.push(UiAction::ClearEffectStack);
                 }
             });
         });
@@ -438,9 +435,9 @@ impl UiState {
                                                     .clicked()
                                                 {
                                                     remove_idx = Some(idx);
-                                                    actions.needs_rebuild = true;
-                                                    actions.needs_compute = true;
-                                                    actions.request_redraw = true;
+                                                    actions.push(UiAction::NeedsRebuild);
+                                                    actions.push(UiAction::NeedsCompute);
+                                                    actions.push(UiAction::RequestRedraw);
                                                 }
                                                 ui.add_space(12.0);
                                                 let mut is_enabled = container.enabled();
@@ -449,9 +446,9 @@ impl UiState {
                                                     .changed()
                                                 {
                                                     container.set_enabled(is_enabled);
-                                                    actions.needs_rebuild = true;
-                                                    actions.needs_compute = true;
-                                                    actions.request_redraw = true;
+                                                    actions.push(UiAction::NeedsRebuild);
+                                                    actions.push(UiAction::NeedsCompute);
+                                                    actions.push(UiAction::RequestRedraw);
                                                 }
                                             },
                                         );
@@ -461,7 +458,7 @@ impl UiState {
                                         ui.add_space(4.0);
                                         ui.add_enabled_ui(container.enabled(), |ui| {
                                             if container.draw_ui(ui) {
-                                                actions.needs_compute = true;
+                                                actions.push(UiAction::NeedsCompute);
                                             }
                                         });
                                     }
@@ -484,17 +481,17 @@ impl UiState {
 
         if let Some(idx) = remove_idx {
             effect_stack.effects.remove(idx);
-            actions.needs_rebuild = true;
-            actions.needs_compute = true;
-            actions.request_redraw = true;
+            actions.push(UiAction::NeedsRebuild);
+            actions.push(UiAction::NeedsCompute);
+            actions.push(UiAction::RequestRedraw);
         }
 
         if let Some((i, j)) = swap_index {
             let moved = effect_stack.effects.remove(i);
             effect_stack.effects.insert(j, moved);
-            actions.needs_rebuild = true;
-            actions.needs_compute = true;
-            actions.request_redraw = true;
+            actions.push(UiAction::NeedsRebuild);
+            actions.push(UiAction::NeedsCompute);
+            actions.push(UiAction::RequestRedraw);
         }
     }
 }

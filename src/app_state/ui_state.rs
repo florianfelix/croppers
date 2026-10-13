@@ -23,18 +23,18 @@ pub struct UiState {
     pub zoom: f32,
 }
 
-#[derive(Default)]
-pub struct UiActions {
-    pub save_overwrite: bool,
-    pub save_increment: bool,
-    pub apply_crop: bool,
-    pub needs_compute: bool,
-    pub needs_rebuild: bool,
-    pub request_redraw: bool,
-    pub save_config: bool,
-    pub open_file_dialog: bool,
-    pub toggle_settings: bool,
-    pub clear_effect_stack: bool,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UiAction {
+    SaveOverwrite,
+    SaveIncrement,
+    ApplyCrop,
+    NeedsCompute,
+    NeedsRebuild,
+    RequestRedraw,
+    SaveConfig,
+    OpenFileDialog,
+    ToggleSettings,
+    ClearEffectStack,
 }
 
 impl UiState {
