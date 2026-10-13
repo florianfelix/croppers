@@ -10,11 +10,20 @@ impl AppState {
             && path.is_file()
         {
             let abs_folder = abspath.parent().map(|p| p.to_owned());
-            self.folder = abs_folder;
+            if self.folder != abs_folder {
+                self.folder = abs_folder;
+                self.invalidate_folder_cache();
+            } else if let Some(ref mut cache) = self.folder_cache {
+                if !cache.contains(&abspath) {
+                    cache.push(abspath);
+                    cache.sort();
+                }
+            }
         } else {
             self.ui_state
                 .notifications
                 .push(&format!("{:?} not found", path), true);
+            self.invalidate_folder_cache();
             return;
         }
 

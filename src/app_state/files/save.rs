@@ -55,6 +55,20 @@ impl AppState {
             .notifications
             .push(&format!("Saved: {}", filename), false);
 
+        let canonical_saved = path.canonicalize().unwrap_or_else(|_| path.clone());
+        if let Some(ref folder) = self.folder {
+            if let Some(parent) = canonical_saved.parent() {
+                if parent == folder {
+                    if let Some(ref mut cache) = self.folder_cache {
+                        if !cache.contains(&canonical_saved) {
+                            cache.push(canonical_saved.clone());
+                            cache.sort();
+                        }
+                    }
+                }
+            }
+        }
+
         if let Ok(ref source) = self.source {
             let is_overwrite = source.path.canonicalize().ok().as_ref() == Some(&path);
             info!("is_overwrite {is_overwrite}");
