@@ -293,17 +293,32 @@ impl UiState {
         }
 
         ui.indent("Efectsindent", |ui| {
-            if ui
-                .add(elegance::Switch::new(
-                    &mut effect_stack.enabled,
-                    "Effect Stack",
-                ))
-                .changed()
-            {
-                actions.needs_rebuild = true;
-                actions.needs_compute = true;
-                actions.request_redraw = true;
-            }
+            ui.horizontal(|ui| {
+                if ui
+                    .add(elegance::Switch::new(
+                        &mut effect_stack.enabled,
+                        "Effect Stack",
+                    ))
+                    .changed()
+                {
+                    actions.needs_rebuild = true;
+                    actions.needs_compute = true;
+                    actions.request_redraw = true;
+                }
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui
+                        .add(
+                            elegance::Button::icon(elegance::glyphs::SETTINGS, "Presets")
+                                .outline()
+                                .size(elegance::ButtonSize::Small),
+                        )
+                        .clicked()
+                    {
+                        effect_stack.presets_collapsed = !effect_stack.presets_collapsed;
+                    }
+                });
+            });
         });
 
         if effect_stack.draw_presets_ui(ui) {
@@ -322,15 +337,19 @@ impl UiState {
                 .show_ui(ui, |ui| {
                     EffectSelector::draw_all(ui, effect_stack);
                 });
-            if ui
-                .add(elegance::Button::icon(
-                    elegance::glyphs::TRASH,
-                    "Clear Stack",
-                ))
-                .clicked()
-            {
-                actions.clear_effect_stack = true;
-            }
+
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui
+                    .add(
+                        elegance::Button::icon(elegance::glyphs::TRASH, "Clear Stack")
+                            .outline()
+                            .size(elegance::ButtonSize::Small),
+                    )
+                    .clicked()
+                {
+                    actions.clear_effect_stack = true;
+                }
+            });
         });
 
         let mut remove_idx = None;

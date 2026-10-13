@@ -112,29 +112,17 @@ impl EffectStack {
                 bottom: 0,
             });
 
-        frame.show(ui, |ui| {
-            ui.allocate_ui_with_layout(
-                egui::vec2(ui.available_width(), 0.0),
-                egui::Layout::top_down(egui::Align::Min),
-                |ui| {
-                    ui.add_space(10.0); // top padding
-                    ui.set_min_width(ui.available_width());
+        if !self.presets_collapsed {
+            frame.show(ui, |ui| {
+                ui.allocate_ui_with_layout(
+                    egui::vec2(ui.available_width(), 0.0),
+                    egui::Layout::top_down(egui::Align::Min),
+                    |ui| {
+                        ui.add_space(10.0); // top padding
+                        ui.set_min_width(ui.available_width());
 
-                    let is_collapsed = self.presets_collapsed;
-                    let chevron = if is_collapsed {
-                        elegance::glyphs::CHEVRON_RIGHT
-                    } else {
-                        elegance::glyphs::CHEVRON_DOWN
-                    };
+                        ui.heading("Presets");
 
-                    ui.horizontal(|ui| {
-                        let title = format!("{} Presets", chevron);
-                        if ui.add(egui::Button::new(title).frame(false)).clicked() {
-                            self.presets_collapsed = !is_collapsed;
-                        }
-                    });
-
-                    if !is_collapsed {
                         ui.add_space(4.0);
 
                         let selected_label = self
@@ -258,12 +246,13 @@ impl EffectStack {
                                 }
                             }
                         }
-                    }
+                        // }
 
-                    ui.add_space(10.0); // bottom padding
-                },
-            );
-        });
+                        ui.add_space(10.0); // bottom padding
+                    },
+                );
+            });
+        }
 
         changed
     }
