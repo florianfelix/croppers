@@ -34,6 +34,7 @@ pub struct UiActions {
     pub save_config: bool,
     pub open_file_dialog: bool,
     pub toggle_settings: bool,
+    pub clear_effect_stack: bool,
 }
 
 impl UiState {

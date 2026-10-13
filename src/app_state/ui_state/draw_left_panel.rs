@@ -15,7 +15,6 @@ impl UiState {
         &mut self,
         ctx: &mut egui::Ui,
         source: &ImgResult<ImageSource>,
-        // source: Option<&ImageSource>,
         src_dims: [u32; 2],
         crop_dims: Option<[u32; 2]>,
         effect_stack: &mut EffectStack,
@@ -307,11 +306,22 @@ impl UiState {
             actions.request_redraw = true;
         }
 
-        let _ = egui::ComboBox::from_label("Add Effect")
-            .selected_text("Add Effect")
-            .show_ui(ui, |ui| {
-                EffectSelector::draw_all(ui, effect_stack);
-            });
+        ui.horizontal(|ui| {
+            let _ = egui::ComboBox::from_id_salt("Add Effect")
+                .selected_text("Add Effect")
+                .show_ui(ui, |ui| {
+                    EffectSelector::draw_all(ui, effect_stack);
+                });
+            if ui
+                .add(elegance::Button::icon(
+                    elegance::glyphs::TRASH,
+                    "Clear Stack",
+                ))
+                .clicked()
+            {
+                actions.clear_effect_stack = true;
+            }
+        });
 
         let mut remove_idx = None;
         let mut swap_index = None;

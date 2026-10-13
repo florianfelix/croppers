@@ -101,6 +101,9 @@ impl AppState {
         if actions.toggle_settings {
             self.ui_state.toggle_settings();
         }
+        if actions.clear_effect_stack {
+            self.effect_stack.effects.clear();
+        }
 
         self.ui_state.notifications.draw(ctx.ctx());
     }
