@@ -103,6 +103,7 @@ impl AppState {
         }
         if actions.clear_effect_stack {
             self.effect_stack.effects.clear();
+            self.effect_stack.needs_rebuild = true;
         }
 
         self.ui_state.notifications.draw(ctx.ctx());

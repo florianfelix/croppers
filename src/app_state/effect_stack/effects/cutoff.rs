@@ -46,7 +46,7 @@ impl Default for CutoffUniforms {
             reintroduce: 0.0,
             angle: std::f32::consts::FRAC_PI_2, // 90°: vertical (bottom to top)
             below_enabled: 1,
-            above_enabled: 1,
+            above_enabled: 0,
             mode: 0,
         }
     }
