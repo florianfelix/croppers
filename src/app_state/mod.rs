@@ -50,6 +50,7 @@ pub struct AppState {
     pub ui_state: UiState,
     pub needs_compute: bool,
     pub is_computing: bool,
+    pub is_startup: bool,
     pub tx_job: Sender<ComputeRequest>,
     pub rx_job: Receiver<ComputeRequest>,
     pub proxy: Option<EventLoopProxy<Message>>,
@@ -70,6 +71,7 @@ impl AppState {
             ui_state: UiState::default(),
             needs_compute: true,
             is_computing: false,
+            is_startup: true,
             tx_job,
             rx_job,
             proxy: None,
@@ -78,19 +80,21 @@ impl AppState {
             app_state.ui_state.show_settings = true;
         }
 
-        app_state.apply_startup_config();
+        // app_state.apply_startup_config();
         app_state
     }
 
     pub fn apply_startup_config(&mut self) {
-        self.ui_state.crop.enabled = self.config.startup_crop.enabled;
-        self.ui_state.crop.mode = self.config.startup_crop.default_crop_mode;
-        self.ui_state.crop.crop_width = self.config.startup_crop.fixed_crop_width;
-        self.ui_state.crop.crop_height = self.config.startup_crop.fixed_crop_height;
+        let startup = &self.config.startup;
+        self.ui_state.crop.enabled = startup.default_crop_setting.enabled;
+        self.ui_state.crop.mode = startup.default_crop_setting.default_crop_mode;
+        self.ui_state.crop.crop_width = startup.default_crop_setting.fixed_crop_width;
+        self.ui_state.crop.crop_height = startup.default_crop_setting.fixed_crop_height;
 
-        self.ui_state.show_panel = self.config.startup_ui.show_panel;
+        self.ui_state.show_panel = self.config.startup.show_panel;
 
-        self.effect_stack.enabled = self.config.startup_effects.enabled;
+        self.effect_stack.enabled = self.config.startup.enable_effects;
+        self.is_startup = false;
     }
 
     #[tracing::instrument(skip(self))]
@@ -100,15 +104,18 @@ impl AppState {
         if self.source_dirty {
             self.ui_state.crop.request_reset();
             if self.source.is_ok() {
+                // reset effect stack compute
                 self.is_computing = false;
                 self.needs_compute = true;
                 self.effect_stack.needs_rebuild = true;
+
+                // Apply config on image load
                 self.effect_stack.enabled = self.config.on_image_load.effects_enabled;
                 self.ui_state.crop.enabled = self.config.on_image_load.crop_enabled;
-
                 if self.config.on_image_load.empty_effects {
                     self.effect_stack.effects.clear();
                 }
+
                 self.ui_state.reset_view();
             } else {
                 self.is_computing = false;
@@ -146,6 +153,9 @@ impl AppState {
             if let Some(ref proxy) = self.proxy {
                 let _ = proxy.send_event(Message::Empty);
             }
+        }
+        if self.is_startup {
+            self.apply_startup_config();
         }
         request_redraw
     }

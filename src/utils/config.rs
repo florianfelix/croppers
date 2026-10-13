@@ -50,9 +50,7 @@ pub struct CroppersConfig {
 
     pub theme_mode: ThemeMode,
     pub appearance: AppearanceConfig,
-    pub startup_crop: StartupCrop,
-    pub startup_ui: StartupUi,
-    pub startup_effects: StartupEffects,
+    pub startup: Startup,
     pub on_image_load: OnImageLoad,
 }
 impl Default for CroppersConfig {
@@ -64,10 +62,24 @@ impl Default for CroppersConfig {
             startup_file: None,
             theme_mode: ThemeMode::default(),
             appearance: AppearanceConfig::default(),
-            startup_crop: StartupCrop::default(),
-            startup_ui: StartupUi::default(),
-            startup_effects: StartupEffects::default(),
+            startup: Startup::default(),
             on_image_load: OnImageLoad::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Startup {
+    pub enable_effects: bool,
+    pub show_panel: bool,
+    pub default_crop_setting: StartupCrop,
+}
+impl Default for Startup {
+    fn default() -> Self {
+        Self {
+            enable_effects: false,
+            show_panel: true,
+            default_crop_setting: StartupCrop::default(),
         }
     }
 }
@@ -112,29 +124,7 @@ impl Default for OnImageLoad {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(default)]
-pub struct StartupEffects {
-    pub enabled: bool,
-}
-impl Default for StartupEffects {
-    fn default() -> Self {
-        Self { enabled: false }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(default)]
-pub struct StartupUi {
-    pub show_panel: bool,
-}
-impl Default for StartupUi {
-    fn default() -> Self {
-        Self { show_panel: true }
-    }
-}
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StartupCrop {
     pub enabled: bool,
     pub default_crop_mode: CropMode,

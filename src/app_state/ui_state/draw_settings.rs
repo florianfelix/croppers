@@ -181,47 +181,54 @@ impl UiState {
 
                             ui.add_space(8.0);
                             ui.group(|ui| {
-                                ui.strong("Startup Effects");
+                                ui.strong("On Startup");
+                                ui.separator();
                                 ui.checkbox(
-                                    &mut config.startup_effects.enabled,
+                                    &mut config.startup.enable_effects,
                                     "Enable Effects on Startup",
                                 );
-                            });
 
-                            ui.add_space(8.0);
-                            ui.group(|ui| {
-                                ui.strong("Startup UI");
                                 ui.checkbox(
-                                    &mut config.startup_ui.show_panel,
+                                    &mut config.startup.show_panel,
                                     "Show Left Panel on Startup",
                                 );
-                            });
 
-                            ui.add_space(8.0);
-                            ui.group(|ui| {
-                                ui.strong("Startup Crop");
+                                ui.add_space(8.0);
+                                ui.strong("Startup Crop Settings");
                                 ui.checkbox(
-                                    &mut config.startup_crop.enabled,
+                                    &mut config.startup.default_crop_setting.enabled,
                                     "Enable Crop on Startup",
                                 );
                                 egui::ComboBox::from_label("Mode")
-                                    .selected_text(config.startup_crop.default_crop_mode.label())
+                                    .selected_text(
+                                        config
+                                            .startup
+                                            .default_crop_setting
+                                            .default_crop_mode
+                                            .label(),
+                                    )
                                     .show_ui(ui, |ui| {
                                         for mode in CropMode::ALL {
                                             ui.selectable_value(
-                                                &mut config.startup_crop.default_crop_mode,
+                                                &mut config
+                                                    .startup
+                                                    .default_crop_setting
+                                                    .default_crop_mode,
                                                 mode,
                                                 mode.label(),
                                             );
                                         }
                                     });
-                                if config.startup_crop.default_crop_mode
+                                if config.startup.default_crop_setting.default_crop_mode
                                     == CropMode::FixedDimensions
                                 {
                                     ui.horizontal(|ui| {
                                         ui.add(
                                             egui::DragValue::new(
-                                                &mut config.startup_crop.fixed_crop_width,
+                                                &mut config
+                                                    .startup
+                                                    .default_crop_setting
+                                                    .fixed_crop_width,
                                             )
                                             .range(1..=10000),
                                         );
@@ -230,7 +237,10 @@ impl UiState {
                                     ui.horizontal(|ui| {
                                         ui.add(
                                             egui::DragValue::new(
-                                                &mut config.startup_crop.fixed_crop_height,
+                                                &mut config
+                                                    .startup
+                                                    .default_crop_setting
+                                                    .fixed_crop_height,
                                             )
                                             .range(1..=10000),
                                         );
@@ -238,6 +248,8 @@ impl UiState {
                                     });
                                 }
                             });
+
+                            ui.add_space(8.0);
 
                             ui.add_space(16.0);
                             if ui.add(elegance::Button::new("Save Settings")).clicked() {
