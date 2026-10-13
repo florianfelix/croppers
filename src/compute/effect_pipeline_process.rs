@@ -37,9 +37,11 @@ impl EffectProcessor {
         );
         shader_modules.insert(
             "cutoff".to_string(),
-            device.create_shader_module(wgpu::include_wgsl!(
-                "../../shaders/cutoff_comp.wgsl"
-            )),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/cutoff_comp.wgsl")),
+        );
+        shader_modules.insert(
+            "flip".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!("../../shaders/flip_comp.wgsl")),
         );
         shader_modules.insert(
             "blur".to_string(),
@@ -167,4 +169,3 @@ impl EffectProcessor {
         }
     }
 }
-

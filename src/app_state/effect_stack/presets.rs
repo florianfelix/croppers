@@ -278,6 +278,10 @@ pub enum EffectConfig {
         enabled: bool,
         uniforms: CutoffUniforms,
     },
+    Flip {
+        enabled: bool,
+        uniforms: FlipUniforms,
+    },
     Vignette {
         enabled: bool,
         uniforms: VignetteUniforms,
@@ -345,6 +349,12 @@ impl From<EffectConfig> for Box<dyn effects::EffectContainerObject> {
             }
             EffectConfig::Cutoff { enabled, uniforms } => {
                 let mut c = CutoffContainer::new();
+                c.enabled = enabled;
+                c.uniforms = uniforms;
+                c
+            }
+            EffectConfig::Flip { enabled, uniforms } => {
+                let mut c = FlipContainer::new();
                 c.enabled = enabled;
                 c.uniforms = uniforms;
                 c

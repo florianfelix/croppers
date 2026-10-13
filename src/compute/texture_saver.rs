@@ -117,7 +117,8 @@ impl TextureSaver {
             if is_jpeg {
                 let file = File::create(path)?;
                 let mut writer = BufWriter::new(file);
-                let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut writer, 90);
+                let mut encoder =
+                    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut writer, 90);
                 encoder.encode_image(&dyn_img.to_rgb8())?;
             } else {
                 dyn_img.save(path)?;

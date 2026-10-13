@@ -2,7 +2,10 @@ use std::sync::Arc;
 #[allow(unused)]
 use tracing::{info, trace, warn};
 
-use crate::app_state::{AppState, textures::{TextureSet, TextureVault}};
+use crate::app_state::{
+    AppState,
+    textures::{TextureSet, TextureVault},
+};
 
 impl TextureVault {
     #[tracing::instrument(skip(self))]
@@ -70,6 +73,7 @@ impl AppState {
 
     #[inline]
     pub fn get_save_texture_set(&self) -> Option<TextureSet> {
-        self.texture_vault.get_save_texture_set(self.effect_stack.is_active())
+        self.texture_vault
+            .get_save_texture_set(self.effect_stack.is_active())
     }
 }
