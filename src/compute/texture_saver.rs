@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use image::{DynamicImage, RgbaImage};
-use std::{path::Path, sync::Arc};
+use std::{fs::File, io::BufWriter, path::Path, sync::Arc};
 
 use crate::app_state::textures::TextureSet;
 
@@ -115,7 +115,10 @@ impl TextureSaver {
                 .unwrap_or(false);
 
             if is_jpeg {
-                dyn_img.to_rgb8().save(path)?;
+                let file = File::create(path)?;
+                let mut writer = BufWriter::new(file);
+                let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut writer, 90);
+                encoder.encode_image(&dyn_img.to_rgb8())?;
             } else {
                 dyn_img.save(path)?;
             }
