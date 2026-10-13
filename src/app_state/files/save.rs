@@ -54,7 +54,8 @@ impl AppState {
             info!("is_overwrite {is_overwrite}");
             if is_overwrite {
                 self.try_open_file(&path);
-                self.effect_stack.enabled = false;
+                self.source_just_saved = true;
+                // self.effect_stack.enabled = false;
             }
         }
     }

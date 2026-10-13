@@ -51,6 +51,7 @@ pub struct AppState {
     pub needs_compute: bool,
     pub is_computing: bool,
     pub is_startup: bool,
+    pub source_just_saved: bool,
     pub tx_job: Sender<ComputeRequest>,
     pub rx_job: Receiver<ComputeRequest>,
     pub proxy: Option<EventLoopProxy<Message>>,
@@ -72,6 +73,7 @@ impl AppState {
             needs_compute: true,
             is_computing: false,
             is_startup: true,
+            source_just_saved: false,
             tx_job,
             rx_job,
             proxy: None,
@@ -114,6 +116,12 @@ impl AppState {
                 self.ui_state.crop.enabled = self.config.on_image_load.crop_enabled;
                 if self.config.on_image_load.empty_effects {
                     self.effect_stack.effects.clear();
+                }
+
+                if self.source_just_saved {
+                    self.effect_stack.enabled = false;
+                    self.ui_state.crop.enabled = false;
+                    self.source_just_saved = false;
                 }
 
                 self.ui_state.reset_view();
