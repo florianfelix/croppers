@@ -19,7 +19,7 @@ use crate::app_state::effect_stack::EffectStack;
 #[allow(dead_code)]
 pub struct GpuEffectPipeline {
     pub device: Arc<wgpu::Device>,
-    pub ping_pong_textures: [wgpu::Texture; 2],
+    pub ping_pong_textures: [Arc<wgpu::Texture>; 2],
     pub ping_pong_views: [wgpu::TextureView; 2],
     pub bind_group_layout: wgpu::BindGroupLayout,
     pub passes: Vec<GpuEffectPass>,
@@ -53,8 +53,8 @@ impl GpuEffectPipeline {
             })
         };
 
-        let tex_a = create_tex("Ping Pong Texture A");
-        let tex_b = create_tex("Ping Pong Texture B");
+        let tex_a = Arc::new(create_tex("Ping Pong Texture A"));
+        let tex_b = Arc::new(create_tex("Ping Pong Texture B"));
         let view_a = tex_a.create_view(&Default::default());
         let view_b = tex_b.create_view(&Default::default());
 

@@ -16,24 +16,30 @@ impl AppState {
 
     #[tracing::instrument(skip(self))]
     pub fn save_effect_texture(&mut self, increment: bool) {
-        if self.texture_vault.effect.texture_view.is_some() {
-            if let Ok(ref source) = self.source {
-                if let Ok(ref current) = source.path.canonicalize() {
-                    let path_for_saving = if increment {
-                        increment_filename(current)
-                    } else {
-                        current.clone()
-                    };
+        if let Ok(ref source) = self.source {
+            if let Ok(ref current) = source.path.canonicalize() {
+                let path_for_saving = if increment {
+                    increment_filename(current)
+                } else {
+                    current.clone()
+                };
+
+                if let Some(texture_set) = self.get_save_texture_set() {
                     if self
                         .tx_job
-                        .send(crate::compute::ComputeRequest::SaveLastEffect(
-                            path_for_saving.clone(),
-                        ))
+                        .send(crate::compute::ComputeRequest::SaveTexture {
+                            path_for_saving: path_for_saving.clone(),
+                            texture_set,
+                        })
                         .is_ok()
                     {
                         info!("Send SaveJob {:?}", path_for_saving);
                     }
-                };
+                } else {
+                    self.ui_state
+                        .notifications
+                        .push("No texture available to save.", true);
+                }
             }
         }
     }

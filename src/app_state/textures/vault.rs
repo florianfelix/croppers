@@ -56,6 +56,10 @@ impl TextureSet {
             None
         }
     }
+
+    pub fn has_texture(&self) -> bool {
+        self.texture.is_some() && (self.dims[0] > 0 && self.dims[1] > 0)
+    }
 }
 
 #[derive(Default, Debug)]
@@ -112,5 +116,17 @@ impl TextureVault {
 
     pub fn clear_effects(&mut self) {
         self.effect.clear();
+    }
+
+    pub fn get_save_texture_set(&self, is_effects_active: bool) -> Option<TextureSet> {
+        if is_effects_active && self.effect.has_texture() {
+            Some(self.effect.clone())
+        } else if self.cropped.has_texture() {
+            Some(self.cropped.clone())
+        } else if self.srcimg.has_texture() {
+            Some(self.srcimg.clone())
+        } else {
+            None
+        }
     }
 }

@@ -2,7 +2,7 @@ use std::sync::Arc;
 #[allow(unused)]
 use tracing::{info, trace, warn};
 
-use crate::app_state::{AppState, textures::TextureVault};
+use crate::app_state::{AppState, textures::{TextureSet, TextureVault}};
 
 impl TextureVault {
     #[tracing::instrument(skip(self))]
@@ -66,5 +66,10 @@ impl AppState {
     #[inline]
     pub fn get_srcimg_view(&self) -> Option<(Arc<wgpu::TextureView>, [u32; 2])> {
         self.texture_vault.get_srcimg_view()
+    }
+
+    #[inline]
+    pub fn get_save_texture_set(&self) -> Option<TextureSet> {
+        self.texture_vault.get_save_texture_set(self.effect_stack.is_active())
     }
 }

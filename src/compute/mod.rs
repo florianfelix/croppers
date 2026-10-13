@@ -1,9 +1,10 @@
 use crate::{
     Message,
-    app_state::effect_stack::EffectStack,
+    app_state::{effect_stack::EffectStack, textures::TextureSet},
     compute::{
         crop_renderer::{CropJob, CropRender, CropResult},
         effect_pipeline_process::{EffectProcessor, EffectsResult},
+        texture_saver::TextureSaver,
     },
 };
 use std::{path::PathBuf, sync::Arc};
@@ -13,6 +14,7 @@ use winit::event_loop::EventLoopProxy;
 pub mod crop_renderer;
 pub mod effect_pipeline;
 pub mod effect_pipeline_process;
+pub mod texture_saver;
 
 pub fn spawn_worker(
     device: Arc<wgpu::Device>,
@@ -27,7 +29,10 @@ pub fn spawn_worker(
 pub enum ComputeRequest {
     EffectsJob(EffectsJob),
     CropJob(CropJob),
-    SaveLastEffect(PathBuf),
+    SaveTexture {
+        path_for_saving: PathBuf,
+        texture_set: TextureSet,
+    },
 }
 #[derive(Clone)]
 pub struct EffectsJob {
@@ -52,6 +57,7 @@ pub fn compute_worker(
 ) {
     let mut effect_processor = EffectProcessor::new(device.clone(), queue.clone());
     let mut crop_renderer = CropRender::new(device.clone(), queue.clone());
+    let texture_saver = TextureSaver::new(device.clone(), queue.clone());
 
     while let Ok(request) = rx_job.recv() {
         match request {
@@ -70,9 +76,13 @@ pub fn compute_worker(
                     // window.request_redraw();
                 }
             }
-            ComputeRequest::SaveLastEffect(path) => match effect_processor.try_save(&path) {
+
+            ComputeRequest::SaveTexture {
+                path_for_saving,
+                texture_set,
+            } => match texture_saver.save(&texture_set, &path_for_saving) {
                 Ok(()) => {
-                    let _ = proxy.send_event(Message::FileSaved(path));
+                    let _ = proxy.send_event(Message::FileSaved(path_for_saving));
                 }
                 Err(e) => {
                     error!("Failed to Save file {e}");

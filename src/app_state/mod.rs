@@ -171,9 +171,13 @@ impl AppState {
     #[tracing::instrument(skip(self, compute_result))]
     pub fn handle_compute_result(&mut self, compute_result: ComputeResult) {
         match compute_result {
-            ComputeResult::FinishedEffects(EffectsResult::Finished((view, dims))) => {
+            ComputeResult::FinishedEffects(EffectsResult::Finished {
+                texture,
+                view,
+                dims,
+            }) => {
                 info!("Received Effects {:?}", dims);
-                self.texture_vault.set_effect_view(view, dims);
+                self.texture_vault.set_effect(texture, view, dims);
                 self.is_computing = false;
                 self.effect_stack.needs_rebuild = false;
             }

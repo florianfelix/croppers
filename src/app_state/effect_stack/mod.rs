@@ -33,6 +33,10 @@ impl Default for EffectStack {
     }
 }
 impl EffectStack {
+    pub fn is_active(&self) -> bool {
+        self.enabled && self.effects.iter().any(|e| e.enabled())
+    }
+
     pub fn validate_ids(&mut self) {
         for (idx, e) in self.effects.iter_mut().enumerate() {
             e.set_id(idx);
