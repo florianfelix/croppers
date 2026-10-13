@@ -270,6 +270,14 @@ pub enum EffectConfig {
         enabled: bool,
         uniforms: BlurUniforms,
     },
+    BrightnessContrast {
+        enabled: bool,
+        uniforms: BrightnessContrastUniforms,
+    },
+    Cutoff {
+        enabled: bool,
+        uniforms: CutoffUniforms,
+    },
     Vignette {
         enabled: bool,
         uniforms: VignetteUniforms,
@@ -325,6 +333,18 @@ impl From<EffectConfig> for Box<dyn effects::EffectContainerObject> {
         match config {
             EffectConfig::Blur { enabled, uniforms } => {
                 let mut c = BlurContainer::new();
+                c.enabled = enabled;
+                c.uniforms = uniforms;
+                c
+            }
+            EffectConfig::BrightnessContrast { enabled, uniforms } => {
+                let mut c = BrightnessContrastContainer::new();
+                c.enabled = enabled;
+                c.uniforms = uniforms;
+                c
+            }
+            EffectConfig::Cutoff { enabled, uniforms } => {
+                let mut c = CutoffContainer::new();
                 c.enabled = enabled;
                 c.uniforms = uniforms;
                 c

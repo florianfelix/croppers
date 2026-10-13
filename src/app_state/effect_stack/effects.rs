@@ -5,6 +5,8 @@ use std::collections::HashMap;
 
 mod ascii;
 mod blur;
+mod brightness_contrast;
+mod cutoff;
 mod bw;
 mod crt;
 mod dither;
@@ -19,6 +21,8 @@ mod vignette;
 pub mod prelude {
     pub use super::ascii::*;
     pub use super::blur::*;
+    pub use super::brightness_contrast::*;
+    pub use super::cutoff::*;
     pub use super::bw::*;
     pub use super::crt::*;
     pub use super::dither::*;
@@ -70,6 +74,8 @@ dyn_clone::clone_trait_object!(EffectContainerObject);
 #[derive(PartialEq, Clone, Copy, Debug, Sequence)]
 pub enum EffectSelector {
     Blur,
+    BrightnessContrast,
+    Cutoff,
     Vignette,
     Bw,
     Hsv,
@@ -88,6 +94,8 @@ impl From<EffectSelector> for Box<dyn EffectContainerObject> {
         match value {
             EffectSelector::Crt => CrtContainer::new(),
             EffectSelector::Blur => BlurContainer::new(),
+            EffectSelector::BrightnessContrast => BrightnessContrastContainer::new(),
+            EffectSelector::Cutoff => CutoffContainer::new(),
             EffectSelector::PixelateLinear => PixelateLinearContainer::new(),
             EffectSelector::PixelateTilt => PixelateTiltContainer::new(),
             EffectSelector::Dither => DitherContainer::new(),

@@ -30,6 +30,18 @@ impl EffectProcessor {
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/vignette_comp.wgsl")),
         );
         shader_modules.insert(
+            "brightness_contrast".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!(
+                "../../shaders/brightness_contrast_comp.wgsl"
+            )),
+        );
+        shader_modules.insert(
+            "cutoff".to_string(),
+            device.create_shader_module(wgpu::include_wgsl!(
+                "../../shaders/cutoff_comp.wgsl"
+            )),
+        );
+        shader_modules.insert(
             "blur".to_string(),
             device.create_shader_module(wgpu::include_wgsl!("../../shaders/blur_comp.wgsl")),
         );
