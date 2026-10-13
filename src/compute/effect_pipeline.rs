@@ -23,6 +23,8 @@ pub struct GpuEffectPipeline {
     pub ping_pong_views: [wgpu::TextureView; 2],
     pub bind_group_layout: wgpu::BindGroupLayout,
     pub passes: Vec<GpuEffectPass>,
+    pub baked_bind_groups: Vec<(wgpu::BindGroup, wgpu::BindGroup)>,
+    pub first_pass_cache: Option<(Arc<wgpu::TextureView>, wgpu::BindGroup)>,
     pub dimensions: (u32, u32),
 }
 
@@ -64,9 +66,12 @@ impl GpuEffectPipeline {
             ping_pong_views: [view_a, view_b],
             bind_group_layout,
             passes: Vec::new(),
+            baked_bind_groups: Vec::new(),
+            first_pass_cache: None,
             dimensions: (width, height),
         }
     }
+
     pub fn create_bind_group_layout(device: Arc<wgpu::Device>) -> wgpu::BindGroupLayout {
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Compute Effect Bind Group Layout"),
@@ -112,6 +117,8 @@ impl GpuEffectPipeline {
         shader_modules: &std::collections::HashMap<String, wgpu::ShaderModule>,
     ) {
         self.passes.clear();
+        self.baked_bind_groups.clear();
+        self.first_pass_cache = None;
 
         for container in &stack.effects {
             if !container.enabled() {
@@ -125,40 +132,20 @@ impl GpuEffectPipeline {
                 &mut self.passes,
             );
         }
-    }
 
-    /// Dispatches all compute passes in order using ping-pong textures
-    pub fn execute(
-        &self,
-        device: &wgpu::Device,
-        encoder: &mut wgpu::CommandEncoder,
-        input_view: &wgpu::TextureView,
-    ) -> (wgpu::TextureView, Option<usize>) {
-        if self.passes.is_empty() {
-            return (input_view.clone(), None);
-        }
-        // info!("Executing");
-
-        let workgroups_x = self.dimensions.0.div_ceil(16);
-        let workgroups_y = self.dimensions.1.div_ceil(16);
-
-        let mut current_src_view = input_view.clone();
-        let mut dst_idx = 0;
-
+        // Pre-bake ping-pong bind groups (A -> B and B -> A) for every pass
         for pass in &self.passes {
-            let write_view = &self.ping_pong_views[dst_idx];
-
-            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("Ping-Pong Compute Bind Group"),
+            let bg_a_to_b = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Ping-Pong A->B Compute Bind Group"),
                 layout: &self.bind_group_layout,
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&current_src_view),
+                        resource: wgpu::BindingResource::TextureView(&self.ping_pong_views[0]),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: wgpu::BindingResource::TextureView(write_view),
+                        resource: wgpu::BindingResource::TextureView(&self.ping_pong_views[1]),
                     },
                     wgpu::BindGroupEntry {
                         binding: 2,
@@ -167,24 +154,104 @@ impl GpuEffectPipeline {
                 ],
             });
 
+            let bg_b_to_a = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Ping-Pong B->A Compute Bind Group"),
+                layout: &self.bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&self.ping_pong_views[1]),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(&self.ping_pong_views[0]),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: pass.uniform_buffer.as_entire_binding(),
+                    },
+                ],
+            });
+
+            self.baked_bind_groups.push((bg_a_to_b, bg_b_to_a));
+        }
+    }
+
+    /// Dispatches all compute passes in order using pre-baked ping-pong bind groups
+    pub fn execute(
+        &mut self,
+        device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        input_view: &Arc<wgpu::TextureView>,
+    ) -> (wgpu::TextureView, Option<usize>) {
+        if self.passes.is_empty() {
+            return (input_view.as_ref().clone(), None);
+        }
+
+        let workgroups_x = self.dimensions.0.div_ceil(16);
+        let workgroups_y = self.dimensions.1.div_ceil(16);
+
+        // Ensure pass 0's bind group (input_view -> ping_pong_views[0]) is cached
+        let is_cached = self
+            .first_pass_cache
+            .as_ref()
+            .map(|(v, _)| Arc::ptr_eq(v, input_view))
+            .unwrap_or(false);
+
+        if !is_cached {
+            let bg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("First Pass Compute Bind Group"),
+                layout: &self.bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(input_view.as_ref()),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(&self.ping_pong_views[0]),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: self.passes[0].uniform_buffer.as_entire_binding(),
+                    },
+                ],
+            });
+            self.first_pass_cache = Some((input_view.clone(), bg));
+        }
+
+        let first_pass_bg = &self.first_pass_cache.as_ref().unwrap().1;
+
+        let mut dst_idx = 0;
+
+        for (i, pass) in self.passes.iter().enumerate() {
+            let bind_group = if i == 0 {
+                first_pass_bg
+            } else if dst_idx == 1 {
+                // Reads from Texture A (0), writes to Texture B (1)
+                &self.baked_bind_groups[i].0
+            } else {
+                // Reads from Texture B (1), writes to Texture A (0)
+                &self.baked_bind_groups[i].1
+            };
+
             {
                 let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                     label: Some("Effect Compute Pass"),
                     timestamp_writes: None,
                 });
                 cpass.set_pipeline(&pass.pipeline);
-                cpass.set_bind_group(0, &bind_group, &[]);
+                cpass.set_bind_group(0, bind_group, &[]);
                 cpass.dispatch_workgroups(workgroups_x, workgroups_y, 1);
             }
 
-            // Point to output view for next pass input
-            current_src_view = write_view.clone();
-
-            // Toggle ping-pong index (0 -> 1 -> 0)
             dst_idx = 1 - dst_idx;
         }
-        let last_written_idx = 1 - dst_idx;
 
-        (current_src_view, Some(last_written_idx))
+        let last_written_idx = 1 - dst_idx;
+        (
+            self.ping_pong_views[last_written_idx].clone(),
+            Some(last_written_idx),
+        )
     }
 }
