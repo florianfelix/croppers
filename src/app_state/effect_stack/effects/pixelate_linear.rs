@@ -29,13 +29,13 @@ impl PixelateLinearContainer {
 pub struct PixelateLinearUniforms {
     pub max_pixel_size: f32,
     pub angle: f32,
-    pub start_x: f32,
-    pub start_y: f32,
+    pub start: f32,
+    pub end: f32,
 
-    pub length: f32,
     pub invert: i32,
     pub _padding1: f32,
     pub _padding2: f32,
+    pub _padding3: f32,
 }
 
 impl Default for PixelateLinearUniforms {
@@ -43,12 +43,12 @@ impl Default for PixelateLinearUniforms {
         Self {
             max_pixel_size: 64.0,
             angle: 0.0,
-            start_x: 0.0,
-            start_y: 0.5,
-            length: 0.8,
+            start: 0.0,
+            end: 1.0,
             invert: 0,
             _padding1: 0.0,
             _padding2: 0.0,
+            _padding3: 0.0,
         }
     }
 }
@@ -83,34 +83,46 @@ impl EffectContainerObject for PixelateLinearContainer {
         changed |= ui
             .add(
                 elegance::Slider::new(&mut self.uniforms.max_pixel_size, 1.0..=128.0)
-                    .label("pixel size"),
+                    .label("Pixel Size"),
             )
             .changed();
-        let mut angle_deg = self.uniforms.angle.to_degrees();
+
+        let mut angle_deg = self.uniforms.angle.to_degrees().rem_euclid(360.0);
         if ui
             .add(
                 elegance::Slider::new(&mut angle_deg, 0.0..=360.0)
                     .suffix("°")
-                    .label("angle"),
+                    .label("Angle"),
             )
             .changed()
         {
             self.uniforms.angle = angle_deg.to_radians();
             changed = true;
         }
-        changed |= ui
-            .add(elegance::Slider::new(&mut self.uniforms.length, 0.0..=1.0).label("length"))
-            .changed();
-        changed |= ui
-            .add(elegance::Slider::new(&mut self.uniforms.start_x, 0.0..=1.0).label("start x"))
-            .changed();
-        changed |= ui
-            .add(elegance::Slider::new(&mut self.uniforms.start_y, 0.0..=1.0).label("start y"))
-            .changed();
+
+        if ui
+            .add(elegance::Slider::new(&mut self.uniforms.start, 0.0..=1.0).label("Start"))
+            .changed()
+        {
+            if self.uniforms.start > self.uniforms.end {
+                self.uniforms.end = self.uniforms.start;
+            }
+            changed = true;
+        }
+
+        if ui
+            .add(elegance::Slider::new(&mut self.uniforms.end, 0.0..=1.0).label("End"))
+            .changed()
+        {
+            if self.uniforms.end < self.uniforms.start {
+                self.uniforms.start = self.uniforms.end;
+            }
+            changed = true;
+        }
 
         let mut is_inverted = self.uniforms.invert == 1;
         if ui
-            .add(egui::Checkbox::new(&mut is_inverted, "invert"))
+            .add(egui::Checkbox::new(&mut is_inverted, "Invert"))
             .changed()
         {
             self.uniforms.invert = is_inverted as i32;
@@ -169,6 +181,7 @@ impl EffectContainerObject for PixelateLinearContainer {
             queue.write_buffer(&pass.uniform_buffer, 0, bytemuck::bytes_of(&self.uniforms));
         }
     }
+
     fn to_config(&self) -> EffectConfig {
         EffectConfig::PixelateLinear {
             enabled: self.enabled,

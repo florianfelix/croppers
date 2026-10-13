@@ -36,8 +36,8 @@ pub struct TiltShiftUniforms {
     // --- 2. Block (16 Bytes) ---
     pub focus_size: f32,
     pub feather: f32,
+    pub angle: f32,
     pub _padding1: f32,
-    pub _padding2: f32,
 }
 
 impl Default for TiltShiftUniforms {
@@ -49,8 +49,8 @@ impl Default for TiltShiftUniforms {
             center: 0.5,
             focus_size: 0.1,
             feather: 0.4,
+            angle: 0.0,
             _padding1: 0.0,
-            _padding2: 0.0,
         }
     }
 }
@@ -85,16 +85,30 @@ impl EffectContainerObject for TiltShiftContainer {
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.max_radius, 0.0..=200.0).label("Radius"))
             .changed();
+
+        let mut angle_deg = self.uniforms.angle.to_degrees().rem_euclid(360.0);
+        if ui
+            .add(
+                elegance::Slider::new(&mut angle_deg, 0.0..=360.0)
+                    .suffix("°")
+                    .label("Angle"),
+            )
+            .changed()
+        {
+            self.uniforms.angle = angle_deg.to_radians();
+            changed = true;
+        }
+
         changed |= ui
             .add(elegance::Slider::new(&mut self.uniforms.center, 0.0..=1.0).label("Center"))
             .changed();
         changed |= ui
             .add(
-                elegance::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).label("focus size"),
+                elegance::Slider::new(&mut self.uniforms.focus_size, 0.0..=1.0).label("Focus Size"),
             )
             .changed();
         changed |= ui
-            .add(elegance::Slider::new(&mut self.uniforms.feather, 0.0..=1.0).label("feather"))
+            .add(elegance::Slider::new(&mut self.uniforms.feather, 0.0..=1.0).label("Feather"))
             .changed();
 
         changed
@@ -184,6 +198,7 @@ impl EffectContainerObject for TiltShiftContainer {
             queue.write_buffer(&v_pass.uniform_buffer, 0, bytemuck::bytes_of(&v_uniforms));
         }
     }
+
     fn to_config(&self) -> EffectConfig {
         EffectConfig::TiltShift {
             enabled: self.enabled,

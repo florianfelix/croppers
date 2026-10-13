@@ -2,11 +2,11 @@ struct TiltShiftUniforms {
     max_radius: f32,
     dir_x: i32,
     dir_y: i32,
-    center: f32,     // 0.0 to 1.0 vertical position of in-focus band
+    center: f32,     // 0.0 to 1.0 position of in-focus band
     focus_size: f32, // Width of in-focus zone
     feather: f32,    // Transition width between sharp and blurred zones
+    angle: f32,      // Rotation angle in radians
     _padding1: f32,
-    _padding2: f32,
 };
 
 @group(0) @binding(0) var input_texture: texture_2d<f32>;
@@ -22,9 +22,11 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     let coords = vec2<i32>(global_id.xy);
 
-    // Calculate normalized vertical distance from current pixel to center focus band
-    let uv_y = (f32(global_id.y) + 0.5f) / f32(dims.y);
-    let distance_to_center = abs(uv_y - uniforms.center);
+    // Calculate normalized distance from current pixel to rotated center focus band
+    let uv = vec2<f32>((f32(global_id.x) + 0.5f) / f32(dims.x), 1.0 - (f32(global_id.y) + 0.5f) / f32(dims.y));
+    let centered_uv = uv - vec2<f32>(0.5, 0.5);
+    let n_vector = vec2<f32>(-sin(uniforms.angle), cos(uniforms.angle));
+    let distance_to_center = abs(dot(centered_uv, n_vector) - (uniforms.center - 0.5));
 
     // Compute dynamic blur factor using smoothstep across focus size and feather zone
     let safe_focus = clamp(uniforms.focus_size, 0.0f, 1.0f);
